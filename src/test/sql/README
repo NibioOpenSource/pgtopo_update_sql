@@ -1,0 +1,15 @@
+Here is a list symlinks we need to add to run the test
+
+Run from src/test/sql directory
+
+ln -s /usr/local/bin/shp2pgsql loader
+ln -s /usr/local/bin/pgsql2shp loader
+mkdir -p regress/00-regress-install/share/contrib
+ln -s /usr/local/Cellar/postgis/2.1.7_1/share/postgis regress/00-regress-install/share/contrib/
+
+This can probably be done in better way.
+
+Then you can run a simple test.
+
+./run_test.pl --verbose --topology topo_update
+

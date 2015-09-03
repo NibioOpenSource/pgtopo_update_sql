@@ -1,0 +1,13 @@
+-- this is a script used for testing on my own mac
+
+sh ~/dev/git/topologi/pgtopo_update_sql/src/test/sql/help_scripts/reset_all_rein_data.sh | psql sl
+cat ~/dev/git/topologi/pgtopo_update_sql/src/test/sql/help_scripts/test_01_apply_line_on_topo_surface.sql | psql sl 
+
+select count(*) from topo_rein.arstidsbeite_var_grense;
+select * from topo_rein.arstidsbeite_var_grense;
+select * from topo_rein.arstidsbeite_var_flate;
+select * from topo_rein_sysdata.relation order by element_type;
+select edge_id,start_node,end_node,next_left_edge,abs_next_left_edge,next_right_edge,abs_next_right_edge,left_face,right_face 
+from topo_rein_sysdata.edge_data   order by  edge_id;
+select face_id from topo_rein_sysdata.face;
+
