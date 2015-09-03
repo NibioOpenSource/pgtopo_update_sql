@@ -1,5 +1,5 @@
 check: ../loader 00-regress
-	POSTGIS_REGRESS_DB=nibio_reg ./run_test.pl --verbose --topology topo_update 
+	POSTGIS_REGRESS_DB=nibio_reg ./run_test.pl --topology $(RUNTESTFLAGS) topo_update 
 
 ../loader:
 	mkdir -p ../loader
