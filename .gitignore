@@ -1,0 +1,3 @@
+src/test/sql/loader/
+src/test/sql/regress/00-regress-install/
+src/test/sql/regress/topo_update-pre.sql

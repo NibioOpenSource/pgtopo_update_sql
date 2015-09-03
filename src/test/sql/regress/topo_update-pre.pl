@@ -12,8 +12,6 @@ if ( -e '/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/schema_topo_rein
 	# We need the spatial ref. for this tests 
 	open($fh_out, ">", $REIN_TABLES_DEF);
 
-	copy_file_into('../regress/00-regress-install/share/contrib/postgis/spatial_ref_sys.sql',$fh_out);
-
 	print $fh_out "CREATE ROLE topo_update; \n";
 	print $fh_out "CREATE ROLE topo_update_crud1; \n";
 
