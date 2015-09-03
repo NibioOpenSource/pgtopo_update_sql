@@ -1,11 +1,18 @@
-check: ../loader 00-regress
+POSTGIS_SCRIPT_DIR ?= `pg_config --sharedir`/contrib/postgis-2.2
+
+check: loader 00-regress
 	POSTGIS_REGRESS_DB=nibio_reg ./run_test.pl --topology $(RUNTESTFLAGS) topo_update 
 
-../loader:
+loader:
+	@which shp2pgsql pgsql2shp > /dev/null || \
+    { echo "shp2pgsql and pgsql2shp must be in your PATH" && exit 1; }
 	mkdir -p ../loader
 	ln -fs `which shp2pgsql` ../loader
 	ln -fs `which pgsql2shp` ../loader
 
 00-regress:
+	@test -f $(POSTGIS_SCRIPT_DIR)/postgis.sql || \
+    { echo "No postgis.sql file found in $(POSTGIS_SCRIPT_DIR)," \
+           "please tweak \$$POSTGIS_SCRIPT_DIR" && exit 1; }
 	mkdir -p 00-regress-install/share/contrib
-	ln -fs `pg_config --sharedir`/contrib/postgis-2.2 00-regress-install/share/contrib/postgis
+	ln -fs $(POSTGIS_SCRIPT_DIR) 00-regress-install/share/contrib/postgis
