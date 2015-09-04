@@ -53,11 +53,11 @@
 -- TDDO Add attribute handling for lines and surfaces
 -- TODO Add som return values that make sense and that can used in tests
 
--- DROP FUNCTION topo_update.apply_line_on_topo_surface(geo_in geometry);
+DROP FUNCTION topo_update.apply_line_on_topo_surface(geo_in geometry);
 
 CREATE OR REPLACE FUNCTION topo_update.apply_line_on_topo_surface(
 geo_in geometry
-) RETURNS int AS $$DECLARE
+) RETURNS json AS $$DECLARE
 
 topo_json_result text[];
 
@@ -490,14 +490,7 @@ BEGIN
 
 --	RAISE EXCEPTION 'Error in topo update, no new polygons created by line (%) and point (%) after update.',  geo_in, p_in  USING HINT = 'This is a bug in topo_update.apply_polygon_on_topo_flate';
 
-	-- return topsjon in so way
---	CREATE TEMP TABLE IF NOT EXISTS edgemap (arc_id serial, edge_id int unique);
-	
-	-- TODO find a way to
---	RETURN QUERY SELECT AsTopoJSON(tg.omrade, 'edgemap') FROM  topo_rein.arstidsbeite_var_flate tg;
-	
-	RETURN num_rows;
-
+	RETURN topo_rein.get_var_flate_topojson();
 END;
 $$ LANGUAGE plpgsql;
 
