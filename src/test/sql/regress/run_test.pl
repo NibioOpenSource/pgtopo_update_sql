@@ -40,6 +40,7 @@ my $OPT_NODROP = 0;
 my $OPT_NOCREATE = 0;
 my $OPT_UPGRADE = 0;
 my $OPT_WITH_TOPO = 0;
+my $OPT_WITH_SPATIAL_REF_SYS = 0;
 my $OPT_WITH_RASTER = 0;
 my $OPT_WITH_SFCGAL = 0;
 my $OPT_EXPECT = 0;
@@ -58,6 +59,7 @@ GetOptions (
 	'upgrade-path=s' => \$OPT_UPGRADE_PATH,
 	'nocreate' => \$OPT_NOCREATE,
 	'topology' => \$OPT_WITH_TOPO,
+	'spatial_ref_sys' => \$OPT_WITH_SPATIAL_REF_SYS,
 	'raster' => \$OPT_WITH_RASTER,
 	'sfcgal' => \$OPT_WITH_SFCGAL,
 	'expect' => \$OPT_EXPECT,
@@ -475,6 +477,7 @@ Options:
   --nodrop        do not drop the regression database on exit
   --raster        load also raster extension
   --topology      load also topology extension
+  --spatial_ref_sys load spatial_ref_sys.sql  
   --sfcgal        use also sfcgal backend
   --clean         cleanup test logs on exit
   --expect        save obtained output as expected
@@ -1286,6 +1289,13 @@ sub prepare_spatial
 		print "Loading Topology into '${DB}'\n";
 		load_sql_file("${STAGED_SCRIPTS_DIR}/topology.sql", 1);
 		load_sql_file("${STAGED_SCRIPTS_DIR}/topology_comments.sql", 0);
+	}
+
+	if ( $OPT_WITH_SPATIAL_REF_SYS )
+	{
+		print "Loading Spatial ref. systems into '${DB}'\n";
+		load_sql_file("${STAGED_SCRIPTS_DIR}/spatial_ref_sys.sql", 1);
+	
 	}
 	
 	if ( $OPT_WITH_RASTER )
