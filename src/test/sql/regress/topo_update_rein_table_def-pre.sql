@@ -1,12 +1,23 @@
+
 -- create topo_rein user that ownes all topo_rein data, tables ... 
 
  
 DO
 $body$
 BEGIN
+
 IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_user WHERE usename = 'topo_rein') THEN
       CREATE ROLE topo_rein LOGIN;
 END IF;
+
+IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_user WHERE usename = 'topo_rein_update_role') THEN
+      CREATE ROLE topo_rein_update_role LOGIN;
+END IF;
+
+IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_user WHERE usename = 'topo_rein_dmz_read_role') THEN
+      CREATE ROLE topo_rein_dmz_read_role LOGIN;
+END IF;
+
 END
 $body$;
 
