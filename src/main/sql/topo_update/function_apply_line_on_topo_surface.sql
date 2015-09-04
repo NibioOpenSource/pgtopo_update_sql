@@ -53,7 +53,7 @@
 -- TDDO Add attribute handling for lines and surfaces
 -- TODO Add som return values that make sense and that can used in tests
 
-DROP FUNCTION topo_update.apply_line_on_topo_surface(geo_in geometry);
+-- DROP FUNCTION topo_update.apply_line_on_topo_surface(geo_in geometry);
 
 CREATE OR REPLACE FUNCTION topo_update.apply_line_on_topo_surface(
 geo_in geometry
