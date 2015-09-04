@@ -1,9 +1,1 @@
-NOTICE:  TopoGeometry is "(1,1,1,2)", its topology_id is "1"
-NOTICE:  table "new_surface_data" does not exist, skipping
-NOTICE:  table "old_surface_data" does not exist, skipping
-NOTICE:  table "old_surface_data_not_in_new" does not exist, skipping
-NOTICE:  table "old_rows_be_reused" does not exist, skipping
-NOTICE:  Number num_rows_affected  0
-NOTICE:  Number of new rows  1
-NOTICE:  Nnum rows to delete  -1
 1|
