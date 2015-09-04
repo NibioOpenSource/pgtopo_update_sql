@@ -56,6 +56,9 @@ BEGIN
   outary = outary || ']}'::text;
 
   RAISE DEBUG '%', array_to_string(outary, '');
+  
+  DROP TABLE topo_rein_topojson_edgemap;
+  
   RETURN array_to_string(outary, '');
 END;
 $$ LANGUAGE 'plpgsql' VOLATILE;
