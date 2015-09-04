@@ -4,7 +4,7 @@
 -- topojson specs:
 -- https://github.com/mbostock/topojson-specification/blob/master/README.md
 
-CREATE OR REPLACE FUNCTION topo_rein.get_var_flate_topojson()
+CREATE OR REPLACE FUNCTION topo_rein.get_var_flate_topojson(env box2d)
 RETURNS json AS
 $$
 DECLARE
@@ -27,6 +27,9 @@ BEGIN
           reinbeitebruker_id, reindrift_sesongomrade_id
       ) as t1)) as prop
     FROM topo_rein.arstidsbeite_var_flate tg
+    WHERE
+      -- NOTE: could be optimized to use edge index instead
+      st_envelope(tg.omrade) && env
   LOOP
     objary := objary || array_to_string(ARRAY[
           '"', rec.id::text, '":',
@@ -62,3 +65,10 @@ BEGIN
   RETURN array_to_string(outary, '');
 END;
 $$ LANGUAGE 'plpgsql' VOLATILE;
+
+CREATE OR REPLACE FUNCTION topo_rein.get_var_flate_topojson()
+RETURNS json
+AS $$
+  SELECT topo_rein.get_var_flate_topojson(ST_MakeEnvelope(
+            '-Infinity', '-Infinity', 'Infinity', 'Infinity'))
+$$ LANGUAGE 'sql' VOLATILE;
