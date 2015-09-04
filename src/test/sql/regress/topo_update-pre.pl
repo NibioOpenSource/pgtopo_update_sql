@@ -12,9 +12,6 @@ if ( -e '/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/schema_topo_rein
 	# We need the spatial ref. for this tests 
 	open($fh_out, ">", $REIN_TABLES_DEF);
 
-	print $fh_out "CREATE ROLE topo_update; \n";
-	print $fh_out "CREATE ROLE topo_update_crud1; \n";
-
 	# This tables are not in any public repo so we only generate when they are available 
 	for my $file (glob '/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/schema*.sql') {
 		copy_file_into($file,$fh_out);
@@ -56,7 +53,7 @@ sub copy_file_into() {
 	my ($v1, $v2) = @_;
 	open(my $fh, '<',$v1);
 	while (my $row = <$fh>) {
-	  print $v2 "$row\n";
+	  print $v2 "$row";
 	}
 	close($fh);	 
     
