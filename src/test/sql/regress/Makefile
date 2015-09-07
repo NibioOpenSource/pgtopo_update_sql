@@ -12,8 +12,12 @@ loader:
 	ln -fs `which pgsql2shp` ../loader
 
 00-regress:
+	ls $(POSTGIS_SCRIPT_DIR) # debug
 	@test -f $(POSTGIS_SCRIPT_DIR)/postgis.sql || \
     { echo "No postgis.sql file found in $(POSTGIS_SCRIPT_DIR)," \
+           "please tweak \$$POSTGIS_SCRIPT_DIR" && exit 1; }
+	@test -f $(POSTGIS_SCRIPT_DIR)/topology.sql || \
+    { echo "No topology.sql file found in $(POSTGIS_SCRIPT_DIR)," \
            "please tweak \$$POSTGIS_SCRIPT_DIR" && exit 1; }
 	mkdir -p 00-regress-install/share/contrib
 	ln -fs $(POSTGIS_SCRIPT_DIR) 00-regress-install/share/contrib/postgis
