@@ -1,0 +1,6 @@
+sudo: false
+
+language: sql
+
+script:
+  - make check
