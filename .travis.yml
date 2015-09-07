@@ -10,4 +10,5 @@ addons:
     - postgresql-9.3-postgis-scripts
 
 script:
+  - psql -c 'select version()'
   - make check RUNTESTFLAGS=-v
