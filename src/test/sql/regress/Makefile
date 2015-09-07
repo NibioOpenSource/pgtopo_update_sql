@@ -4,10 +4,11 @@ check: loader 00-regress
 	POSTGIS_REGRESS_DB=nibio_reg ./run_test.pl --spatial_ref_sys --topology $(RUNTESTFLAGS) topo_update 
 
 loader:
-	@which shp2pgsql pgsql2shp > /dev/null || \
-    { echo "shp2pgsql and pgsql2shp must be in your PATH" && exit 1; }
-	mkdir -p ../loader
-	ln -fs `which shp2pgsql` ../loader
+	export PATH=$(PATH):`pg_config --bindir`; \
+	which shp2pgsql pgsql2shp > /dev/null || \
+    { echo "shp2pgsql and pgsql2shp must be in your PATH" && exit 1; }; \
+	mkdir -p ../loader; \
+	ln -fs `which shp2pgsql` ../loader; \
 	ln -fs `which pgsql2shp` ../loader
 
 00-regress:
