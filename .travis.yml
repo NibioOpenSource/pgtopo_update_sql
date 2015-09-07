@@ -10,4 +10,4 @@ addons:
     - postgresql-9.3-postgis-scripts
 
 script:
-  - make check
+  - make check RUNTESTFLAGS=-v
