@@ -2,5 +2,10 @@ sudo: false
 
 language: sql
 
+addons:
+  apt:
+    packages:
+    - postgis
+
 script:
   - make check
