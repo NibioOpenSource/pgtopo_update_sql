@@ -10,5 +10,5 @@ addons:
     - postgresql-9.3-postgis-scripts
 
 script:
-  - psql -c 'select version()'
+  - psql -c 'select version()' template1
   - make check RUNTESTFLAGS=-v
