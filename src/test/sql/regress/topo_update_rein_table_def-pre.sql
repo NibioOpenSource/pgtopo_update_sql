@@ -1,39 +1,5 @@
-
--- create topo_rein user that ownes all topo_rein data, tables ... 
-
-DO
-$body$
-BEGIN
-IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname like 'topo_rein') THEN
-      CREATE ROLE topo_rein;
-END IF;
-END
-$body$;
-
-DO
-$body$
-BEGIN
-IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname like 'topo_rein_update_role') THEN
-      CREATE ROLE topo_rein_update_role;
-END IF;
-END
-$body$;
-
-DO
-$body$
-BEGIN
-IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname like 'topo_rein_dmz_read_role') THEN
-      CREATE ROLE topo_rein_dmz_read_role;
-END IF;
-END
-$body$;
-
- -- give the user topo_rein right to update spatial_ref_sys and update geometry_columns (This is needed to create tables with geometry collums)
-GRANT ALL ON spatial_ref_sys, geometry_columns TO GROUP topo_rein;
-
 -- create schema for topo_rein data, tables, .... 
-CREATE SCHEMA topo_rein
-  AUTHORIZATION topo_rein;
+CREATE SCHEMA topo_rein;
 
 	
 select CreateTopology('topo_rein_sysdata',4258,0.0000000001);
@@ -191,8 +157,6 @@ create table if not exists topo_rein.rein_kode_reinbeitedist(
   definisjon varchar(10),
   distriktnavn varchar);
 
-alter table topo_rein.rein_kode_reinbeitedist owner to topo_rein;
-
    
   
 -- ReindriftSesongområde  
@@ -204,7 +168,7 @@ create table if not exists topo_rein.rein_kode_sesomr(
   definisjon varchar
  );
  
-alter table topo_rein.rein_kode_sesomr owner to topo_rein;
+
 
 
   
@@ -214,7 +178,6 @@ create table if not exists topo_rein.rein_kode_reinbeiteomr(
   beskrivelse varchar
 );
 
-alter table topo_rein.rein_kode_reinbeiteomr owner to topo_rein;
 
 
 
@@ -224,7 +187,6 @@ create table if not exists topo_rein.rein_kode_gjerderanlegg(
   definisjon varchar
   );
 
-alter table topo_rein.rein_kode_gjerderanlegg owner to topo_rein;
 
 
 
@@ -340,13 +302,6 @@ COMMENT ON COLUMN topo_rein.arstidsbeite_var_flate.felles_egenskaper IS 'Sosi co
 
 -- COMMENT ON COLUMN topo_rein.arstidsbeite_var_flate.geo IS 'This holds the ref to topo_rein_sysdata.relation table, where we find pointers needed top build the the topo surface';
 
--- ade_rein user to own table rein_flate
-ALTER TABLE topo_rein.arstidsbeite_var_flate OWNER TO topo_rein;
--- grant read to topo_rein_dmz_read_role (means that also dmz_read_role and topo_rein_sl_read_role also have read access)
-GRANT SELECT ON topo_rein.arstidsbeite_var_flate TO topo_rein_dmz_read_role;
--- grant CRUD roles to topo_rein_update_role 
-GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE ON topo_rein.arstidsbeite_var_flate TO topo_rein_update_role;
-
 -- create function basded index to get performance
 CREATE INDEX topo_rein_arstidsbeite_var_flate_geo_relation_id_idx ON topo_rein.arstidsbeite_var_flate(topo_rein.get_relation_id(omrade));	
 
@@ -379,11 +334,6 @@ from topo_rein.arstidsbeite_var_flate al;
 --CREATE INDEX topo_rein_ar5_topo_flate_mv_geo ON topo_rein.arstidsbeite_var_flate_v USING GIST (geo); 
 
 --REFRESH MATERIALIZED VIEW topo_rein.arstidsbeite_var_flate_v;
-
--- so crud user may 
-ALTER TABLE topo_rein.arstidsbeite_var_flate_v  OWNER TO topo_rein;
-GRANT ALL ON TABLE topo_rein.arstidsbeite_var_flate_v TO topo_rein;
-GRANT SELECT ON TABLE topo_rein.arstidsbeite_var_flate_v TO topo_rein_dmz_read_role;
 
 
 -- SELECT * FROM topo_rein.arstidsbeite_var_flate_v  ;
