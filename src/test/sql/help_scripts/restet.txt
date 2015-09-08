@@ -1,7 +1,7 @@
 -- this is a script used for testing on my own mac
 
 sh ~/dev/git/topologi/pgtopo_update_sql/src/test/sql/help_scripts/reset_all_rein_data.sh | psql sl
-cat ~/dev/git/topologi/pgtopo_update_sql/src/test/sql/help_scripts/test_01_apply_line_on_topo_surface.sql | psql sl 
+cat ~/dev/git/topologi/pgtopo_update_sql/src/test/sql/help_scripts/test_03_apply_line_on_topo_surface.sql | psql sl 
 
 select count(*) from topo_rein.arstidsbeite_var_grense;
 select * from topo_rein.arstidsbeite_var_grense;
