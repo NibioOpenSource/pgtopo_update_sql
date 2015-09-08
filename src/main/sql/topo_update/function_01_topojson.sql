@@ -4,7 +4,10 @@
 -- topojson specs:
 -- https://github.com/mbostock/topojson-specification/blob/master/README.md
 
-CREATE OR REPLACE FUNCTION topo_rein.get_var_flate_topojson(env box2d)
+-- env used to select bounding box area
+-- srid_out is the srid data put are transformed to
+-- maxdecimaldigits the number og digets used for update
+CREATE OR REPLACE FUNCTION topo_rein.get_var_flate_topojson(env box2d, srid_out int, maxdecimaldigits int)
 RETURNS json AS
 $$
 DECLARE
@@ -47,7 +50,7 @@ BEGIN
   -- Add arcs
 
   -- Added hardcoded st_transform TODO add paramerter 
-  SELECT array_agg(ST_AsGeoJSON(ST_transform(e.geom,32632),0)::json->>'coordinates'
+  SELECT array_agg(ST_AsGeoJSON(ST_transform(e.geom,srid_out),maxdecimaldigits)::json->>'coordinates'
   -- SELECT array_agg(ST_AsGeoJSON(e.geom, 6)::json->>'coordinates'
                    ORDER BY m.arc_id)
     FROM topo_rein_topojson_edgemap m
@@ -68,9 +71,9 @@ BEGIN
 END;
 $$ LANGUAGE 'plpgsql' VOLATILE;
 
-CREATE OR REPLACE FUNCTION topo_rein.get_var_flate_topojson()
+CREATE OR REPLACE FUNCTION topo_rein.get_var_flate_topojson(srid_out int, maxdecimaldigits int)
 RETURNS json
 AS $$
   SELECT topo_rein.get_var_flate_topojson(ST_MakeEnvelope(
-            '-Infinity', '-Infinity', 'Infinity', 'Infinity'))
+            '-Infinity', '-Infinity', 'Infinity', 'Infinity'), srid_out, maxdecimaldigits)
 $$ LANGUAGE 'sql' VOLATILE;

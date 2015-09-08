@@ -56,7 +56,7 @@
 -- DROP FUNCTION topo_update.apply_line_on_topo_surface(geo_in geometry);
 
 CREATE OR REPLACE FUNCTION topo_update.apply_line_on_topo_surface(
-geo_in geometry
+geo_in geometry,  srid_out int, maxdecimaldigits int
 ) RETURNS json AS $$DECLARE
 
 topo_json_result text[];
@@ -490,7 +490,7 @@ BEGIN
 
 --	RAISE EXCEPTION 'Error in topo update, no new polygons created by line (%) and point (%) after update.',  geo_in, p_in  USING HINT = 'This is a bug in topo_update.apply_polygon_on_topo_flate';
 
-	RETURN topo_rein.get_var_flate_topojson();
+	RETURN topo_rein.get_var_flate_topojson(srid_out,maxdecimaldigits);
 END;
 $$ LANGUAGE plpgsql;
 
