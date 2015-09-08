@@ -46,7 +46,9 @@ BEGIN
 
   -- Add arcs
 
-  SELECT array_agg(ST_AsGeoJSON(e.geom, 6)::json->>'coordinates'
+  -- Added hardcoded st_transform TODO add paramerter 
+  SELECT array_agg(ST_AsGeoJSON(ST_transform(e.geom,32632),0)::json->>'coordinates'
+  -- SELECT array_agg(ST_AsGeoJSON(e.geom, 6)::json->>'coordinates'
                    ORDER BY m.arc_id)
     FROM topo_rein_topojson_edgemap m
     INNER JOIN topo_rein_sysdata.edge e
