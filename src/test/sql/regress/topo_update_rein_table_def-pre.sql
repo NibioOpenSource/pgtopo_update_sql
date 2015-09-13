@@ -1,8 +1,12 @@
 -- create schema for topo_rein data, tables, .... 
 CREATE SCHEMA topo_rein;
+-- give puclic access
+GRANT USAGE ON SCHEMA topo_rein TO public;
 
-	
 select CreateTopology('topo_rein_sysdata',4258,0.0000000001);
+-- give puclic access
+GRANT USAGE ON SCHEMA topo_rein_sysdata TO public;
+
 
 -- This function is used to create indexes
 CREATE OR REPLACE FUNCTION topo_rein.get_relation_id( geo TopoGeometry) RETURNS integer AS $$DECLARE
@@ -329,11 +333,3 @@ id,
 omrade::geometry(MultiPolygon,4258) as geo 
 from topo_rein.arstidsbeite_var_flate al;
 
--- TODO fix this hack
-
---CREATE INDEX topo_rein_ar5_topo_flate_mv_geo ON topo_rein.arstidsbeite_var_flate_v USING GIST (geo); 
-
---REFRESH MATERIALIZED VIEW topo_rein.arstidsbeite_var_flate_v;
-
-
--- SELECT * FROM topo_rein.arstidsbeite_var_flate_v  ;
