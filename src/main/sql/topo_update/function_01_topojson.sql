@@ -8,13 +8,14 @@
 -- srid_out is the srid data put are transformed to
 -- maxdecimaldigits the number og digets used for update
 CREATE OR REPLACE FUNCTION topo_rein.get_var_flate_topojson(env box2d, srid_out int, maxdecimaldigits int)
-RETURNS json AS
+RETURNS text AS
 $$
 DECLARE
   tmptext text;
   outary text[];
   objary text[];
   rec RECORD;
+  json_result text;
 BEGIN
 
   outary := ARRAY['{"type":"Topology","objects":{'];
@@ -67,12 +68,14 @@ BEGIN
   
   DROP TABLE topo_rein_topojson_edgemap;
   
-  RETURN array_to_string(outary, '');
+  json_result = array_to_string(outary, '')::varchar;
+  RETURN json_result;
+
 END;
 $$ LANGUAGE 'plpgsql' VOLATILE;
 
 CREATE OR REPLACE FUNCTION topo_rein.get_var_flate_topojson(srid_out int, maxdecimaldigits int)
-RETURNS json
+RETURNS TEXT
 AS $$
   SELECT topo_rein.get_var_flate_topojson(ST_MakeEnvelope(
             '-Infinity', '-Infinity', 'Infinity', 'Infinity'), srid_out, maxdecimaldigits)
