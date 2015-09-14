@@ -201,14 +201,14 @@ BEGIN
 		RAISE NOTICE 'edge_with_out_loose_ends ::::   %',  ST_AsText(edge_with_out_loose_ends);
 		
 	    
-	    DROP TABLE IF EXISTS topo_rein_sysdata.edge_with_out_loose_ends ;
-    	CREATE TABLE topo_rein_sysdata.edge_with_out_loose_ends  AS (SELECT edge_with_out_loose_ends as geom);
+	    DROP TABLE IF EXISTS edge_with_out_loose_ends ;
+    	CREATE TEMP TABLE edge_with_out_loose_ends  AS (SELECT edge_with_out_loose_ends as geom);
 		
 	    
-    	DROP TABLE IF EXISTS topo_rein_sysdata.end_points ;
+    	DROP TABLE IF EXISTS end_points ;
     	-- Create a temp table to hold new surface data
-		CREATE TABLE topo_rein_sysdata.end_points  AS (SELECT ST_StartPoint(edge_with_out_loose_ends) as geom);
-		INSERT INTO topo_rein_sysdata.end_points(geom) SELECT ST_EndPoint(edge_with_out_loose_ends) as geom;
+		CREATE TEMP TABLE end_points  AS (SELECT ST_StartPoint(edge_with_out_loose_ends) as geom);
+		INSERT INTO end_points(geom) SELECT ST_EndPoint(edge_with_out_loose_ends) as geom;
 
 		IF (EXISTS 
 			(
@@ -294,14 +294,14 @@ BEGIN
 	
 	-------------------- Surface ---------------------------------
 
-	DROP TABLE IF EXISTS topo_rein_sysdata.new_surface_data; 
+	DROP TABLE IF EXISTS new_surface_data; 
 
 
 	-- Create a temp table to hold new surface data
-	CREATE TABLE topo_rein_sysdata.new_surface_data AS (SELECT * FROM topo_rein.arstidsbeite_var_flate LIMIT 0);
+	CREATE TEMP TABLE new_surface_data AS (SELECT * FROM topo_rein.arstidsbeite_var_flate LIMIT 0);
 
 	-- create surface geometry if a surface exits for the left side
-	INSERT INTO topo_rein_sysdata.new_surface_data(omrade,simple_geo)
+	INSERT INTO new_surface_data(omrade,simple_geo)
 	SELECT omrade, omrade:: geometry AS simple_geo FROM (
 	SELECT 	topology.CreateTopoGeom('topo_rein_sysdata',3,surface_layer_id,topoelementarray  ) AS omrade 
 	FROM ( 
@@ -330,7 +330,7 @@ BEGIN
 
 	
 	-- create surface geometry if a surface exits for the rght side
-	INSERT INTO topo_rein_sysdata.new_surface_data(omrade,simple_geo)
+	INSERT INTO new_surface_data(omrade,simple_geo)
 	SELECT omrade, omrade:: geometry AS simple_geo FROM (
 	SELECT 	topology.CreateTopoGeom('topo_rein_sysdata',3,surface_layer_id,topoelementarray  ) AS omrade 
 	FROM ( 
@@ -356,16 +356,16 @@ BEGIN
 	) AS f
 	WHERE omrade IS NOT NULL;
 
-	DROP TABLE IF EXISTS topo_rein_sysdata.old_surface_data; 
+	DROP TABLE IF EXISTS old_surface_data; 
 	-- find out if any old topo objects overlaps with this new objects using the relation table
 	-- by using the surface objects owned by the both the new objects and the exting one
-	CREATE TABLE topo_rein_sysdata.old_surface_data AS 
+	CREATE TEMP TABLE old_surface_data AS 
 	(SELECT 
 	re.* 
 	FROM 
 	topo_rein_sysdata.relation re,
 	topo_rein_sysdata.relation re_tmp,
-	topo_rein_sysdata.new_surface_data new_sd
+	new_surface_data new_sd
 	WHERE 
 	re.layer_id = surface_layer_id AND
 	re.element_type = 3 AND
@@ -376,46 +376,46 @@ BEGIN
 	(new_sd.omrade).id != re.topogeo_id);
 	
 	
-	DROP TABLE IF EXISTS topo_rein_sysdata.old_surface_data_not_in_new; 
+	DROP TABLE IF EXISTS old_surface_data_not_in_new; 
 	-- find any old objects that are not covered totaly by 
 	-- this objets should not be deleted, but the geometry should only decrease in size.
 	-- TODO add a test case for this
-	CREATE TABLE topo_rein_sysdata.old_surface_data_not_in_new AS 
+	CREATE TEMP TABLE old_surface_data_not_in_new AS 
 	(SELECT 
 	re.* 
 	FROM 
 	topo_rein_sysdata.relation re,
-	topo_rein_sysdata.old_surface_data re_tmp
+	old_surface_data re_tmp
 	WHERE 
 	re.layer_id = surface_layer_id AND
 	re.element_type = 3 AND
 	re.topogeo_id = re_tmp.topogeo_id AND
-	re.element_id NOT IN (SELECT element_id FROM topo_rein_sysdata.old_surface_data));
+	re.element_id NOT IN (SELECT element_id FROM old_surface_data));
 	
 	
-	DROP TABLE IF EXISTS topo_rein_sysdata.old_rows_be_reused;
-	-- IF topo_rein_sysdata.old_surface_data_not_in_new is empty we know that all areas are coverbed by the new objects
+	DROP TABLE IF EXISTS old_rows_be_reused;
+	-- IF old_surface_data_not_in_new is empty we know that all areas are coverbed by the new objects
 	-- and we can delete/resuse this objects for the new rows
-	CREATE TABLE topo_rein_sysdata.old_rows_be_reused AS 
+	CREATE TEMP TABLE old_rows_be_reused AS 
 	-- we can have distinct here 
 	(SELECT distinct(old_data_row.id) FROM 
 	topo_rein.arstidsbeite_var_flate old_data_row,
-	topo_rein_sysdata.old_surface_data sf 
+	old_surface_data sf 
 	WHERE (old_data_row.omrade).id = sf.topogeo_id);  
 	
 	-- We now know which rows we can reuse clear out old data rom the realation table
 	UPDATE topo_rein.arstidsbeite_var_flate r
 	SET omrade = clearTopoGeom(omrade)
-	FROM topo_rein_sysdata.old_rows_be_reused reuse
+	FROM old_rows_be_reused reuse
 	WHERE reuse.id = r.id;
 	
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 
 	RAISE NOTICE 'Number num_rows_affected  %',  num_rows_affected;
 
-	SELECT (num_rows_affected - (SELECT count(*) FROM topo_rein_sysdata.new_surface_data)) INTO num_rows_to_delete;
+	SELECT (num_rows_affected - (SELECT count(*) FROM new_surface_data)) INTO num_rows_to_delete;
 
-	RAISE NOTICE 'Number of new rows  %',  count(*) FROM topo_rein_sysdata.new_surface_data;
+	RAISE NOTICE 'Number of new rows  %',  count(*) FROM new_surface_data;
 
 	RAISE NOTICE 'Nnum rows to delete  %',  num_rows_to_delete;
 
@@ -425,25 +425,25 @@ BEGIN
 	WHERE ctid IN (
 	SELECT r.ctid FROM
 	topo_rein.arstidsbeite_var_flate r,
-	topo_rein_sysdata.old_rows_be_reused reuse
+	old_rows_be_reused reuse
 	WHERE reuse.id = r.id 
 	LIMIT  greatest(num_rows_to_delete, 0));
 	
 	
 	-- Resus old rows in topo_rein.arstidsbeite_var_flate and use as many values as possible
-	-- We pick the new values from topo_rein_sysdata.new_surface_data
+	-- We pick the new values from new_surface_data
 	-- First we pick up values with the same topo object value id
 	UPDATE topo_rein.arstidsbeite_var_flate old
 	SET omrade = new.omrade
-	FROM topo_rein_sysdata.new_surface_data new,
-	topo_rein_sysdata.old_rows_be_reused reuse
+	FROM new_surface_data new,
+	old_rows_be_reused reuse
 	WHERE old.id = reuse.id ;
 	
 	
 	-- insert missing rows
 	INSERT INTO  topo_rein.arstidsbeite_var_flate(omrade)
 	SELECT new.omrade 
-	FROM topo_rein_sysdata.new_surface_data new
+	FROM new_surface_data new
 	WHERE NOT EXISTS ( SELECT f.id FROM topo_rein.arstidsbeite_var_flate f WHERE (new.omrade).id = (f.omrade).id );
 
 		
