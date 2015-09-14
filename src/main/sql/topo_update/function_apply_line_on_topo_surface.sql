@@ -491,6 +491,11 @@ BEGIN
 --	RAISE EXCEPTION 'Error in topo update, no new polygons created by line (%) and point (%) after update.',  geo_in, p_in  USING HINT = 'This is a bug in topo_update.apply_polygon_on_topo_flate';
 
 	json_result = topo_rein.get_var_flate_topojson(srid_out,maxdecimaldigits)::varchar;
+	
+	-- this is hack to hanlde select ST_EstimatedExtent('topo_rein_sysdata','edge_data','geom');
+	-- Todo find a better way to this
+	-- ANALYZE topo_rein_sysdata.edge_data;
+	
 	RETURN json_result;
 END;
 $$ LANGUAGE plpgsql;

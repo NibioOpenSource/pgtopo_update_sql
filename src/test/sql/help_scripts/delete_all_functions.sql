@@ -1,5 +1,6 @@
 
 -- Drop alle functions
+DROP FUNCTION IF EXISTS topo_rein.findextent(text,text,text); 
 DROP FUNCTION IF EXISTS topo_rein.get_var_flate_topojson(env box2d,srid_out int, maxdecimaldigits int);
 DROP FUNCTION IF EXISTS topo_rein.get_rein_felles_egenskaper_flate(localid_in int);
 DROP FUNCTION IF EXISTS topo_rein.get_rein_felles_egenskaper_linje(localid_in int);
