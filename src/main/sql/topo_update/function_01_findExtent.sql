@@ -9,13 +9,18 @@ BEGIN
 	IF (EXISTS 
 			( SELECT * FROM topo_rein_sysdata.edge_data  limit 1)
 	) THEN
-		-- ANALYZE topo_rein_sysdata.edge_data;
-		command_string := FORMAT('ANALYZE %s',schema_name || '.' || table_name);
-		EXECUTE command_string; 
-		SELECT ST_EstimatedExtent(schema_name,table_name, geocolumn_name)::geometry into bb;
+		BEGIN
+			SELECT ST_EstimatedExtent(schema_name,table_name, geocolumn_name)::geometry into bb;
+        EXCEPTION WHEN internal_error THEN
+        -- ERROR:  XX000: stats for "edge_data.geom" do not exist
+        	-- Catch error and return a empty polygon ant he let application decide what to do
+   			SELECT ST_GeomFromText('POLYGON EMPTY') into bb;
+
+        END;
 	ELSE
 		SELECT ST_GeomFromText('POLYGON EMPTY') into bb;
 	END IF;
+	
     RAISE NOTICE '%', St_AsText(bb);
 	
     -- This is hack needed by the cleint
