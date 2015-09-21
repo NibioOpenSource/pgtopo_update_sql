@@ -28,7 +28,7 @@ BEGIN
       AsTopoJSON(tg.omrade, 'topo_rein_topojson_edgemap') as obj,
       row_to_json( (SELECT t1 FROM ( SELECT
           -- attributes to include in output
-          reinbeitebruker_id, reindrift_sesongomrade_id
+          reinbeitebruker_id, reindrift_sesongomrade_kode
       ) as t1)) as prop
     FROM topo_rein.arstidsbeite_var_flate tg
     WHERE

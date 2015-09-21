@@ -1,1 +1,1 @@
-1|{"type":"Topology","objects":{"1":{ "type": "MultiPolygon", "arcs": [[[-1]]],"properties":{"reinbeitebruker_id":null,"reindrift_sesongomrade_id":null}}},"arcs": [[[308101,6494806],[308209,6494804],[308243,6495071],[308097,6495076],[308101,6494806]]]}
+1|{"type":"Topology","objects":{"1":{ "type": "MultiPolygon", "arcs": [[[-1]]],"properties":{"reinbeitebruker_id":null,"reindrift_sesongomrade_kode":null}}},"arcs": [[[308101,6494806],[308209,6494804],[308243,6495071],[308097,6495076],[308101,6494806]]]}
