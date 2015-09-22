@@ -1,7 +1,8 @@
 
 
 -- update attribute values for given topo object
-CREATE OR REPLACE FUNCTION topo_update.apply_attr_on_topo_surface(json_feature text) RETURNS int AS $$DECLARE
+CREATE OR REPLACE FUNCTION topo_update.apply_attr_on_topo_surface(json_feature text) 
+RETURNS int AS $$DECLARE
 
 num_rows int;
 
@@ -88,7 +89,7 @@ $$ LANGUAGE plpgsql;
 --UPDATE topo_rein.arstidsbeite_var_flate r
 --SET reindrift_sesongomrade_kode = null;
 
-select * from topo_update.apply_attr_on_topo_surface('{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-39993,6527853],[-39980,6527867],[-39955,6527864],[-39973,6527837],[-40005,6527840],[-39993,6527853]]],"crs":{"type":"name","properties":{"name":"EPSG:32632"}}},"properties":{"reinbeitebruker_id":null,"reindrift_sesongomrade_kode":2}}');
+-- select * from topo_update.apply_attr_on_topo_surface('{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-39993,6527853],[-39980,6527867],[-39955,6527864],[-39973,6527837],[-40005,6527840],[-39993,6527853]]],"crs":{"type":"name","properties":{"name":"EPSG:32632"}}},"properties":{"reinbeitebruker_id":null,"reindrift_sesongomrade_kode":2}}');
 
 --select * from topo_update.apply_attr_on_topo_surface('{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-40034,6527765],[-39904,6527747],[-39938,6527591],[-40046,6527603],[-40034,6527765]]]},"properties":{"reinbeitebruker_id":null,"reindrift_sesongomrade_kode":null}}');
 

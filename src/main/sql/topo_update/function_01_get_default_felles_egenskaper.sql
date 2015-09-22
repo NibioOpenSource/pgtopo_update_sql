@@ -1,6 +1,7 @@
 
 -- Default value for Ar5LinjeV
-CREATE OR REPLACE FUNCTION topo_rein.get_rein_felles_egenskaper_linje(localid_in int) RETURNS topo_rein.sosi_felles_egenskaper AS $$DECLARE
+CREATE OR REPLACE FUNCTION topo_rein.get_rein_felles_egenskaper_linje(localid_in int) 
+RETURNS topo_rein.sosi_felles_egenskaper AS $$DECLARE
 
 DECLARE 
 
@@ -57,7 +58,8 @@ $$ LANGUAGE plpgsql STABLE;
 -- select topo_rein.get_rein_felles_egenskaper_linje();
 
 -- Default value for Ar5FlateV
-CREATE OR REPLACE FUNCTION topo_rein.get_rein_felles_egenskaper_flate(localid_in int) RETURNS topo_rein.sosi_felles_egenskaper AS $$DECLARE
+CREATE OR REPLACE FUNCTION topo_rein.get_rein_felles_egenskaper_flate(localid_in int) 
+RETURNS topo_rein.sosi_felles_egenskaper AS $$DECLARE
 
 DECLARE 
 

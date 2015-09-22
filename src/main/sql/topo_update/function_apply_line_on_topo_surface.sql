@@ -1,3 +1,7 @@
+
+-- This one is not used any more
+--===============================
+
 -- This code is a new way to think about how update topology
 -- The basic idea is that you draw a line instring closed or non closed and that changes the underlying surface objects
 -- Here is a example
@@ -55,9 +59,8 @@
 
 -- DROP FUNCTION topo_update.apply_line_on_topo_surface(geo_in geometry);
 
-CREATE OR REPLACE FUNCTION topo_update.apply_line_on_topo_surface(
-geo_in geometry,  srid_out int, maxdecimaldigits int
-) RETURNS geometry AS $$DECLARE
+CREATE OR REPLACE FUNCTION topo_update.apply_line_on_topo_surface(geo_in geometry,  srid_out int, maxdecimaldigits int) 
+RETURNS geometry AS $$DECLARE
 
 result geometry;
 
