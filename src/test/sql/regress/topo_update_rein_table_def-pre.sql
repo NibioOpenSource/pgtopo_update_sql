@@ -264,14 +264,18 @@ id serial PRIMARY KEY not null,
 
 -- angir hvilket reinbeitedistrikt som bruker beiteområdet 
 -- Definition -- indicates which reindeer pasture district uses the pasture area
-reinbeitebruker_id varchar(3) 
+reinbeitebruker_id varchar(3)
 CONSTRAINT fk_arstidsbeite_var_flate_reinbeitebruker_id REFERENCES topo_rein.rein_kode_reinbeitedist(distkode), 
+
 
 -- identifiserer hvorvidt reinbeiteområdet er egnet og brukes til vårbeite, høstbeite, etc 
 -- Definition -- identifies whether the reindeer pasture area is suitable and is being used for spring grazing, autumn grazing, etc.
 -- Reduces this to only vårbeite I og vårbeite II, because this types form one single map
-reindrift_sesongomrade_id int CHECK ( reindrift_sesongomrade_id > 0 AND reindrift_sesongomrade_id < 3) 
-CONSTRAINT fk_arstidsbeite_var_flate_reindrift_sesongomrade_id REFERENCES topo_rein.rein_kode_sesomr(kode) ,
+-- reindrift_sesongomrade_id int CHECK ( reindrift_sesongomrade_id > 0 AND reindrift_sesongomrade_id < 3) 
+-- CONSTRAINT fk_arstidsbeite_var_flate_reindrift_sesongomrade_id REFERENCES topo_rein.rein_kode_sesomr(kode) ,
+
+-- it's better to use a code here, because that is what is descrbeied in the spec
+reindrift_sesongomrade_kode int CHECK ( reindrift_sesongomrade_kode > 0 AND reindrift_sesongomrade_kode < 3), 
 
 -- contains felles egenskaper for rein
 -- should this be moved to the border, because the is just a result drawing border lines ??
@@ -330,6 +334,7 @@ id,
 --(al.felles_egenskaper).verifiseringsdato, 
 --(al.felles_egenskaper).opphav, 
 --(al.felles_egenskaper).informasjon::varchar as informasjon, 
+reindrift_sesongomrade_kode,
 omrade::geometry(MultiPolygon,4258) as geo 
 from topo_rein.arstidsbeite_var_flate al;
 
