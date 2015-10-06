@@ -20,11 +20,25 @@ DECLARE
   typname text;
   toponame text;
   topology_id int;
+  crs text;
   sql text;
 BEGIN
 
 
-  outary := ARRAY['{"type":"Topology","objects":{'];
+  -- Find CRS corresponding to output srid
+  SELECT auth_name || ':' || auth_srid
+    FROM spatial_ref_sys
+    WHERE srid = srid_out
+    INTO crs;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'SRID % is not found in spatial_ref_sys', srid_out;
+  END IF;
+
+  outary := ARRAY[
+    '{"type":"Topology", "crs":{"type":"name","properties":{"name":"',
+    crs,
+  '"}}'];
 
   CREATE TEMP TABLE topo_rein_topojson_edgemap
       (arc_id serial primary key, edge_id int);
@@ -89,9 +103,9 @@ BEGIN
   sql := 'SELECT name FROM topology.topology WHERE id = ' || topology_id;
   EXECUTE sql INTO STRICT toponame;
 
-  outary := outary || array_to_string(objary, ',');
-
-  outary := outary || '},"arcs": ['::text;
+  outary := outary || ',"objects":{'::text
+                   || array_to_string(objary, ',')
+                   || '}'::text;
 
   -- Add arcs
 
@@ -104,9 +118,11 @@ BEGIN
   RAISE DEBUG '%', sql;
   EXECUTE sql USING srid_out,maxdecimaldigits INTO objary;
 
-  outary = outary || array_to_string(objary, ',');
+  outary = outary || ',"arcs": ['::text
+                  || array_to_string(objary, ',')
+                  || ']'::text;
 
-  outary = outary || ']}'::text;
+  outary = outary || '}'::text;
 
   RAISE DEBUG '%', array_to_string(outary, '');
   
