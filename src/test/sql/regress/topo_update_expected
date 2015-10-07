@@ -1,1 +1,2 @@
-1|{"type":"Topology","objects":{"1":{ "type": "MultiPolygon", "arcs": [[[-1]]],"properties":{"id":1,"reinbeitebruker_id":null,"reindrift_sesongomrade_kode":null}}},"arcs": [[[308101,6494806],[308209,6494804],[308243,6495071],[308097,6495076],[308101,6494806]]]}
+WARNING:  "geometry" field "simple_geo" ignored
+1|{"type":"Topology", "crs":{"type":"name","properties":{"name":"EPSG:32632"}},"objects":{"1":{ "type": "MultiPolygon", "arcs": [[[-1]]],"properties":{"id":1,"reinbeitebruker_id":null,"reindrift_sesongomrade_kode":null,"felles_egenskaper":null}}},"arcs": [[[308101,6494806],[308209,6494804],[308243,6495071],[308097,6495076],[308101,6494806]]]}
