@@ -69,6 +69,10 @@ BEGIN
     END LOOP;
   END LOOP;
 
+  IF NOT FOUND THEN
+    RETURN NULL;
+  END IF;
+
   IF fname_topogeom IS NULL THEN
     RAISE EXCEPTION 'No TopoGeometry field in query result';
   END IF;
