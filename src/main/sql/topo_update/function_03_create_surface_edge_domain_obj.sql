@@ -76,8 +76,9 @@ BEGIN
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 	RAISE NOTICE 'number_of_rows removed new_surface_data_for_edge   %',  num_rows_affected;
 	
-	
-	json_result = topo_rein.get_var_flate_topojson('new_surface_data_for_edge',srid_out,maxdecimaldigits)::varchar;
+	json_result = topo_rein.query_to_topojson('SELECT tg.* FROM topo_rein.arstidsbeite_var_flate tg, new_surface_data_for_edge new WHERE (new.surface_topo).id = (tg.omrade).id', srid_out,maxdecimaldigits)::varchar;
+
+	--json_result = topo_rein.get_var_flate_topojson('new_surface_data_for_edge',srid_out,maxdecimaldigits)::varchar;
 
 	RETURN json_result;
 	
