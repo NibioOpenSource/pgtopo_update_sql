@@ -79,11 +79,18 @@ BEGIN
       '), AsTopoJSON(' || quote_ident(fname_topogeom) ||
       ', ''topo_rein_topojson_edgemap'') as obj, ' || 
       'topology_id(' || quote_ident(fname_topogeom) || 
-      '), row_to_json( (SELECT t1 FROM ( SELECT ' ||
-      -- attributes to include in output
-      array_to_string(fname_attributes, ',') ||
-      ') as t1)) as prop ' || 
-      ' FROM ( ' || query || ' ) foo';
+      ')';
+
+  IF fname_attributes IS NOT NULL THEN
+    sql := sql || ', row_to_json( (SELECT t1 FROM ( SELECT ' ||
+        -- attributes to include in output
+        array_to_string(fname_attributes, ',') ||
+        ') as t1)) as prop ';
+  ELSE
+    sql := sql || ', ''{}'' as prop';
+  END IF;
+
+  sql := sql || ' FROM ( ' || query || ' ) foo';
   FOR rec IN EXECUTE sql
   LOOP
     IF topology_id IS NULL THEN
