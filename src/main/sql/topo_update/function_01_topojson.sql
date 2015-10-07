@@ -70,6 +70,7 @@ BEGIN
   END LOOP;
 
   IF NOT FOUND THEN
+    DROP TABLE topo_rein_topojson_edgemap;
     RETURN NULL;
   END IF;
 
