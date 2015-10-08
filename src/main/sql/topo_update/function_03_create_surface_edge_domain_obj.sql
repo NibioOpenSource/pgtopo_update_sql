@@ -1,14 +1,16 @@
 -- This a function that will be called from the client when user is drawing a line
+-- This line will be applied the data in the line layer first
+-- After that will find the new surfaces created. 
+-- new surfaces that was part old serface should inherit old values
+
+-- The result is a set of id's of the new surface objects created
+
 -- TODO set attributtes for the line
 -- TODO set attributtes for the surface
 
--- return the id's of the new topobjects created
 
+-- DROP FUNCTION FUNCTION topo_update.create_surface_edge_domain_obj(geo_in geometry) cascade;
 
--- DROP FUNCTION FUNCTION topo_update.create_surface_edge_domain_obj(geo_in geometry,command_string text) cascade;
-
--- geo_in is the geometry to apply on the surface, that may be any geo
--- it return a set if ides for given table
 
 CREATE OR REPLACE FUNCTION topo_update.create_surface_edge_domain_obj(geo_in geometry) 
 RETURNS TABLE(id integer) AS $$
@@ -95,6 +97,6 @@ $$ LANGUAGE plpgsql;
 
 --select topo_update.create_surface_edge_domain_obj('SRID=4258;LINESTRING (5.70182 58.55131, 5.70368 58.55134, 5.70403 58.55375, 5.70152 58.55373, 5.70182 58.55131)');
 
-select topo_update.create_surface_edge_domain_obj('SRID=4258;LINESTRING (5.70182 58.55131, 5.70368 58.55134, 4.80403 58.95375, 4.70152 58.55373, 5.70182 58.55131)');
+-- select topo_update.create_surface_edge_domain_obj('SRID=4258;LINESTRING (5.70182 58.55131, 5.70368 58.55134, 4.80403 58.95375, 4.70152 58.55373, 5.70182 58.55131)');
 
 
