@@ -68,8 +68,9 @@ BEGIN
 	
 	-- We now know which rows we can reuse clear out old data rom the realation table
 	UPDATE topo_rein.arstidsbeite_var_flate r
-	SET reindrift_sesongomrade_kode = (t2.properties->>'reindrift_sesongomrade_kode')::int
-	--SET reindrift_sesongomrade_kode = 1
+	SET 
+		reindrift_sesongomrade_kode = (t2.properties->>'reindrift_sesongomrade_kode')::int,
+		reinbeitebruker_id = (t2.properties->>'reinbeitebruker_id')::text
 	FROM new_attributes_values t2
 	WHERE ST_Intersects(r.omrade::geometry,t2.geom);
 	
