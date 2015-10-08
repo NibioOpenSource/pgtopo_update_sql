@@ -1,12 +1,17 @@
--- This a function that will be called from the client when user is draing a line
--- This sets the attributes for the line
--- return the new topobjects created
+-- This a function that will be called from the client when user is drawing a line
+-- TODO set attributtes for the line
+-- TODO set attributtes for the surface
+
+-- return the id's of the new topobjects created
 
 
--- DROP FUNCTION topo_update.create_surface_edge_domain_obj(geo_in geometry,srid_out int, maxdecimaldigits int) cascade;
+-- DROP FUNCTION FUNCTION topo_update.create_surface_edge_domain_obj(geo_in geometry,command_string text) cascade;
 
-CREATE OR REPLACE FUNCTION topo_update.create_surface_edge_domain_obj(geo_in geometry,srid_out int, maxdecimaldigits int) 
-RETURNS text AS $$
+-- geo_in is the geometry to apply on the surface, that may be any geo
+-- it return a set if ides for given table
+
+CREATE OR REPLACE FUNCTION topo_update.create_surface_edge_domain_obj(geo_in geometry) 
+RETURNS TABLE(id integer) AS $$
 DECLARE
 
 json_result text;
@@ -33,6 +38,8 @@ edge_with_out_loose_ends geometry = null;
 command_string text;
 
 num_rows_affected int;
+
+records RECORD;
 
 BEGIN
 	
@@ -76,17 +83,18 @@ BEGIN
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 	RAISE NOTICE 'number_of_rows removed new_surface_data_for_edge   %',  num_rows_affected;
 	
-	json_result = topo_rein.query_to_topojson('SELECT tg.* FROM topo_rein.arstidsbeite_var_flate tg, new_surface_data_for_edge new WHERE (new.surface_topo).id = (tg.omrade).id', srid_out,maxdecimaldigits)::varchar;
+	command_string := 'SELECT tg.id AS id FROM ' || surface_topo_info.layer_schema_name || '.' || surface_topo_info.layer_table_name || ' tg, new_surface_data_for_edge new WHERE (new.surface_topo).id = (tg.omrade).id';
+    -- RAISE NOTICE '%', command_string;
 
-	--json_result = topo_rein.get_var_flate_topojson('new_surface_data_for_edge',srid_out,maxdecimaldigits)::varchar;
-
-	RETURN json_result;
-	
+    RETURN QUERY EXECUTE command_string;
+    
 END;
 $$ LANGUAGE plpgsql;
 
 
 
---select topo_update.create_surface_edge_domain_obj('SRID=4258;LINESTRING (5.70182 58.55131, 5.70368 58.55134, 5.70403 58.55375, 5.70152 58.55373, 5.70182 58.55131)',32632,0);
+--select topo_update.create_surface_edge_domain_obj('SRID=4258;LINESTRING (5.70182 58.55131, 5.70368 58.55134, 5.70403 58.55375, 5.70152 58.55373, 5.70182 58.55131)');
+
+select topo_update.create_surface_edge_domain_obj('SRID=4258;LINESTRING (5.70182 58.55131, 5.70368 58.55134, 4.80403 58.95375, 4.70152 58.55373, 5.70182 58.55131)');
 
 
