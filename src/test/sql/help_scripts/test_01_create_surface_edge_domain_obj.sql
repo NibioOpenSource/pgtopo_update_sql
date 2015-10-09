@@ -1,6 +1,7 @@
 
+
 --added a closed linestring
-select topo_update.create_surface_edge_domain_obj('SRID=4258;LINESTRING (5.70182 58.55131, 5.70368 58.55134, 5.70403 58.55375, 5.70152 58.55373, 5.70182 58.55131)',32632,0);
+select topo_update.create_surface_edge_domain_obj('SRID=4258;LINESTRING (5.70182 58.55131, 5.70368 58.55134, 5.70403 58.55375, 5.70152 58.55373, 5.70182 58.55131)');
 
 -- and I get this
 --    ,---E3--.
@@ -12,7 +13,7 @@ select topo_update.create_surface_edge_domain_obj('SRID=4258;LINESTRING (5.70182
 --    `-------'
 
 -- added linstring that splits this polygon in two pices
-select topo_update.create_surface_edge_domain_obj('SRID=4258;LINESTRING (5.701298 58.551259, 5.702758 58.552522, 5.704312 58.553801)',32632,0);
+select topo_update.create_surface_edge_domain_obj('SRID=4258;LINESTRING (5.701298 58.551259, 5.702758 58.552522, 5.704312 58.553801)');
 
 --
 --    ,---E3--.
@@ -37,7 +38,7 @@ select topo_update.create_surface_edge_domain_obj('SRID=4258;LINESTRING (5.70129
 --
 
 --added a bigger closed linestring than E3
-select topo_update.create_surface_edge_domain_obj('SRID=4258;LINESTRING (5.70182 58.55131, 5.70368 58.55134, 5.704899 58.554966, 5.70152 58.55373, 5.70182 58.55131)',32632,0);
+select topo_update.create_surface_edge_domain_obj('SRID=4258;LINESTRING (5.70182 58.55131, 5.70368 58.55134, 5.704899 58.554966, 5.70152 58.55373, 5.70182 58.55131)');
 
 --    
 --    ,-------E4--.
@@ -64,7 +65,7 @@ select topo_update.create_surface_edge_domain_obj('SRID=4258;LINESTRING (5.70182
 
 
 -- added linstring that splits this mergde polygon in two picese again
-select topo_update.create_surface_edge_domain_obj('SRID=4258;LINESTRING (5.701298 58.551259, 5.702758 58.552522, 5.704312 58.553801, 5.705144 58.554435)',32632,0);
+select topo_update.create_surface_edge_domain_obj('SRID=4258;LINESTRING (5.701298 58.551259, 5.702758 58.552522, 5.704312 58.553801, 5.705144 58.554435)');
 --
 --               /
 --    ,-------E4/-.
