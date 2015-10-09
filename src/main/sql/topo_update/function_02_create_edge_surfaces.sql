@@ -125,6 +125,8 @@ BEGIN
 
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 	RAISE NOTICE 'Number num_rows_affected  %',  num_rows_affected;
+	
+	-- We now objects that are missing attribute values that should be inheretaded from mother object.
 
 		
 	RETURN QUERY SELECT a.surface_topo::topogeometry as t FROM new_surface_data a;

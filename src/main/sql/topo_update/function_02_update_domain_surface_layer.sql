@@ -115,6 +115,19 @@ BEGIN
 	old_surface_data sf 
 	WHERE (old_data_row.omrade).id = sf.topogeo_id);  
 	
+	
+	-- Take a copy of old attribute values because they will be needed when you add new rows.
+	-- The new surfaces should pick up old values from the old row attributtes that overlaps the new rows
+	-- We also take copy of the geometry we need that to overlaps when we pick up old values
+	-- TODO this should have been solved by using topology relation table, but I do that later 
+	DROP TABLE IF EXISTS old_rows_attributes;
+	CREATE TEMP TABLE old_rows_attributes AS 
+	(SELECT old_data_row.*, old_data_row.omrade::geometry as foo_geo FROM 
+	topo_rein.arstidsbeite_var_flate old_data_row,
+	old_surface_data sf 
+	WHERE (old_data_row.omrade).id = sf.topogeo_id);  
+	
+	
 	-- We now know which rows we can reuse clear out old data rom the realation table
 	UPDATE topo_rein.arstidsbeite_var_flate r
 	SET omrade = clearTopoGeom(omrade)
@@ -150,17 +163,35 @@ BEGIN
 	FROM new_surface_data new,
 	old_rows_be_reused reuse
 	WHERE old.id = reuse.id ;
-	
-	
-	-- insert missing rows
+
+	DROP TABLE IF EXISTS new_rows_added_in_org_table;
+
+	CREATE TEMP TABLE new_rows_added_in_org_table AS (SELECT * FROM topo_rein.arstidsbeite_var_flate limit 0);
+
+	-- insert missing rows and keep a copy in them a temp table
+	WITH inserted AS (
 	INSERT INTO  topo_rein.arstidsbeite_var_flate(omrade)
 	SELECT new.surface_topo 
 	FROM new_surface_data new
-	WHERE NOT EXISTS ( SELECT f.id FROM topo_rein.arstidsbeite_var_flate f WHERE (new.surface_topo).id = (f.omrade).id );
-
-		
+	WHERE NOT EXISTS ( SELECT f.id FROM topo_rein.arstidsbeite_var_flate f WHERE (new.surface_topo).id = (f.omrade).id )
+	returning *
+	)
+	INSERT INTO new_rows_added_in_org_table(id,omrade)
+	SELECT inserted.id, omrade FROM inserted;
 	
-	--RETURN QUERY SELECT a.surface_topo::topogeometry as t FROM new_surface_data a;
+
+	-- update the newly inserted rows with attribute values based from old_rows_table
+	UPDATE topo_rein.arstidsbeite_var_flate a
+	SET reinbeitebruker_id  = c.reinbeitebruker_id, 
+	reindrift_sesongomrade_kode = c.reindrift_sesongomrade_kode
+	FROM new_rows_added_in_org_table b, 
+	old_rows_attributes c
+	WHERE 
+    a.id = b.id AND                           
+    ST_Intersects(c.foo_geo,a.omrade::geometry);
+    -- ST_overlaps does not work
+    -- TODO use the topology relations ti check on this
+
 	
 	RETURN QUERY SELECT a.surface_topo::topogeometry as t FROM new_surface_data a;
 
