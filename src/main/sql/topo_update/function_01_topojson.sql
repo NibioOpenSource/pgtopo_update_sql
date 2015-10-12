@@ -104,7 +104,8 @@ BEGIN
       RAISE EXCEPTION 'TopoGeometry from different topologies mixed in query results';
     END IF;
     objary := objary || array_to_string(ARRAY[
-          '"', rec.id::text, '":',
+          --'"', rec.id::text, '":',
+          '',
           substring(rec.obj from 0 for length(rec.obj)),
           ',"properties":',
           rec.prop::text,
@@ -116,8 +117,9 @@ BEGIN
   EXECUTE sql INTO STRICT toponame;
 
   outary := outary || ',"objects":{'::text
-                   || array_to_string(objary, ',')
-                   || '}'::text;
+  				   || '"collection": { "type": "GeometryCollection", "geometries":['::text
+                   || array_to_string(objary, ',');
+--                   || '}'::text;
 
   -- Add arcs
 
@@ -130,11 +132,14 @@ BEGIN
   RAISE DEBUG '%', sql;
   EXECUTE sql USING srid_out,maxdecimaldigits INTO objary;
 
+  outary = outary || ']'::text || '}'::text || '}'::text;
+
   outary = outary || ',"arcs": ['::text
                   || array_to_string(objary, ',')
                   || ']'::text;
 
   outary = outary || '}'::text;
+
 
   RAISE DEBUG '%', array_to_string(outary, '');
   
@@ -145,3 +150,4 @@ BEGIN
 
 END;
 $$ LANGUAGE 'plpgsql' VOLATILE;
+
