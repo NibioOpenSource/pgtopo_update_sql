@@ -51,34 +51,40 @@ BEGIN
 	
 	-- find surface layer id
 	surface_layer_id := topo_update.get_topo_layer_id(surface_topo_info);
-	
-	CREATE TEMP TABLE new_attributes_values(geom geometry,properties json);
 
+	DROP TABLE IF EXISTS topo_rein.new_attributes_values;
 
-	
-	INSERT INTO new_attributes_values(geom,properties)
+	CREATE TABLE topo_rein.new_attributes_values(geom geometry,properties json,crs text);
+
+	INSERT INTO topo_rein.new_attributes_values(geom,properties,crs)
 	SELECT
-	  --ST_transform(ST_GeomFromGeoJSON(feat->>'geometry'),4258) AS geom,
-	  ST_transform( ST_SetSrid(ST_GeomFromGeoJSON(feat->>'geometry'),32633 ),4258) AS geom,
-	  to_json(feat->'properties')::json  as properties
+	CASE WHEN (feat->'crs'->'properties'->'name')::text = 'EPSG:4258' THEN ST_SetSrid(ST_GeomFromGeoJSON(feat->>'geometry'),4258) -- no need to transfomr
+	WHEN (feat->'crs'->'properties'->'name')::text IS null THEN ST_transform( ST_SetSrid(ST_GeomFromGeoJSON(feat->>'geometry'),32633 ),4258) -- use defalut
+	ELSE ST_SetSrid(ST_transform(ST_SetSrid(ST_GeomFromGeoJSON(feat->>'geometry'), 
+	-- TODO wrao this in to a function
+	substring((feat->'crs'->'properties'->'name')::text,position(':' in to_json(feat->'crs'->'properties'->'name')::text)::int+1,(length(to_json(feat->'crs'->'properties'->'name')::text) - 7) )::int
+	),4258),4258) 
+   	END AS geom,
+	to_json(feat->'properties')::json  as properties,
+	substring((feat->'crs'->'properties'->'name')::text,position(':' in to_json(feat->'crs'->'properties'->'name')::text)::int+1,(length(to_json(feat->'crs'->'properties'->'name')::text) - 7) )  as crs
 	FROM (
 	  SELECT json_feature::json AS feat
 	) AS f;
 
+	--  
 	
 	-- We now know which rows we can reuse clear out old data rom the realation table
 	UPDATE topo_rein.arstidsbeite_var_flate r
 	SET 
 		reindrift_sesongomrade_kode = (t2.properties->>'reindrift_sesongomrade_kode')::int,
 		reinbeitebruker_id = (t2.properties->>'reinbeitebruker_id')::text
-	FROM new_attributes_values t2
+	FROM topo_rein.new_attributes_values t2
 	WHERE ST_Intersects(r.omrade::geometry,t2.geom);
 	
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 
 	RAISE NOTICE 'Number num_rows_affected  %',  num_rows_affected;
 	
-	DROP TABLE new_attributes_values;
 
 	
 	RETURN num_rows_affected;
@@ -90,7 +96,7 @@ $$ LANGUAGE plpgsql;
 --UPDATE topo_rein.arstidsbeite_var_flate r
 --SET reindrift_sesongomrade_kode = null;
 
--- select * from topo_update.apply_attr_on_topo_surface('{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-39993,6527853],[-39980,6527867],[-39955,6527864],[-39973,6527837],[-40005,6527840],[-39993,6527853]]],"crs":{"type":"name","properties":{"name":"EPSG:32632"}}},"properties":{"reinbeitebruker_id":null,"reindrift_sesongomrade_kode":2}}');
+select * from topo_update.apply_attr_on_topo_surface('{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-39993,6527853],[-39980,6527867],[-39955,6527864],[-39973,6527837],[-40005,6527840],[-39993,6527853]]],"crs":{"type":"name","properties":{"name":"EPSG:32632"}}},"properties":{"reinbeitebruker_id":null,"reindrift_sesongomrade_kode":2}}');
 
 --select * from topo_update.apply_attr_on_topo_surface('{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-40034,6527765],[-39904,6527747],[-39938,6527591],[-40046,6527603],[-40034,6527765]]]},"properties":{"reinbeitebruker_id":null,"reindrift_sesongomrade_kode":null}}');
 
