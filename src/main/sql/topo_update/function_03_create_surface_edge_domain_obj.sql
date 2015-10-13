@@ -39,7 +39,11 @@ edge_with_out_loose_ends geometry = null;
 -- holds dynamic sql to be able to use the same code for different
 command_string text;
 
+-- used for logging
 num_rows_affected int;
+
+-- used for logging
+add_debug_tables int = 1;
 
 records RECORD;
 
@@ -69,23 +73,35 @@ BEGIN
 	SELECT new_border_data, topo_rein.get_rein_felles_egenskaper_linje(0);
 
 	-- create the new topo object for the surfaces
-	DROP TABLE IF EXISTS topo_rein.new_surface_data_for_edge; 
+	DROP TABLE IF EXISTS new_surface_data_for_edge; 
 	-- find out if any old topo objects overlaps with this new objects using the relation table
 	-- by using the surface objects owned by the both the new objects and the exting one
-	CREATE TABLE topo_rein.new_surface_data_for_edge AS 
+	CREATE TABLE new_surface_data_for_edge AS 
 	(SELECT topo::topogeometry AS surface_topo FROM topo_update.create_edge_surfaces(new_border_data));
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 	RAISE NOTICE 'Number of topo surfaces added to table new_surface_data_for_edge   %',  num_rows_affected;
 	
-	-- clean up old surface and return a list of 
-	-- TODO return a id list
-	DROP TABLE IF EXISTS removed_surface_data_for_edge; 
-	CREATE TEMP TABLE removed_surface_data_for_edge AS 
-	(SELECT topo::topogeometry AS surface_topo FROM topo_update.update_domain_surface_layer('topo_rein.new_surface_data_for_edge'));
+	-- clean up old surface and return a list of the objects
+	DROP TABLE IF EXISTS res_from_update_domain_surface_layer; 
+	CREATE TEMP TABLE res_from_update_domain_surface_layer AS 
+	(SELECT topo::topogeometry AS surface_topo FROM topo_update.update_domain_surface_layer('new_surface_data_for_edge'));
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-	RAISE NOTICE 'number_of_rows removed new_surface_data_for_edge   %',  num_rows_affected;
+	RAISE NOTICE 'Number_of_rows removed from topo_update.update_domain_surface_layer   %',  num_rows_affected;
+
+	-- Only used for debug
+	IF add_debug_tables = 1 THEN
+		-- get new objects created from topo_update.create_edge_surfaces
+		DROP TABLE IF EXISTS topo_rein.create_surface_edge_domain_obj_t1; 
+		CREATE TABLE topo_rein.create_surface_edge_domain_obj_t1 AS 
+		(SELECT surface_topo::geometry AS geo , surface_topo::text AS topo FROM new_surface_data_for_edge);
+
+		-- get the reslt from topo_update.update_domain_surface_layer
+		DROP TABLE IF EXISTS topo_rein.create_surface_edge_domain_obj_t2; 
+		CREATE TABLE topo_rein.create_surface_edge_domain_obj_t2 AS 
+		(SELECT surface_topo::geometry AS geo , surface_topo::text AS topo FROM res_from_update_domain_surface_layer);
+	END IF;
 	
-	command_string := 'SELECT tg.id AS id FROM ' || surface_topo_info.layer_schema_name || '.' || surface_topo_info.layer_table_name || ' tg, topo_rein.new_surface_data_for_edge new WHERE (new.surface_topo).id = (tg.omrade).id';
+	command_string := 'SELECT tg.id AS id FROM ' || surface_topo_info.layer_schema_name || '.' || surface_topo_info.layer_table_name || ' tg, new_surface_data_for_edge new WHERE (new.surface_topo).id = (tg.omrade).id';
     -- RAISE NOTICE '%', command_string;
 
     RETURN QUERY EXECUTE command_string;

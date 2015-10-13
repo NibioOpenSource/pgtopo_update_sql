@@ -32,6 +32,8 @@ num_rows_affected int;
 -- number of rows to delete from org table
 num_rows_to_delete int;
 
+-- used for logging
+add_debug_tables int = 1;
 
 
 BEGIN
