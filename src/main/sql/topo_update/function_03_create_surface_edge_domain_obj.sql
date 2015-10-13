@@ -62,30 +62,30 @@ BEGIN
 	
 	-- create the new topo object for the egde layer
 	new_border_data := topo_update.create_surface_edge(geo_in);
-	RAISE NOTICE 'new_border_data  %',  new_border_data;
+	RAISE NOTICE 'The new topo object created for based on the input geo  %',  new_border_data;
 
 	-- TODO insert some correct value for attributes
 	INSERT INTO topo_rein.arstidsbeite_var_grense(grense, felles_egenskaper)
 	SELECT new_border_data, topo_rein.get_rein_felles_egenskaper_linje(0);
 
 	-- create the new topo object for the surfaces
-	DROP TABLE IF EXISTS new_surface_data_for_edge; 
+	DROP TABLE IF EXISTS topo_rein.new_surface_data_for_edge; 
 	-- find out if any old topo objects overlaps with this new objects using the relation table
 	-- by using the surface objects owned by the both the new objects and the exting one
-	CREATE TEMP TABLE new_surface_data_for_edge AS 
+	CREATE TABLE topo_rein.new_surface_data_for_edge AS 
 	(SELECT topo::topogeometry AS surface_topo FROM topo_update.create_edge_surfaces(new_border_data));
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-	RAISE NOTICE 'number_of_rows aded to new_surface_data_for_edge   %',  num_rows_affected;
+	RAISE NOTICE 'Number of topo surfaces added to table new_surface_data_for_edge   %',  num_rows_affected;
 	
 	-- clean up old surface and return a list of 
 	-- TODO return a id list
 	DROP TABLE IF EXISTS removed_surface_data_for_edge; 
 	CREATE TEMP TABLE removed_surface_data_for_edge AS 
-	(SELECT topo::topogeometry AS surface_topo FROM topo_update.update_domain_surface_layer('new_surface_data_for_edge'));
+	(SELECT topo::topogeometry AS surface_topo FROM topo_update.update_domain_surface_layer('topo_rein.new_surface_data_for_edge'));
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 	RAISE NOTICE 'number_of_rows removed new_surface_data_for_edge   %',  num_rows_affected;
 	
-	command_string := 'SELECT tg.id AS id FROM ' || surface_topo_info.layer_schema_name || '.' || surface_topo_info.layer_table_name || ' tg, new_surface_data_for_edge new WHERE (new.surface_topo).id = (tg.omrade).id';
+	command_string := 'SELECT tg.id AS id FROM ' || surface_topo_info.layer_schema_name || '.' || surface_topo_info.layer_table_name || ' tg, topo_rein.new_surface_data_for_edge new WHERE (new.surface_topo).id = (tg.omrade).id';
     -- RAISE NOTICE '%', command_string;
 
     RETURN QUERY EXECUTE command_string;

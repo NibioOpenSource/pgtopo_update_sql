@@ -59,7 +59,7 @@ BEGIN
 	surface_layer_id := topo_update.get_topo_layer_id(surface_topo_info);
 	RAISE NOTICE 'surface_layer_id   %',  surface_layer_id ;
 
-	RAISE NOTICE 'new_border_data  %',  new_border_data;
+	RAISE NOTICE 'The topo objected added  %',  new_border_data;
 	
 	-------------------- Surface ---------------------------------
 
@@ -94,7 +94,7 @@ BEGIN
 	WHERE surface_topo IS NOT NULL;
 	    	
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-	RAISE NOTICE 'Number num_rows_affected  %',  num_rows_affected;
+	RAISE NOTICE 'Number of topo objects found on the left side  %',  num_rows_affected;
 
 	
 	-- create surface geometry if a surface exits for the rght side
@@ -124,7 +124,7 @@ BEGIN
 	WHERE surface_topo IS NOT NULL;
 
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-	RAISE NOTICE 'Number num_rows_affected  %',  num_rows_affected;
+	RAISE NOTICE 'Number of topo objects found on the right side  %',  num_rows_affected;
 	
 	-- We now objects that are missing attribute values that should be inheretaded from mother object.
 
