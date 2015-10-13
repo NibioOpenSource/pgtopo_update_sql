@@ -1,6 +1,6 @@
 -- delete surface that intersects with given point
 
-CREATE OR REPLACE FUNCTION topo_update.delete_topo_surface(geo_in geometry) 
+CREATE OR REPLACE FUNCTION topo_update.delete_topo_surface(id_in int) 
 RETURNS int AS $$DECLARE
 
 num_rows int;
@@ -51,9 +51,8 @@ BEGIN
 	-- find surface layer id
 	surface_layer_id := topo_update.get_topo_layer_id(surface_topo_info);
 
-	-- TODO to be optimzed 
 	DELETE FROM topo_rein.arstidsbeite_var_flate r
-	WHERE ST_Intersects(r.omrade::geometry,geo_in);
+	WHERE id = id_in;
 	
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 
