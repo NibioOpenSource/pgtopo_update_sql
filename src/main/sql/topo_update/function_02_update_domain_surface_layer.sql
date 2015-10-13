@@ -149,13 +149,13 @@ BEGIN
 	
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 
-	RAISE NOTICE 'Number num_rows_affected  %',  num_rows_affected;
+	RAISE NOTICE 'Number rows to be reused in org table %',  num_rows_affected;
 
 	SELECT (num_rows_affected - (SELECT count(*) FROM new_surface_data)) INTO num_rows_to_delete;
 
-	RAISE NOTICE 'Number of new rows  %',  count(*) FROM new_surface_data;
+	RAISE NOTICE 'Number rows to be added in org table  %',  count(*) FROM new_surface_data;
 
-	RAISE NOTICE 'Nnum rows to delete  %',  num_rows_to_delete;
+	RAISE NOTICE 'Number rows to be deleted in org table  %',  num_rows_to_delete;
 
 	-- When overwrite we may have more rows in the org table so we may need do delete the rows not needed 
 	-- from  topo_rein.arstidsbeite_var_flate, we the just delete the left overs 
@@ -185,7 +185,7 @@ BEGIN
 	INSERT INTO new_rows_updated_in_org_table(omrade)
 	SELECT omrade FROM updated;
 
-			-- Only used for debug
+	-- Only used for debug
 	IF add_debug_tables = 1 THEN
 		-- list new objects added reused
 		-- get new objects created from topo_update.create_edge_surfaces

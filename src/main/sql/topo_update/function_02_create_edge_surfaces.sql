@@ -89,14 +89,13 @@ BEGIN
 			    ed.edge_id = re.element_id AND
 			    fa.face_id=ed.left_face AND -- How do I know if a should use left or right ?? 
 			    fa.mbr IS NOT NULL
-			    
 			) AS b
 		) AS c
 	) AS f
 	WHERE surface_topo IS NOT NULL;
 	    	
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-	RAISE NOTICE 'Number of topo objects found on the left side  %',  num_rows_affected;
+	RAISE NOTICE 'Number of topo objects found on the left side  % ',  num_rows_affected;
 
 	
 	-- create surface geometry if a surface exits for the rght side
@@ -119,14 +118,35 @@ BEGIN
 			    ed.edge_id = re.element_id AND
 			    fa.face_id=ed.right_face AND -- How do I know if a should use left or right ?? 
 			    fa.mbr IS NOT NULL
-			    
 			) AS b
 		) AS c
 	) AS f
 	WHERE surface_topo IS NOT NULL;
 
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-	RAISE NOTICE 'Number of topo objects found on the right side  %',  num_rows_affected;
+	RAISE NOTICE 'Number of topo objects found on the right side  % ',  num_rows_affected;
+	
+	-- create other tbales
+	
+		-- Only used for debug
+	IF add_debug_tables = 1 THEN
+	
+		-- get new objects created from topo_update.create_edge_surfaces
+		DROP TABLE IF EXISTS topo_rein.create_edge_surfaces_t1; 
+		CREATE TABLE topo_rein.create_edge_surfaces_t1 AS 
+		(SELECT * FROM topo_rein_sysdata.relation where element_type = 2 and (new_border_data).id = topogeo_id);
+
+		DROP TABLE IF EXISTS topo_rein.create_edge_surfaces_t2; 
+		CREATE TABLE topo_rein.create_edge_surfaces_t2 AS 
+		(SELECT * FROM topo_rein_sysdata.edge_data);
+
+		DROP TABLE IF EXISTS topo_rein.create_edge_surfaces_t3; 
+		CREATE TABLE topo_rein.create_edge_surfaces_t3 AS 
+		(SELECT * FROM topo_rein_sysdata.face);
+			
+	END IF;
+
+	
 	
 	-- We now objects that are missing attribute values that should be inheretaded from mother object.
 
