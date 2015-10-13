@@ -52,11 +52,11 @@ BEGIN
 	-- find surface layer id
 	surface_layer_id := topo_update.get_topo_layer_id(surface_topo_info);
 
-	DROP TABLE IF EXISTS topo_rein.new_attributes_values;
+	DROP TABLE IF EXISTS new_attributes_values;
 
-	CREATE TABLE topo_rein.new_attributes_values(geom geometry,properties json,crs text);
+	CREATE TEMP TABLE new_attributes_values(geom geometry,properties json,crs text);
 
-	INSERT INTO topo_rein.new_attributes_values(geom,properties,crs)
+	INSERT INTO new_attributes_values(geom,properties,crs)
 	SELECT
 	CASE WHEN (feat->'crs'->'properties'->'name')::text = 'EPSG:4258' THEN ST_SetSrid(ST_GeomFromGeoJSON(feat->>'geometry'),4258) -- no need to transfomr
 	WHEN (feat->'crs'->'properties'->'name')::text IS null THEN ST_transform( ST_SetSrid(ST_GeomFromGeoJSON(feat->>'geometry'),32633 ),4258) -- use defalut
@@ -78,7 +78,7 @@ BEGIN
 	SET 
 		reindrift_sesongomrade_kode = (t2.properties->>'reindrift_sesongomrade_kode')::int,
 		reinbeitebruker_id = (t2.properties->>'reinbeitebruker_id')::text
-	FROM topo_rein.new_attributes_values t2
+	FROM new_attributes_values t2
 	WHERE ST_Intersects(r.omrade::geometry,t2.geom);
 	
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
