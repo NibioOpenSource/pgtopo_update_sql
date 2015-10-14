@@ -35,6 +35,11 @@ num_rows_to_delete int;
 -- used for logging
 add_debug_tables int = 1;
 
+-- used for looping
+rec RECORD;
+
+-- used for creating new topo objects
+new_surface_topo topogeometry;
 
 BEGIN
 	
@@ -65,70 +70,71 @@ BEGIN
 	
 	-------------------- Surface ---------------------------------
 
+	-- find new facec that needs to be creted
+	DROP TABLE IF EXISTS new_faces; 
+	CREATE TEMP TABLE new_faces(face_id int);
+
+	-- find left face
+	INSERT INTO new_faces(face_id) 
+	SELECT DISTINCT(fa.face_id) as face_id
+	FROM 
+	topo_rein_sysdata.relation re,
+	topo_rein_sysdata.edge_data ed,
+	topo_rein_sysdata.face fa
+	WHERE 
+	(new_border_data).id = re.topogeo_id AND
+    re.layer_id =  border_layer_id AND 
+    re.element_type = 2 AND  -- TODO use variable element_type_edge=2
+    ed.edge_id = re.element_id AND
+    fa.face_id=ed.left_face AND -- How do I know if a should use left or right ?? 
+    fa.mbr IS NOT NULL;
+    GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
+	RAISE NOTICE 'Number of face objects found on the left side  % ',  num_rows_affected;
+
+    -- find right face
+	INSERT INTO new_faces(face_id) 
+	SELECT DISTINCT(fa.face_id) as face_id
+	FROM 
+	topo_rein_sysdata.relation re,
+	topo_rein_sysdata.edge_data ed,
+	topo_rein_sysdata.face fa
+	WHERE 
+	(new_border_data).id = re.topogeo_id AND
+    re.layer_id =  border_layer_id AND 
+    re.element_type = 2 AND  -- TODO use variable element_type_edge=2
+    ed.edge_id = re.element_id AND
+    fa.face_id=ed.right_face AND -- How do I know if a should use left or right ?? 
+    fa.mbr IS NOT NULL;
+    GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
+	RAISE NOTICE 'Number of face objects found on the right side  % ',  num_rows_affected;
+
 	DROP TABLE IF EXISTS new_surface_data; 
 	-- Create a temp table to hold new surface data
 	CREATE TEMP TABLE new_surface_data(surface_topo topogeometry);
-
 	-- create surface geometry if a surface exits for the left side
-	INSERT INTO new_surface_data(surface_topo)
-	SELECT surface_topo FROM (
-	SELECT 	topology.CreateTopoGeom('topo_rein_sysdata',3,surface_layer_id,topoelementarray  ) AS surface_topo 
-	FROM ( 
-			SELECT topology.TopoElementArray_Agg(ARRAY[b.face_id,3]) AS topoelementarray 
-			FROM 
-			(	
-				SELECT DISTINCT(fa.face_id) as face_id
-				FROM 
-				topo_rein_sysdata.relation re,
-				topo_rein_sysdata.edge_data ed,
-				topo_rein_sysdata.face fa
-				WHERE 
-				(new_border_data).id = re.topogeo_id AND
-			    re.layer_id =  border_layer_id AND 
-			    re.element_type = 2 AND  -- TODO use variable element_type_edge=2
-			    ed.edge_id = re.element_id AND
-			    fa.face_id=ed.left_face AND -- How do I know if a should use left or right ?? 
-			    fa.mbr IS NOT NULL
-			) AS b
-		) AS c
-	) AS f
-	WHERE surface_topo IS NOT NULL;
-	    	
-	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-	RAISE NOTICE 'Number of topo objects found on the left side  % ',  num_rows_affected;
 
-	
-	-- create surface geometry if a surface exits for the rght side
-	INSERT INTO new_surface_data(surface_topo)
-	SELECT surface_topo FROM (
-	SELECT 	topology.CreateTopoGeom('topo_rein_sysdata',3,surface_layer_id,topoelementarray  ) AS surface_topo 
-	FROM ( 
-			SELECT topology.TopoElementArray_Agg(ARRAY[b.face_id,3]) AS topoelementarray 
-			FROM 
-			(	
-				SELECT DISTINCT(fa.face_id) as face_id
-				FROM 
-				topo_rein_sysdata.relation re,
-				topo_rein_sysdata.edge_data ed,
-				topo_rein_sysdata.face fa
-				WHERE 
-				(new_border_data).id = re.topogeo_id AND
-			    re.layer_id =  border_layer_id AND 
-			    re.element_type = 2 AND  -- TODO use variable element_type_edge=2
-			    ed.edge_id = re.element_id AND
-			    fa.face_id=ed.right_face AND -- How do I know if a should use left or right ?? 
-			    fa.mbr IS NOT NULL
-			) AS b
-		) AS c
-	) AS f
-	WHERE surface_topo IS NOT NULL;
 
-	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-	RAISE NOTICE 'Number of topo objects found on the right side  % ',  num_rows_affected;
+	FOR rec IN SELECT face_id FROM new_faces
+	LOOP
+		new_surface_topo := topology.CreateTopoGeom('topo_rein_sysdata',3,surface_layer_id,topology.TopoElementArray_Agg(ARRAY[rec.face_id,3])  );
+		-- if not null
+		IF new_surface_topo IS NOT NULL THEN
+			-- check if this topo already exist
+			-- TODO find out this chck is needed then we can only check on id 
+--			IF NOT EXISTS(SELECT 1 FROM topo_rein.arstidsbeite_var_flate WHERE (omrade).id = (new_surface_topo).id) AND
+--			   NOT EXISTS(SELECT 1 FROM new_surface_data WHERE (surface_topo).id = (new_surface_topo).id)
+--			THEN
+				INSERT INTO new_surface_data(surface_topo) VALUES(new_surface_topo);
+				RAISE NOTICE 'Use new topo object % for face % created from user input %',  new_surface_topo, rec.face_id, new_border_data;
+--			ELSE
+--				RAISE NOTICE 'Not Use new topo object % for face %',  new_surface_topo, rec.face_id;
+--			END IF;
+		END IF;
+    END LOOP;
+
+    
 	
-	-- create other tbales
-	
-		-- Only used for debug
+	-- Only used for debug
 	IF add_debug_tables = 1 THEN
 	
 		-- get new objects created from topo_update.create_edge_surfaces
@@ -143,6 +149,11 @@ BEGIN
 		DROP TABLE IF EXISTS topo_rein.create_edge_surfaces_t3; 
 		CREATE TABLE topo_rein.create_edge_surfaces_t3 AS 
 		(SELECT * FROM topo_rein_sysdata.face);
+		
+		DROP TABLE IF EXISTS topo_rein.create_edge_surfaces_t4; 
+		CREATE TABLE topo_rein.create_edge_surfaces_t4 AS 
+		(SELECT * FROM new_faces);
+
 			
 	END IF;
 
