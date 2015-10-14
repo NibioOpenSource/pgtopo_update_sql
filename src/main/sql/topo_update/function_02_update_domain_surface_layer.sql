@@ -69,6 +69,7 @@ BEGIN
 
 	
 	EXECUTE format('CREATE TEMP TABLE new_surface_data AS (SELECT * FROM %s)', _new_topo_objects);
+	ALTER TABLE new_surface_data ADD COLUMN id_foo SERIAL PRIMARY KEY;
 	
 	DROP TABLE IF EXISTS old_surface_data; 
 	-- find out if any old topo objects overlaps with this new objects using the relation table
@@ -110,13 +111,14 @@ BEGIN
 	DROP TABLE IF EXISTS old_rows_be_reused;
 	-- IF old_surface_data_not_in_new is empty we know that all areas are coverbed by the new objects
 	-- and we can delete/resuse this objects for the new rows
+	-- Get a list of old row id's used
 	CREATE TEMP TABLE old_rows_be_reused AS 
 	-- we can have distinct here 
 	(SELECT distinct(old_data_row.id) FROM 
 	topo_rein.arstidsbeite_var_flate old_data_row,
 	old_surface_data sf 
 	WHERE (old_data_row.omrade).id = sf.topogeo_id);  
-
+	
 	
 	-- Take a copy of old attribute values because they will be needed when you add new rows.
 	-- The new surfaces should pick up old values from the old row attributtes that overlaps the new rows
@@ -148,7 +150,6 @@ BEGIN
 	WHERE reuse.id = r.id;
 	
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-
 	RAISE NOTICE 'Number rows to be reused in org table %',  num_rows_affected;
 
 	SELECT (num_rows_affected - (SELECT count(*) FROM new_surface_data)) INTO num_rows_to_delete;
@@ -167,23 +168,22 @@ BEGIN
 	WHERE reuse.id = r.id 
 	LIMIT  greatest(num_rows_to_delete, 0));
 	
-	
-	-- Resus old rows in topo_rein.arstidsbeite_var_flate and use as many values as possible
-	-- We pick the new values from new_surface_data
-	-- First we pick up values with the same topo object value id
 
+	
+	-- Also rows that could be reused, since I was not able to update those.
 	DROP TABLE IF EXISTS new_rows_updated_in_org_table;
 	CREATE TEMP TABLE new_rows_updated_in_org_table AS (SELECT * FROM topo_rein.arstidsbeite_var_flate limit 0);
 	WITH updated AS (
-		UPDATE topo_rein.arstidsbeite_var_flate old
-		SET omrade = new.surface_topo
-		FROM new_surface_data new,
-		old_rows_be_reused reuse
+		DELETE FROM topo_rein.arstidsbeite_var_flate old
+		USING old_rows_be_reused reuse
 		WHERE old.id = reuse.id
 		returning *
 	)
 	INSERT INTO new_rows_updated_in_org_table(omrade)
 	SELECT omrade FROM updated;
+	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
+	RAISE NOTICE 'Number old rows to deleted table %',  num_rows_affected;
+
 
 	-- Only used for debug
 	IF add_debug_tables = 1 THEN
@@ -191,7 +191,7 @@ BEGIN
 		-- get new objects created from topo_update.create_edge_surfaces
 		DROP TABLE IF EXISTS topo_rein.update_domain_surface_layer_t2;
 		CREATE TABLE topo_rein.update_domain_surface_layer_t2 AS 
-		( SELECT r.id, r.omrade::geometry AS geo, 'old rows after update' || r.omrade::text AS topo
+		( SELECT r.id, r.omrade::geometry AS geo, 'old rows deleted update' || r.omrade::text AS topo
 			FROM new_rows_updated_in_org_table r) ;
 	END IF;
 
