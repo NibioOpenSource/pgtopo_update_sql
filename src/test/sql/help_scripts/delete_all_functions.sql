@@ -14,9 +14,12 @@ DROP FUNCTION IF EXISTS topo_rein.get_var_flate_topojson(_new_topo_objects regcl
 DROP FUNCTION IF EXISTS topo_update.create_edge_surfaces(new_border_data topogeometry) cascade; 
 DROP FUNCTION IF EXISTS topo_update.create_surface_edge(geo_in geometry) cascade; 
 DROP FUNCTION IF EXISTS topo_update.update_domain_surface_layer(_new_topo_objects regclass) cascade; 
+
 DROP FUNCTION IF EXISTS topo_update.create_surface_edge_domain_obj(geo_in geometry,srid_out int, maxdecimaldigits int) cascade; 
+DROP FUNCTION IF EXISTS topo_update.create_surface_edge_domain_obj(geo_in geometry) cascade;
+
 DROP FUNCTION IF EXISTS topo_update.apply_attr_on_topo_surface(json_feature text) cascade; 
 DROP FUNCTION IF EXISTS topo_update.apply_line_on_topo_surface(geo_in geometry,  srid_out int, maxdecimaldigits int) cascade; 
-
+ 
 DROP FUNCTION IF EXISTS topo_update.delete_topo_surface(geo_in geometry)  cascade; 
 DROP FUNCTION IF EXISTS topo_update.delete_topo_surface(id_in int)  cascade; 
