@@ -32,7 +32,7 @@ FROM org_rein_korr.rein_korr_arstidsbeite_var_flate
 ORDER BY objectid
 ) 
 AS lg
-) As f 
+) As f; 
 
 
 
