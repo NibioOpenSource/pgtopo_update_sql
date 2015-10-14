@@ -33,7 +33,7 @@ num_rows_affected int;
 num_rows_to_delete int;
 
 -- used for logging
-add_debug_tables int = 1;
+add_debug_tables int = 0;
 
 -- used for looping
 rec RECORD;

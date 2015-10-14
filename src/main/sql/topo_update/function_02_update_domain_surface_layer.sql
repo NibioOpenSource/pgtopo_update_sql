@@ -37,7 +37,7 @@ num_rows_to_delete int;
 new_border_data topogeometry;
 
 -- used for logging
-add_debug_tables int = 1;
+add_debug_tables int = 0;
 
 BEGIN
 	
