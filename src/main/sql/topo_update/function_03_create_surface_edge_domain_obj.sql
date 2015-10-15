@@ -48,6 +48,9 @@ add_debug_tables int = 0;
 -- the number times the inlut line intersects
 num_edge_intersects int;
 
+-- the orignal geo that is from the user
+org_geo_in geometry;
+
 BEGIN
 	
 	-- TODO to be moved is justed for testing now
@@ -65,6 +68,11 @@ BEGIN
 	surface_topo_info.layer_feature_column := 'omrade';
 	surface_topo_info.snap_tolerance := 0.0000000001;
 
+	
+	org_geo_in := geo_in;
+	
+	RAISE NOTICE 'The input as it used before check/fixed %',  ST_AsText(geo_in);
+
 		-- Only used for debug
 	IF add_debug_tables = 1 THEN
 		-- get new objects created from topo_update.create_edge_surfaces
@@ -81,7 +89,8 @@ BEGIN
 	ELSIF NOT ST_IsClosed(geo_in) THEN
 		-- If this is not closed just check that it intersects two times with a exting border
 		-- TODO make more precice check that only used edges that in varbeite surface
-		num_edge_intersects :=  (SELECT ST_NumGeometries(ST_collect(ST_Intersection(geo_in,e.geom))) FROM topo_rein_sysdata.edge_data e WHERE ST_Intersects(geo_in,e.geom))::int;
+		-- TODO handle return of gemoerty collection
+		num_edge_intersects :=  (SELECT ST_NumGeometries(ST_Intersection(geo_in,e.geom)) FROM topo_rein_sysdata.edge_data e WHERE ST_Intersects(geo_in,e.geom))::int;
 		RAISE NOTICE 'Found a non closed linestring does intersect % times, with any borders by using buildArea %', num_edge_intersects, geo_in;
 		IF num_edge_intersects is null OR num_edge_intersects < 2 THEN
 			geo_in := ST_ExteriorRing(ST_BuildArea(ST_UnaryUnion(ST_AddPoint(geo_in, ST_StartPoint(geo_in)))));
@@ -93,7 +102,14 @@ BEGIN
 	IF add_debug_tables = 1 THEN
 		INSERT INTO topo_rein.create_surface_edge_domain_obj_t0(geo_in,IsSimple,IsClosed) VALUES(geo_in,St_IsSimple(geo_in),St_IsSimple(geo_in));
 	END IF;
+
+	RAISE NOTICE 'The input as it used after check/fixed %',  ST_AsText(geo_in);
 	
+	IF geo_in IS NULL THEN
+		RAISE EXCEPTION 'The geo generated from geo_in is null %', org_geo_in;
+	END IF;
+	
+
 	-- create the new topo object for the egde layer
 	new_border_data := topo_update.create_surface_edge(geo_in);
 	RAISE NOTICE 'The new topo object created for based on the input geo  %',  new_border_data;
