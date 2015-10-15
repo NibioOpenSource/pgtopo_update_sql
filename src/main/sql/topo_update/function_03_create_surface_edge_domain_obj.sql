@@ -51,7 +51,11 @@ num_edge_intersects int;
 -- the orignal geo that is from the user
 org_geo_in geometry;
 
+-- 
+line_intersection_result geometry;
+
 BEGIN
+	
 	
 	-- TODO to be moved is justed for testing now
 	border_topo_info.topology_name := 'topo_rein_sysdata';
@@ -90,7 +94,14 @@ BEGIN
 		-- If this is not closed just check that it intersects two times with a exting border
 		-- TODO make more precice check that only used edges that in varbeite surface
 		-- TODO handle return of gemoerty collection
-		num_edge_intersects :=  (SELECT ST_NumGeometries(ST_Intersection(geo_in,e.geom)) FROM topo_rein_sysdata.edge_data e WHERE ST_Intersects(geo_in,e.geom))::int;
+		-- thic code fails need to make a test on this 
+		-- num_edge_intersects :=  (SELECT ST_NumGeometries(ST_Intersection(geo_in,e.geom)) FROM topo_rein_sysdata.edge_data e WHERE ST_Intersects(geo_in,e.geom))::int;
+		line_intersection_result := (select ST_Union(ST_Intersection(geo_in,e.geom)) FROM topo_rein_sysdata.edge_data e WHERE ST_Intersects(geo_in,e.geom))::geometry;
+
+		RAISE NOTICE 'Line intersection result is %', ST_AsText(line_intersection_result);
+
+		num_edge_intersects :=  (SELECT ST_NumGeometries(line_intersection_result))::int;
+		
 		RAISE NOTICE 'Found a non closed linestring does intersect % times, with any borders by using buildArea %', num_edge_intersects, geo_in;
 		IF num_edge_intersects is null OR num_edge_intersects < 2 THEN
 			geo_in := ST_ExteriorRing(ST_BuildArea(ST_UnaryUnion(ST_AddPoint(geo_in, ST_StartPoint(geo_in)))));
