@@ -87,7 +87,17 @@ BEGIN
 	
 	IF NOT ST_IsSimple(geo_in) THEN
 		-- This is probably a crossing line so we try to build a surface
-		geo_in := ST_ExteriorRing(ST_BuildArea(ST_UnaryUnion(geo_in)));
+		BEGIN
+			line_intersection_result := ST_BuildArea(ST_UnaryUnion(geo_in))::geometry;
+			RAISE NOTICE 'Line intersection result is %', ST_AsText(line_intersection_result);
+			geo_in := ST_ExteriorRing(line_intersection_result);
+		EXCEPTION WHEN others THEN
+		 	RAISE NOTICE 'Error code: %', SQLSTATE;
+      		RAISE NOTICE 'Error message: %', SQLERRM;
+			RAISE NOTICE 'Failed to to use line intersection result is %, try buffer', ST_AsText(line_intersection_result);
+			geo_in := ST_ExteriorRing(ST_Buffer(line_intersection_result,0.00000000001));
+		END;
+		
 		-- check the object after a fix
 		RAISE NOTICE 'Fixed a non simple line to be valid simple line by using by buildArea %',  geo_in;
 	ELSIF NOT ST_IsClosed(geo_in) THEN
