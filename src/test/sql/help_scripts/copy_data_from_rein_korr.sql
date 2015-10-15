@@ -34,5 +34,5 @@ ORDER BY objectid
 AS lg
 ) As f; 
 
-
-
+-- delete holes
+delete from topo_rein.arstidsbeite_var_flate where reinbeitebruker_id is null;
