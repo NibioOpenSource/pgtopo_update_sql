@@ -6,10 +6,7 @@
 -- TODO set attributtes for the line
 
 
--- DROP FUNCTION FUNCTION topo_update.create_line_edge_domain_obj(geo_in geometry) cascade;
-
-
-CREATE OR REPLACE FUNCTION topo_update.create_line_edge_domain_obj(geo_in geometry) 
+CREATE OR REPLACE FUNCTION topo_update.create_line_edge_domain_obj(json_feature text) 
 RETURNS TABLE(id integer) AS $$
 DECLARE
 
@@ -41,10 +38,6 @@ add_debug_tables int = 0;
 -- the number times the inlut line intersects
 num_edge_intersects int;
 
--- the orignal geo that is from the user
-org_geo_in geometry;
-
--- 
 line_intersection_result geometry;
 
 BEGIN
@@ -61,58 +54,48 @@ BEGIN
 		-- find border layer id
 	border_layer_id := topo_update.get_topo_layer_id(border_topo_info);
 
-	org_geo_in := geo_in;
 	
-	RAISE NOTICE 'The input as it used before check/fixed %',  ST_AsText(geo_in);
+	RAISE NOTICE 'The JSON input %',  json_feature;
 
-		-- Only used for debug
-	IF add_debug_tables = 1 THEN
-		DROP TABLE IF EXISTS topo_rein.create_line_edge_domain_obj_t0; 
-		CREATE TABLE topo_rein.create_line_edge_domain_obj_t0(geo_in geometry, IsSimple boolean, IsClosed boolean);
-		INSERT INTO topo_rein.create_line_edge_domain_obj_t0(geo_in,IsSimple,IsClosed) VALUES(geo_in,St_IsSimple(geo_in),St_IsSimple(geo_in));
-	END IF;
 
---  Accept any lines 	
---	IF NOT ST_IsSimple(geo_in) THEN
---		RAISE EXCEPTION 'The is not a valid geo for a simple line  %', org_geo_in;
---	ELSIF ST_IsClosed(geo_in) THEN
---		RAISE EXCEPTION 'Do not use a closed line for line object %', org_geo_in;
---	END IF;
-
-	IF add_debug_tables = 1 THEN
-		INSERT INTO topo_rein.create_line_edge_domain_obj_t0(geo_in,IsSimple,IsClosed) VALUES(geo_in,St_IsSimple(geo_in),St_IsSimple(geo_in));
-	END IF;
-
-	RAISE NOTICE 'The input as it used after check/fixed %',  ST_AsText(geo_in);
-
-	-- create the new topo object for the egde layer
-	new_border_data := topology.toTopoGeom(geo_in, border_topo_info.topology_name, border_layer_id, border_topo_info.snap_tolerance); 
-	RAISE NOTICE 'The new topo object created for based on the input geo  %',  new_border_data;
-
-	-- TODO insert some correct value for attributes
+	-- get the json values
 	
-		-- clean up old surface and return a list of the objects
-	DROP TABLE IF EXISTS new_reindrift_anlegg_linje; 
-	CREATE TEMP TABLE new_reindrift_anlegg_linje AS 
-	(SELECT new_border_data AS linje);
+	DROP TABLE IF EXISTS new_attributes_values;
+
+	CREATE TEMP TABLE new_attributes_values(geom geometry,properties json);
+	
+	-- get json data
+	INSERT INTO new_attributes_values(geom,properties)
+	SELECT 
+		topo_rein.get_geom_from_json(feat,4258) as geom,
+		to_json(feat->'properties')::json  as properties
+	FROM (
+	  	SELECT json_feature::json AS feat
+	) AS f;
+
+	-- insert the data the new table
+	INSERT INTO topo_rein.reindrift_anlegg_linje(linje, felles_egenskaper, reindriftsanleggstype,reinbeitebruker_id)
+	SELECT  
+		topology.toTopoGeom(t2.geom, border_topo_info.topology_name, border_layer_id, border_topo_info.snap_tolerance) AS linje,
+		topo_rein.get_rein_felles_egenskaper_linje(0) AS felles_egenskaper,
+		(t2.properties->>'reindriftsanleggstype')::int AS reindriftsanleggstype,
+		(t2.properties->>'reinbeitebruker_id')::text AS reinbeitebruker_id
+	FROM new_attributes_values t2;
+	
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-	RAISE NOTICE 'Number_of_rows removed from topo_update.update_domain_surface_layer   %',  num_rows_affected;
+
+	RAISE NOTICE 'Number num_rows_affected  %',  num_rows_affected;
 
 	
-	INSERT INTO topo_rein.reindrift_anlegg_linje(linje, felles_egenskaper)
-	SELECT new_border_data, topo_rein.get_rein_felles_egenskaper_linje(0);
+	command_string := ' SELECT tg.id AS id FROM topo_rein.reindrift_anlegg_linje tg';
 
-	-- return all the lines created
-	-- SELECT tg.id AS id FROM topo_rein.reindrift_anlegg_linje tg, new_reindrift_anlegg_linje new WHERE (new.linje).id = (tg.linje).id
-
-	command_string := 'SELECT tg.id AS id FROM ' || border_topo_info.layer_schema_name || '.' || border_topo_info.layer_table_name || ' tg, new_reindrift_anlegg_linje new WHERE (new.linje).id = (tg.linje).id';
+	--command_string := 'SELECT tg.id AS id FROM ' || border_topo_info.layer_schema_name || '.' || border_topo_info.layer_table_name || ' tg, new_reindrift_anlegg_linje new WHERE (new.linje).id = (tg.linje).id';
 	RAISE NOTICE '%', command_string;
 
     RETURN QUERY EXECUTE command_string;
     
 END;
 $$ LANGUAGE plpgsql;
-
 
 
 --select topo_update.create_line_edge_domain_obj('SRID=4258;LINESTRING (5.70182 58.55131, 5.70368 58.55134, 5.70403 58.55375, 5.70152 58.55373)');

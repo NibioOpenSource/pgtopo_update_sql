@@ -19,6 +19,9 @@ DROP FUNCTION IF EXISTS topo_update.create_surface_edge_domain_obj(geo_in geomet
 DROP FUNCTION IF EXISTS topo_update.create_surface_edge_domain_obj(geo_in geometry) cascade;
 
 DROP FUNCTION IF EXISTS topo_update.create_line_edge_domain_obj(geo_in geometry) cascade;
+DROP FUNCTION IF EXISTS topo_update.create_line_edge_domain_obj(geo_in geometry, json_feature text) cascade;
+DROP FUNCTION IF EXISTS topo_update.create_line_edge_domain_obj(json_feature text) cascade;
+
 DROP FUNCTION IF EXISTS topo_update.create_point_point_domain_obj(geo_in geometry) cascade;
 
 DROP FUNCTION IF EXISTS topo_update.apply_attr_on_topo_surface(json_feature text) cascade; 
@@ -26,3 +29,5 @@ DROP FUNCTION IF EXISTS topo_update.apply_line_on_topo_surface(geo_in geometry, 
  
 DROP FUNCTION IF EXISTS topo_update.delete_topo_surface(geo_in geometry)  cascade; 
 DROP FUNCTION IF EXISTS topo_update.delete_topo_surface(id_in int)  cascade; 
+
+DROP FUNCTION IF EXISTS topo_rein.get_geom_from_json(feat json, srid_out int)  cascade;

@@ -1,4 +1,10 @@
+------- Handle Årstidsbeiter - Vårbeite
+-- from: org_rein_korr.rein_korr_arstidsbeite_var_flate 
+-- to: topo_rein.arstidsbeite_var_grense and topo_rein.arstidsbeite_var_flate
+
 -- Add surface with no attributtes
+
+
 SELECT topo_update.create_surface_edge_domain_obj(ST_setSrid(ST_transform(geo,4258),4258))  FROM 
 --SELECT ST_AsText(ST_setSrid(ST_transform(geo,4258),4258))  FROM 
 ( 
@@ -36,3 +42,25 @@ AS lg
 
 -- delete holes
 delete from topo_rein.arstidsbeite_var_flate where reinbeitebruker_id is null;
+
+------- Gjerder og Anlegg linje
+-- from: org_rein_korr.rein_korr_drift_anlegg_linje 
+-- to: topo_rein.reindrift_anlegg_linje
+
+SELECT topo_update.create_line_edge_domain_obj(f.a) 
+FROM (
+ 	SELECT 
+ 	'{"type": "Feature",' || 
+ 	'"crs":{"type":"name","properties":{"name":"EPSG:4258"}},' ||
+ 	'"geometry":' || ST_AsGeoJSON(ST_setSrid(ST_transform(geo,4258),4258))::json || ',' ||
+ 	'"properties":' || row_to_json((SELECT l FROM (SELECT reinbeitebruker_id, reindriftsanleggstype) As l )) || '}' as a,
+ 	ST_setSrid(ST_transform(geo,4258),4258) as geo
+FROM 
+( 
+SELECT beitebrukerid AS reinbeitebruker_id, reindriftanltyp AS reindriftsanleggstype, geo 
+FROM org_rein_korr.rein_korr_drift_anlegg_linje
+where reindriftanltyp != 99
+ORDER BY objectid
+) 
+AS lg
+) As f;
