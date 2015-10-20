@@ -359,9 +359,11 @@ felles_egenskaper topo_rein.sosi_felles_egenskaper NOT NULL,
 
 -- angir hvilket reinbeitedistrikt som bruker beiteområdet 
 -- Definition -- indicates which reindeer pasture district uses the pasture area
+-- TODO add not null
 reinbeitebruker_id varchar(3) CHECK (reinbeitebruker_id IN ('XI','ZA','ZB','ZC','ZD','ZE','ZF','ØG','UW','UX','UY','UZ','ØA','ØB','ØC','ØE','ØF','ZG','ZH','ZJ','ZS','ZL','ZÅ','YA','YB','YC','YD','YE','YF','YG','XM','XR','XT','YH','YI','YJ','YK','YL','YM','YN','YP','YX','YR','YS','YT','YU','YV','YW','YY','XA','XD','XE','XG','XH','XJ','XK','XL','XM','XR','XS','XT','XN','XØ','XP','XU','XV','XW','XZ','XX','XY','WA','WB','WD','WF','WK','WL','WN','WP','WR','WS','WX','WZ','VA','VF','VG','VJ','VM','VR','YQA','YQB','YQC','ZZ','RR','ZQA')), 
 
 -- spesifikasjon av type teknisk anlegg som er etablert i forbindelse med utmarksbeite 
+-- TODO add not null
 reindriftsanleggstype int CHECK ( (reindriftsanleggstype > 0 AND reindriftsanleggstype < 8) or (reindriftsanleggstype=12)) 
 
 
@@ -431,7 +433,7 @@ CREATE INDEX topo_rein_reindrift_anlegg_punkt_geo_relation_id_idx ON topo_rein.r
 -- DROP VIEW topo_rein.arstidsbeite_var_flate_v cascade ;
 
 
-CREATE VIEW topo_rein.arstidsbeite_var_flate_v 
+CREATE OR REPLACE VIEW topo_rein.arstidsbeite_var_flate_v 
 AS
 select 
 id,
@@ -444,4 +446,46 @@ id,
 reindrift_sesongomrade_kode,
 omrade::geometry(MultiPolygon,4258) as geo 
 from topo_rein.arstidsbeite_var_flate al;
+
+-- DROP VIEW topo_rein.reindrift_anlegg_linje_v cascade ;
+
+
+CREATE OR REPLACE VIEW topo_rein.reindrift_anlegg_linje_v 
+AS
+select 
+id,
+--((al.felles_egenskaper).kvalitet).maalemetode,
+--((al.felles_egenskaper).kvalitet).noyaktighet,
+--((al.felles_egenskaper).kvalitet).synbarhet,
+--(al.felles_egenskaper).verifiseringsdato, 
+--(al.felles_egenskaper).opphav, 
+--(al.felles_egenskaper).informasjon::varchar as informasjon, 
+reinbeitebruker_id,
+reindriftsanleggstype,
+linje::geometry(MultiLineString,4258) as geo 
+from topo_rein.reindrift_anlegg_linje al;
+
+-- select * from topo_rein.reindrift_anlegg_linje_v ;
+
+
+--DROP VIEW topo_rein.reindrift_anlegg_punkt_v cascade ;
+
+
+CREATE OR REPLACE VIEW topo_rein.reindrift_anlegg_punkt_v 
+AS
+select 
+id,
+--((al.felles_egenskaper).kvalitet).maalemetode,
+--((al.felles_egenskaper).kvalitet).noyaktighet,
+--((al.felles_egenskaper).kvalitet).synbarhet,
+--(al.felles_egenskaper).verifiseringsdato, 
+--(al.felles_egenskaper).opphav, 
+--(al.felles_egenskaper).informasjon::varchar as informasjon, 
+reinbeitebruker_id,
+reindriftsanleggstype,
+punkt::geometry(MultiPoint,4258) as geo 
+from topo_rein.reindrift_anlegg_punkt al;
+
+-- select * from topo_rein.reindrift_anlegg_punkt_v ;
+
 
