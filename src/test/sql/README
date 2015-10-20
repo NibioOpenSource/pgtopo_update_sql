@@ -17,7 +17,7 @@ Then you can run a simple test in the regress directory
 
 By the way ypu update the README file for run_test.pl in the file I coppiedform 
 
-./run_test.pl --verbose --topology topo_update
+./run_test.pl --verbose --topology --spatial_ref_sys topo_update
 
 In the files pgtopo_update_sql/src/test/sql/help_scripts/test_*_apply_line_on_topo_surface.sql there are simple test cases.
 
