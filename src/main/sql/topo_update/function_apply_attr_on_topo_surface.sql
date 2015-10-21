@@ -57,9 +57,9 @@ BEGIN
 	CREATE TEMP TABLE new_attributes_values(geom geometry,properties json);
 	
 	-- get json data
-	INSERT INTO new_attributes_values(geom,properties)
+	INSERT INTO new_attributes_values(properties)
 	SELECT 
-		topo_rein.get_geom_from_json(feat,4258) as geom,
+--		topo_rein.get_geom_from_json(feat,4258) as geom,
 		to_json(feat->'properties')::json  as properties
 	FROM (
 	  	SELECT json_feature::json AS feat
@@ -73,7 +73,8 @@ BEGIN
 		reindrift_sesongomrade_kode = (t2.properties->>'reindrift_sesongomrade_kode')::int,
 		reinbeitebruker_id = (t2.properties->>'reinbeitebruker_id')::text
 	FROM new_attributes_values t2
-	WHERE ST_Intersects(r.omrade::geometry,t2.geom);
+	-- WHERE ST_Intersects(r.omrade::geometry,t2.geom);
+	WHERE id = (t2.properties->>'id')::int;
 	
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 
