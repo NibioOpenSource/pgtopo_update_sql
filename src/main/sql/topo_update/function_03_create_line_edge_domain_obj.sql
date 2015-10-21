@@ -73,34 +73,33 @@ BEGIN
 	  	SELECT json_feature::json AS feat
 	) AS f;
 
-	-- insert the data the new table
-	INSERT INTO topo_rein.reindrift_anlegg_linje(linje, felles_egenskaper, reindriftsanleggstype,reinbeitebruker_id)
-	SELECT  
-		topology.toTopoGeom(t2.geom, border_topo_info.topology_name, border_layer_id, border_topo_info.snap_tolerance) AS linje,
-		topo_rein.get_rein_felles_egenskaper_linje(0) AS felles_egenskaper,
-		(t2.properties->>'reindriftsanleggstype')::int AS reindriftsanleggstype,
-		(t2.properties->>'reinbeitebruker_id')::text AS reinbeitebruker_id
-	FROM new_attributes_values t2;
-	
+	-- insert the data in the org table and keep a copy of the data
+	DROP TABLE IF EXISTS new_rows_added_in_org_table;
+	CREATE TEMP TABLE new_rows_added_in_org_table AS (SELECT * FROM  topo_rein.reindrift_anlegg_linje limit 0);
+	WITH inserted AS (
+		INSERT INTO topo_rein.reindrift_anlegg_linje(linje, felles_egenskaper, reindriftsanleggstype,reinbeitebruker_id)
+		SELECT  
+			topology.toTopoGeom(t2.geom, border_topo_info.topology_name, border_layer_id, border_topo_info.snap_tolerance) AS linje,
+			topo_rein.get_rein_felles_egenskaper_linje(0) AS felles_egenskaper,
+			(t2.properties->>'reindriftsanleggstype')::int AS reindriftsanleggstype,
+			(t2.properties->>'reinbeitebruker_id')::text AS reinbeitebruker_id
+		FROM new_attributes_values t2
+		RETURNING *
+	)
+	INSERT INTO new_rows_added_in_org_table
+	SELECT * FROM inserted;
+
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-
 	RAISE NOTICE 'Number num_rows_affected  %',  num_rows_affected;
-
 	
-	command_string := ' SELECT tg.id AS id FROM topo_rein.reindrift_anlegg_linje tg';
-
-	--command_string := 'SELECT tg.id AS id FROM ' || border_topo_info.layer_schema_name || '.' || border_topo_info.layer_table_name || ' tg, new_reindrift_anlegg_linje new WHERE (new.linje).id = (tg.linje).id';
+	-- TODO should we also return lines that are close to or intersects and split them so it's possible to ??? 
+	command_string := ' SELECT tg.id AS id FROM  new_rows_added_in_org_table tg';
+	-- command_string := 'SELECT tg.id AS id FROM ' || border_topo_info.layer_schema_name || '.' || border_topo_info.layer_table_name || ' tg, new_rows_added_in_org_table new WHERE new.linje::geometry && tg.linje::geometry';
 	RAISE NOTICE '%', command_string;
-
     RETURN QUERY EXECUTE command_string;
     
 END;
 $$ LANGUAGE plpgsql;
 
 
---select topo_update.create_line_edge_domain_obj('SRID=4258;LINESTRING (5.70182 58.55131, 5.70368 58.55134, 5.70403 58.55375, 5.70152 58.55373)');
-
---select topo_update.create_line_edge_domain_obj('SRID=4258;LINESTRING (5.701884 58.552517, 5.705113 58.552631)');
-
---select topo_update.create_line_edge_domain_obj('SRID=4258;LINESTRING (5.701884 58.552517, 5.705113 58.552631, 5.70403 58.55375)');
-
+-- select topo_update.create_line_edge_domain_obj('{"type": "Feature","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"geometry":{"type":"LineString","coordinates":[[23.6848135255864,70.2941567505496],[23.6861561245622,70.2937237249409],[23.6888489506943,70.2928551851477],[23.6896495555246,70.2925466063485],[23.6917889588952,70.2921562639517],[23.694595666294,70.2918661087774],[23.696565951167,70.2915742147016],[23.6997477210545,70.2913270875264],[23.7033391523831,70.2915039485159],[23.704465396345,70.2916332890859],[23.7071834726507,70.2915684567574],[23.7076455811378,70.2914565778099],[23.7081927635498,70.291260212567],[23.7079468414143,70.2907122102879]]},"properties":{"reinbeitebruker_id":"YD","reindriftsanleggstype":1}}');
