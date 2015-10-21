@@ -9,16 +9,15 @@
 -- DROP FUNCTION FUNCTION topo_update.create_point_point_domain_obj(geo_in geometry) cascade;
 
 
-CREATE OR REPLACE FUNCTION topo_update.create_point_point_domain_obj(geo_in geometry) 
+CREATE OR REPLACE FUNCTION topo_update.create_point_point_domain_obj(json_feature text) 
 RETURNS TABLE(id integer) AS $$
 DECLARE
 
 json_result text;
 
-new_border_data topogeometry;
 
 -- this border layer id will picked up by input parameters
-border_layer_id int;
+point_layer_id int;
 
 -- this is the tolerance used for snap to 
 snap_tolerance float8 = 0.0000000001;
@@ -26,26 +25,12 @@ snap_tolerance float8 = 0.0000000001;
 -- TODO use as parameter put for testing we just have here for now
 point_topo_info topo_update.input_meta_info ;
 
--- hold striped gei
-edge_with_out_loose_ends geometry = null;
-
 -- holds dynamic sql to be able to use the same code for different
 command_string text;
 
 -- used for logging
 num_rows_affected int;
 
--- used for logging
-add_debug_tables int = 0;
-
--- the number times the inlut line intersects
-num_edge_intersects int;
-
--- the orignal geo that is from the user
-org_geo_in geometry;
-
--- 
-line_intersection_result geometry;
 
 BEGIN
 	
@@ -58,40 +43,49 @@ BEGIN
 	point_topo_info.snap_tolerance := 0.0000000001;
 	point_topo_info.element_type = 1;
 	
-		-- find border layer id
-	border_layer_id := topo_update.get_topo_layer_id(point_topo_info);
+		-- find point layer id
+	point_layer_id := topo_update.get_topo_layer_id(point_topo_info);
 
-	org_geo_in := geo_in;
+	DROP TABLE IF EXISTS new_attributes_values;
+
+	CREATE TEMP TABLE new_attributes_values(geom geometry,properties json);
 	
-	RAISE NOTICE 'The input as %',  ST_AsText(geo_in);
+	-- get json data
+	INSERT INTO new_attributes_values(geom,properties)
+	SELECT 
+		topo_rein.get_geom_from_json(feat,4258) as geom,
+		to_json(feat->'properties')::json  as properties
+	FROM (
+	  	SELECT json_feature::json AS feat
+	) AS f;
 
-	-- create the new topo object for the egde layer
-	new_border_data := topology.toTopoGeom(geo_in, point_topo_info.topology_name, border_layer_id, point_topo_info.snap_tolerance); 
-	RAISE NOTICE 'The new topo object created for based on the input geo  %',  new_border_data;
+	-- insert the data in the org table and keep a copy of the data
+	DROP TABLE IF EXISTS new_rows_added_in_org_table;
+	CREATE TEMP TABLE new_rows_added_in_org_table AS (SELECT * FROM  topo_rein.reindrift_anlegg_punkt limit 0);
+	WITH inserted AS (
+		INSERT INTO topo_rein.reindrift_anlegg_punkt(punkt, felles_egenskaper, reindriftsanleggstype,reinbeitebruker_id)
+		SELECT  
+			topology.toTopoGeom(t2.geom, point_topo_info.topology_name, point_layer_id, point_topo_info.snap_tolerance) AS punkt,
+			topo_rein.get_rein_felles_egenskaper_linje(0) AS felles_egenskaper,
+			(t2.properties->>'reindriftsanleggstype')::int AS reindriftsanleggstype,
+			(t2.properties->>'reinbeitebruker_id')::text AS reinbeitebruker_id
+		FROM new_attributes_values t2
+		RETURNING *
+	)
+	INSERT INTO new_rows_added_in_org_table
+	SELECT * FROM inserted;
 
-	-- TODO insert some correct value for attributes
-	
-		-- clean up old surface and return a list of the objects
-	DROP TABLE IF EXISTS new_reindrift_anlegg_punkt; 
-	CREATE TEMP TABLE new_reindrift_anlegg_punkt AS 
-	(SELECT new_border_data AS punkt);
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-	RAISE NOTICE 'Number_of_rows removed from topo_update.update_domain_surface_layer   %',  num_rows_affected;
-
+	RAISE NOTICE 'Number num_rows_affected  %',  num_rows_affected;
 	
-	INSERT INTO topo_rein.reindrift_anlegg_punkt(punkt, felles_egenskaper)
-	SELECT new_border_data, topo_rein.get_rein_felles_egenskaper_linje(0);
-
-	-- return all the lines created
-	-- SELECT tg.id AS id FROM topo_rein.reindrift_anlegg_punkt tg, new_reindrift_anlegg_punkt new WHERE (new.punkt).id = (tg.punkt).id
-
-	command_string := 'SELECT tg.id AS id FROM ' || point_topo_info.layer_schema_name || '.' || point_topo_info.layer_table_name || ' tg, new_reindrift_anlegg_punkt new WHERE (new.punkt).id = (tg.punkt).id';
+	-- TODO should we also return lines that are close to or intersects and split them so it's possible to ??? 
+	command_string := ' SELECT tg.id AS id FROM  new_rows_added_in_org_table tg';
+	-- command_string := 'SELECT tg.id AS id FROM ' || border_topo_info.layer_schema_name || '.' || border_topo_info.layer_table_name || ' tg, new_rows_added_in_org_table new WHERE new.punkt::geometry && tg.punkt::geometry';
 	RAISE NOTICE '%', command_string;
-
     RETURN QUERY EXECUTE command_string;
     
 END;
 $$ LANGUAGE plpgsql;
 
--- select topo_update.create_point_point_domain_obj('SRID=4258;POINT (5.70182 58.55131)');
+--select topo_update.create_point_point_domain_obj('{"type": "Feature","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"geometry":{"type":"Point","coordinates":[17.4122416312598,68.6013397740665]},"properties":{"reinbeitebruker_id":"XG","reindriftsanleggstype":18}}');
 

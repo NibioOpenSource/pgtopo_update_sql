@@ -64,3 +64,27 @@ ORDER BY objectid
 ) 
 AS lg
 ) As f;
+
+
+------- Gjerder og Anlegg punkt
+-- from: org_rein_korr.rein_korr_drift_anlegg_punkt 
+-- to: topo_rein.reindrift_anlegg_punkt
+
+SELECT topo_update.create_line_edge_domain_obj(f.a) 
+SELECT f.a
+FROM (
+ 	SELECT 
+ 	'{"type": "Feature",' || 
+ 	'"crs":{"type":"name","properties":{"name":"EPSG:4258"}},' ||
+ 	'"geometry":' || ST_AsGeoJSON(ST_setSrid(ST_transform(geo,4258),4258))::json || ',' ||
+ 	'"properties":' || row_to_json((SELECT l FROM (SELECT reinbeitebruker_id, reindriftsanleggstype) As l )) || '}' as a,
+ 	ST_setSrid(ST_transform(geo,4258),4258) as geo
+FROM 
+( 
+SELECT beitebrukerid AS reinbeitebruker_id, reindriftanltyp AS reindriftsanleggstype, geo 
+FROM org_rein_korr.rein_korr_drift_anlegg_punkt
+where reindriftanltyp != 99
+ORDER BY objectid
+) 
+AS lg
+) As f;
