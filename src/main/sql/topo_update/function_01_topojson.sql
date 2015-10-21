@@ -22,6 +22,7 @@ DECLARE
   topology_id int;
   crs text;
   sql text;
+  obj_json text;
 BEGIN
 
 
@@ -80,37 +81,51 @@ BEGIN
 
   -- Add features (objects) array
 
-  sql := 'SELECT id(' || quote_ident(fname_topogeom) ||
-      '), AsTopoJSON(' || quote_ident(fname_topogeom) ||
-      ', ''topo_rein_topojson_edgemap'') as obj, ' || 
-      'topology_id(' || quote_ident(fname_topogeom) || 
-      ')';
+  sql := 'SELECT ' || quote_ident(fname_topogeom) || ' as obj';
+
+  --RAISE DEBUG 'fname_attributes is: %', fname_attributes;
 
   IF fname_attributes IS NOT NULL THEN
     sql := sql || ', row_to_json( (SELECT t1 FROM ( SELECT ' ||
         -- attributes to include in output
         array_to_string(fname_attributes, ',') ||
-        ') as t1)) as prop ';
+        ') as t1))::text as prop ';
   ELSE
-    sql := sql || ', ''{}'' as prop';
+    sql := sql || ', ''{}''::text as prop';
   END IF;
 
   sql := sql || ' FROM ( ' || query || ' ) foo';
+
+  --RAISE DEBUG 'Looping over sql: %', sql;
+
   FOR rec IN EXECUTE sql
   LOOP
     IF topology_id IS NULL THEN
-      topology_id := rec.topology_id;
-    ELSIF topology_id != rec.topology_id THEN
+      topology_id := topology_id(rec.obj);
+    ELSIF topology_id != topology_id(rec.obj) THEN
       RAISE EXCEPTION 'TopoGeometry from different topologies mixed in query results';
     END IF;
+    IF type(rec.obj) = 1 THEN
+      -- Puntal type TopoJson not supported as of PostGIS-2.2, see
+      -- https://trac.osgeo.org/postgis/ticket/3343
+      tmptext := ST_AsGeoJSON(rec.obj::geometry);
+      -- Trim closing paren
+      tmptext := substring(tmptext from 0 for length(tmptext));
+      obj_json := tmptext;
+    ELSE
+      tmptext := AsTopoJSON(rec.obj, 'topo_rein_topojson_edgemap');
+      -- Trim closing paren
+      tmptext := substring(tmptext from 0 for length(tmptext));
+      obj_json := tmptext;
+    END IF;
+    -- RAISE DEBUG 'Appending to objary: %', objary;
     objary := objary || array_to_string(ARRAY[
-          --'"', rec.id::text, '":',
-          '',
-          substring(rec.obj from 0 for length(rec.obj)),
-          ',"properties":',
+          obj_json::text,
+          ',"properties":'::text,
           rec.prop::text,
           '}'
-          ], '');
+          ]::text[], '');
+    --RAISE DEBUG 'New objary: %', objary;
   END LOOP;
 
   sql := 'SELECT name FROM topology.topology WHERE id = ' || topology_id;
@@ -123,13 +138,15 @@ BEGIN
 
   -- Add arcs
 
+  --RAISE DEBUG 'Adding arcs';
+
   sql := 'SELECT array_agg(ST_AsGeoJSON(' ||
       'ST_transform(e.geom,$1),$2' ||
       ')::json->>''coordinates'' ' ||
       'ORDER BY m.arc_id) FROM topo_rein_topojson_edgemap m ' ||
       'INNER JOIN ' || quote_ident(toponame) || '.edge e ' ||
       'ON (e.edge_id = m.edge_id)';
-  RAISE DEBUG '%', sql;
+  --RAISE DEBUG '%', sql;
   EXECUTE sql USING srid_out,maxdecimaldigits INTO objary;
 
   outary = outary || ']'::text || '}'::text || '}'::text;
@@ -141,7 +158,7 @@ BEGIN
   outary = outary || '}'::text;
 
 
-  RAISE DEBUG '%', array_to_string(outary, '');
+  --RAISE DEBUG '%', array_to_string(outary, '');
   
   DROP TABLE topo_rein_topojson_edgemap;
   
