@@ -54,21 +54,15 @@ BEGIN
 
 	DROP TABLE IF EXISTS new_attributes_values;
 
-	CREATE TEMP TABLE new_attributes_values(geom geometry,properties json,crs text);
-
-	INSERT INTO new_attributes_values(geom,properties,crs)
-	SELECT
-	CASE WHEN (feat->'crs'->'properties'->'name')::text = 'EPSG:4258' THEN ST_SetSrid(ST_GeomFromGeoJSON(feat->>'geometry'),4258) -- no need to transfomr
-	WHEN (feat->'crs'->'properties'->'name')::text IS null THEN ST_transform( ST_SetSrid(ST_GeomFromGeoJSON(feat->>'geometry'),32633 ),4258) -- use defalut
-	ELSE ST_SetSrid(ST_transform(ST_SetSrid(ST_GeomFromGeoJSON(feat->>'geometry'), 
-	-- TODO wrao this in to a function
-	substring((feat->'crs'->'properties'->'name')::text,position(':' in to_json(feat->'crs'->'properties'->'name')::text)::int+1,(length(to_json(feat->'crs'->'properties'->'name')::text) - 7) )::int
-	),4258),4258) 
-   	END AS geom,
-	to_json(feat->'properties')::json  as properties,
-	substring((feat->'crs'->'properties'->'name')::text,position(':' in to_json(feat->'crs'->'properties'->'name')::text)::int+1,(length(to_json(feat->'crs'->'properties'->'name')::text) - 7) )  as crs
+	CREATE TEMP TABLE new_attributes_values(geom geometry,properties json);
+	
+	-- get json data
+	INSERT INTO new_attributes_values(geom,properties)
+	SELECT 
+		topo_rein.get_geom_from_json(feat,4258) as geom,
+		to_json(feat->'properties')::json  as properties
 	FROM (
-	  SELECT json_feature::json AS feat
+	  	SELECT json_feature::json AS feat
 	) AS f;
 
 	--  

@@ -9,8 +9,7 @@ srid int;
 BEGIN
 
 	geom := ST_GeomFromGeoJSON(feat->>'geometry');
-	
-	srid := substring((feat->'crs'->'properties'->'name')::text,position(':' in to_json(feat->'crs'->'properties'->'name')::text)::int+1,(length(to_json(feat->'crs'->'properties'->'name')::text) - 7) )::int;
+	srid = St_Srid(geom);
 	
 	IF (srid_out != srid) THEN
 		geom := ST_transform(geom,srid_out);
@@ -18,7 +17,7 @@ BEGIN
 	
 	geom := ST_SetSrid(geom,srid_out);
 
-	-- RAISE NOTICE 'srid %, geom  %',   srid_out, ST_AsEWKT(geom);
+	RAISE NOTICE 'srid %, geom  %',   srid_out, ST_AsEWKT(geom);
 
 	RETURN geom;
 

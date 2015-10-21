@@ -24,10 +24,7 @@ SELECT topo_update.apply_attr_on_topo_surface(f.a)
  FROM (
  	SELECT 
  	'{"type": "Feature",' || 
- 	'"crs":{"type":"name","properties":{"name":"EPSG:4258"}},' ||
- 	'"geometry":' || ST_AsGeoJSON(ST_setSrid(ST_transform(ST_PointOnSurface(geo),4258),4258))::json || ',' ||
--- 	'"geometry":' || ST_AsGeoJSON(ST_setSrid(ST_transform(ST_PointOnSurface(ST_transform(geo,4258)),32633),32633))::json || ',' ||
--- 	'"geometry":' || ST_AsGeoJSON(ST_setSrid(ST_PointOnSurface(geo),32633))::json || ',' ||  
+ 	'"geometry":' || ST_AsGeoJSON(ST_setSrid(ST_transform(ST_PointOnSurface(geo),4258),4258),10,2)::json || ',' ||
  	'"properties":' || row_to_json((SELECT l FROM (SELECT reinbeitebruker_id, reindrift_sesongomrade_kode) As l )) || '}' as a
 FROM 
 ( 
@@ -48,11 +45,11 @@ delete from topo_rein.arstidsbeite_var_flate where reinbeitebruker_id is null;
 -- to: topo_rein.reindrift_anlegg_linje
 
 SELECT topo_update.create_line_edge_domain_obj(f.a) 
+select f.a
 FROM (
  	SELECT 
  	'{"type": "Feature",' || 
- 	'"crs":{"type":"name","properties":{"name":"EPSG:4258"}},' ||
- 	'"geometry":' || ST_AsGeoJSON(ST_setSrid(ST_transform(geo,4258),4258))::json || ',' ||
+ 	'"geometry":' || ST_AsGeoJSON(ST_setSrid(ST_transform(geo,4258),4258),10,2)::json || ',' ||
  	'"properties":' || row_to_json((SELECT l FROM (SELECT reinbeitebruker_id, reindriftsanleggstype) As l )) || '}' as a,
  	ST_setSrid(ST_transform(geo,4258),4258) as geo
 FROM 
@@ -71,11 +68,11 @@ AS lg
 -- to: topo_rein.reindrift_anlegg_punkt
 
 SELECT topo_update.create_point_point_domain_obj(f.a) 
+SELECT f.a
 FROM (
  	SELECT 
  	'{"type": "Feature",' || 
- 	'"crs":{"type":"name","properties":{"name":"EPSG:4258"}},' ||
- 	'"geometry":' || ST_AsGeoJSON(ST_setSrid(ST_transform(geo,4258),4258))::json || ',' ||
+ 	'"geometry":' || ST_AsGeoJSON(ST_setSrid(ST_transform(geo,4258),4258),10,2)::json || ',' ||
  	'"properties":' || row_to_json((SELECT l FROM (SELECT reinbeitebruker_id, reindriftsanleggstype) As l )) || '}' as a,
  	ST_setSrid(ST_transform(geo,4258),4258) as geo
 FROM 

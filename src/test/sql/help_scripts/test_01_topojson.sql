@@ -82,3 +82,9 @@ topo_rein.get_relation_id(a.omrade) = re.topogeo_id and re.layer_id = tl.layer_i
 
 
 selecy 
+
+
+
+SELECT topo_update.create_point_point_domain_obj('{"type": "Feature","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"geometry":{"type":"Point","coordinates":[17.4122416312598,68.6013397740665]},"properties":{"reinbeitebruker_id":"XG","reindriftsanleggstype":18}}');
+
+SELECT  topo_rein.query_to_topojson('select * from topo_rein.reindrift_anlegg_punkt', 32632, 0);
