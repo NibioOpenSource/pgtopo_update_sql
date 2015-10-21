@@ -70,8 +70,7 @@ AS lg
 -- from: org_rein_korr.rein_korr_drift_anlegg_punkt 
 -- to: topo_rein.reindrift_anlegg_punkt
 
-SELECT topo_update.create_line_edge_domain_obj(f.a) 
-SELECT f.a
+SELECT topo_update.create_point_point_domain_obj(f.a) 
 FROM (
  	SELECT 
  	'{"type": "Feature",' || 
@@ -83,7 +82,7 @@ FROM
 ( 
 SELECT beitebrukerid AS reinbeitebruker_id, reindriftanltyp AS reindriftsanleggstype, geo 
 FROM org_rein_korr.rein_korr_drift_anlegg_punkt
-where reindriftanltyp != 99
+where reindriftanltyp != 99 and length(beitebrukerid) < 4
 ORDER BY objectid
 ) 
 AS lg
