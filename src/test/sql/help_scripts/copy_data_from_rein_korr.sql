@@ -21,6 +21,7 @@ ORDER BY objectid, type_geo;
 
 -- Pick up surface attributtes  and set them by using json
 SELECT topo_update.apply_attr_on_topo_surface(f.a) 
+--SELECT f.a
 FROM (
  	SELECT 
  	'{"type": "Feature",' || 
@@ -38,7 +39,7 @@ org_rein_korr.rein_korr_arstidsbeite_var_flate k ,
 topo_rein.arstidsbeite_var_flate r
 WHERE ST_Intersects(r.omrade::geometry,ST_setSrid(ST_transform(ST_PointOnSurface(k.geo),4258),4258)) 
 ) as lg
-) as f
+) as f;
 
 -- delete holes
 delete from topo_rein.arstidsbeite_var_flate where reinbeitebruker_id is null;
@@ -48,7 +49,6 @@ delete from topo_rein.arstidsbeite_var_flate where reinbeitebruker_id is null;
 -- to: topo_rein.reindrift_anlegg_linje
 
 SELECT topo_update.create_line_edge_domain_obj(f.a) 
-select f.a
 FROM (
  	SELECT 
  	'{"type": "Feature",' || 

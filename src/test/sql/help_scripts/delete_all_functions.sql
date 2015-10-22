@@ -29,6 +29,8 @@ DROP FUNCTION IF EXISTS topo_update.create_point_point_domain_obj(json_feature t
 
 DROP FUNCTION IF EXISTS topo_update.apply_attr_on_topo_surface(json_feature text) cascade; 
 DROP FUNCTION IF EXISTS topo_update.apply_line_on_topo_surface(geo_in geometry,  srid_out int, maxdecimaldigits int) cascade; 
+DROP FUNCTION IF EXISTS topo_update.apply_attr_on_topo_line(json_feature text) cascade; 
+DROP FUNCTION IF EXISTS topo_update.apply_attr_on_topo_point(json_feature text) cascade; 
  
 DROP FUNCTION IF EXISTS topo_update.delete_topo_surface(geo_in geometry)  cascade; 
 DROP FUNCTION IF EXISTS topo_update.delete_topo_surface(id_in int)  cascade; 
