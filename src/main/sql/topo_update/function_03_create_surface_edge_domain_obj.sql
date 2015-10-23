@@ -12,7 +12,7 @@
 -- DROP FUNCTION FUNCTION topo_update.create_surface_edge_domain_obj(geo_in geometry) cascade;
 
 
-CREATE OR REPLACE FUNCTION topo_update.create_surface_edge_domain_obj(geo_in geometry) 
+CREATE OR REPLACE FUNCTION topo_update.create_surface_edge_domain_obj(json_feature text) 
 RETURNS TABLE(id integer) AS $$
 DECLARE
 
@@ -51,7 +51,8 @@ num_edge_intersects int;
 -- the orignal geo that is from the user
 org_geo_in geometry;
 
--- 
+geo_in geometry;
+
 line_intersection_result geometry;
 
 BEGIN
@@ -73,7 +74,32 @@ BEGIN
 	surface_topo_info.snap_tolerance := 0.0000000001;
 
 	
+	DROP TABLE IF EXISTS new_attributes_values;
+
+	CREATE TEMP TABLE new_attributes_values(geom geometry,properties json);
+	
+	-- parse the json data
+	INSERT INTO new_attributes_values(geom,properties)
+	SELECT 
+		topo_rein.get_geom_from_json(feat,4258) as geom,
+		to_json(feat->'properties')::json  as properties
+	FROM (
+	  	SELECT json_feature::json AS feat
+	) AS f;
+
+	-- check that it is only one row put that value into 
+	-- TODO rewrite this to not use table in
+	
+	IF (SELECT count(*) FROM new_attributes_values) != 1 THEN
+		RAISE EXCEPTION 'Not valid json_feature %', json_feature;
+	ELSE 
+		SELECT geom FROM new_attributes_values INTO geo_in;
+	END IF;
+
+
 	org_geo_in := geo_in;
+	
+
 	
 	RAISE NOTICE 'The input as it used before check/fixed %',  ST_AsText(geo_in);
 
@@ -178,8 +204,7 @@ $$ LANGUAGE plpgsql;
 
 
 
---select topo_update.create_surface_edge_domain_obj('SRID=4258;LINESTRING (5.70182 58.55131, 5.70368 58.55134, 5.70403 58.55375, 5.70152 58.55373, 5.70182 58.55131)');
+--select topo_update.create_surface_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[18.3342803675,69.1937360885],[18.3248972004,69.1926352514],[18.3225223088,69.1928235904],[18.3172506318,69.1941599626],[18.3145519815,69.1957316656],[18.3123602886,69.1980059858],[18.310704822,69.2011722899],[18.3080083628,69.2036461481],[18.3052533657,69.2074983075],[18.3057756447,69.2082956989],[18.3075330509,69.2093067972],[18.3103134457,69.2100132313],[18.3156403748,69.2107656476],[18.3228118186,69.2113399389],[18.3301412606,69.2111984614],[18.3349532259,69.2112004097],[18.3395639862,69.2116335442],[18.3433515794,69.2127948707],[18.3502828982,69.2152724054],[18.3524811669,69.2156570867],[18.3547763375,69.2158024362],[18.3580354423,69.2152640418],[18.3623692173,69.2138971761],[18.3678152295,69.2110837518],[18.3695071064,69.2082009883],[18.3680734909,69.2067092134],[18.3638755844,69.2028967661],[18.355530639,69.1981677188],[18.3471464882,69.1957662158],[18.3342803675,69.1937360885]]}}');
 
--- select topo_update.create_surface_edge_domain_obj('SRID=4258;LINESTRING (5.70182 58.55131, 5.70368 58.55134, 4.80403 58.95375, 4.70152 58.55373, 5.70182 58.55131)');
 
 

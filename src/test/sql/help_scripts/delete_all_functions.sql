@@ -17,6 +17,7 @@ DROP FUNCTION IF EXISTS topo_update.update_domain_surface_layer(_new_topo_object
 
 DROP FUNCTION IF EXISTS topo_update.create_surface_edge_domain_obj(geo_in geometry,srid_out int, maxdecimaldigits int) cascade; 
 DROP FUNCTION IF EXISTS topo_update.create_surface_edge_domain_obj(geo_in geometry) cascade;
+DROP FUNCTION IF EXISTS topo_update.create_surface_edge_domain_obj(json_feature text)  cascade;
 
 DROP FUNCTION IF EXISTS topo_update.create_line_edge_domain_obj(geo_in geometry) cascade;
 DROP FUNCTION IF EXISTS topo_update.create_line_edge_domain_obj(geo_in geometry, json_feature text) cascade;
