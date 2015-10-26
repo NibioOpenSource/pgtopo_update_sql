@@ -51,7 +51,7 @@ BEGIN
 	--  
 	
 	-- We now know which rows we can reuse clear out old data rom the realation table
-	UPDATE topo_rein.reindrift_anlegg_linje r
+	UPDATE topo_rein.reindrift_anlegg_punkt r
 	SET 
 		reindriftsanleggstype = (t2.properties->>'reindriftsanleggstype')::int,
 		reinbeitebruker_id = (t2.properties->>'reinbeitebruker_id')::text
