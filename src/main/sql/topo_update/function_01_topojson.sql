@@ -108,7 +108,8 @@ BEGIN
     IF type(rec.obj) = 1 THEN
       -- Puntal type TopoJson not supported as of PostGIS-2.2, see
       -- https://trac.osgeo.org/postgis/ticket/3343
-      tmptext := ST_AsGeoJSON(rec.obj::geometry);
+      sql := 'SELECT ST_AsGeoJSON(' || 'ST_transform($1::geometry,$2),$3' || ')';
+      EXECUTE sql USING rec.obj,srid_out,maxdecimaldigits INTO  tmptext;
       -- Trim closing paren
       tmptext := substring(tmptext from 0 for length(tmptext));
       obj_json := tmptext;
