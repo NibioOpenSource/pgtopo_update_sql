@@ -5,8 +5,7 @@ $$
     SELECT f.face_id as faces
     FROM
       topo_rein_sysdata.face f
-    WHERE f.face_id > 0
-      EXCEPT
+    EXCEPT
     SELECT r.element_id
     FROM
       topo_rein_sysdata.relation r,
