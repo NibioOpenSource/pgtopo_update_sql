@@ -227,7 +227,7 @@ BEGIN
 	old_rows_attributes c
 	WHERE 
     a.id = b.id AND                           
-    ST_Intersects(c.foo_geo,a.omrade::geometry);
+    ST_Intersects(c.foo_geo,ST_pointOnSurface(a.omrade::geometry));
     -- ST_overlaps does not work
     -- TODO use the topology relations ti check on this
 
