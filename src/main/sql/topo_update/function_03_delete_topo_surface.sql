@@ -28,6 +28,10 @@ num_rows_affected int;
 -- number of rows to delete from org table
 num_rows_to_delete int;
 
+-- Geometry
+delete_surface geometry;
+
+
 BEGIN
 	
 	-- TODO to be moved is justed for testing now
@@ -51,16 +55,123 @@ BEGIN
 	-- find surface layer id
 	surface_layer_id := topo_update.get_topo_layer_id(surface_topo_info);
 
-	DELETE FROM topo_rein.arstidsbeite_var_flate r
-	WHERE id = id_in;
-	
-	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
+	SELECT omrade::geometry FROM topo_rein.arstidsbeite_var_flate r WHERE id = id_in INTO delete_surface;
+        
 
-	RAISE NOTICE 'Rows deleted  %',  num_rows_affected;
+    PERFORM topology.clearTopoGeom(omrade) FROM topo_rein.arstidsbeite_var_flate r
+    WHERE id = id_in;
+    
+    DELETE FROM topo_rein.arstidsbeite_var_flate r
+    WHERE id = id_in;
+    
+    
+    GET DIAGNOSTICS num_rows_to_delete = ROW_COUNT;
+
+    RAISE NOTICE 'Rows deleted  %',  num_rows_to_delete;
+
+    -- Find unused edges 
+    DROP TABLE IF EXISTS tmp_unused_edge_ids;
+    CREATE TEMP TABLE tmp_unused_edge_ids AS 
+    (
+		SELECT                                                                          
+		topo_rein.get_edges_within_faces(array_agg(x)) AS id from                            
+		topo_rein.get_unused_faces() x
+    );
+    
+    -- Used for debug
+    DROP TABLE IF EXISTS tmp_unused_edge_geos;
+    CREATE TEMP TABLE tmp_unused_edge_geos AS 
+    (
+		SELECT ed.geom, ed.edge_id FROM
+		topo_rein_sysdata.edge_data ed,
+		tmp_unused_edge_ids ued
+		WHERE ed.edge_id = ANY(ued.id)
+    );
+
+
+    -- Find linear objects related to his edges 
+    DROP TABLE IF EXISTS tmp_affected_border_objects;
+    CREATE TEMP TABLE tmp_affected_border_objects AS 
+    (
+		select distinct ud.id
+	    FROM 
+		topo_rein_sysdata.relation re,
+		topo_rein.arstidsbeite_var_grense ud, 
+		topo_rein_sysdata.edge_data ed,
+		tmp_unused_edge_ids ued
+		WHERE 
+		(ud.grense).id = re.topogeo_id AND
+		re.layer_id =  border_layer_id AND 
+		re.element_type = 2 AND  -- TODO use variable element_type_edge=2
+		ed.edge_id = re.element_id AND
+		ed.edge_id = ANY(ued.id)
+    );
+    
+    -- Create geoms for for linal objects with out edges that will be deleted
+    DROP TABLE IF EXISTS tmp_new_border_objects;
+    CREATE TEMP TABLE tmp_new_border_objects AS 
+    (
+		SELECT ud.id, ST_Union(ed.geom) AS geom 
+	    FROM 
+		topo_rein_sysdata.relation re,
+		topo_rein.arstidsbeite_var_grense ud, 
+		topo_rein_sysdata.edge_data ed,
+		tmp_unused_edge_ids ued,
+		tmp_affected_border_objects ab
+		WHERE 
+		ab.id = ud.id AND
+		(ud.grense).id = re.topogeo_id AND
+		re.layer_id =  border_layer_id AND 
+		re.element_type = 2 AND  -- TODO use variable element_type_edge=2
+		ed.edge_id = re.element_id AND
+		NOT (ed.edge_id = ANY(ued.id))
+		GROUP BY ud.id
+    );
+	
+    -- Delete border topo objects
+    PERFORM topology.clearTopoGeom(a.grense) 
+    FROM topo_rein.arstidsbeite_var_grense a,
+    tmp_affected_border_objects b
+	WHERE a.id = b.id;
+	
+ 	-- Remove edges not used from the edge table
+	command_string := FORMAT('
+	SELECT ST_RemEdgeModFace(%1$L, ed.edge_id)
+	FROM 
+	tmp_unused_edge_ids ued,
+	%2$s ed
+	WHERE 
+	ed.edge_id = ANY(ued.id) 
+	',
+	border_topo_info.topology_name,
+	border_topo_info.topology_name || '.edge_data'
+	);
+	
+	RAISE NOTICE '%', command_string;
+
+    EXECUTE command_string;
+	
+	-- Delete those rows don't have any geoms left
+	DELETE FROM topo_rein.arstidsbeite_var_grense a
+	USING tmp_new_border_objects b
+	WHERE a.id = b.id AND b.geom IS NULL;
 	
 
+    -- update new topo objects topo values
+	UPDATE topo_rein.arstidsbeite_var_grense AS a
+	SET grense =  topology.toTopoGeom(b.geom, border_topo_info.topology_name, border_layer_id, border_topo_info.snap_tolerance)
+	FROM tmp_new_border_objects b
+	WHERE a.id = b.id AND b.geom IS NOT NULL;
 	
-	RETURN num_rows_affected;
+	
+    		    
+    DROP TABLE IF EXISTS topo_rein.delete_surface;
+    CREATE TABLE topo_rein.delete_surface AS 
+    (
+    SELECT delete_surface as geom
+    );	
+
+    RETURN num_rows_to_delete;
 
 END;
 $$ LANGUAGE plpgsql;
