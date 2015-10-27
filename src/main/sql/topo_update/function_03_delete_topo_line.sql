@@ -10,7 +10,10 @@ num_rows_affected int;
 
 BEGIN
 	
+	PERFORM topology.clearTopoGeom(linje) FROM topo_rein.reindrift_anlegg_linje r
+	WHERE id = id_in;
 
+	
 	DELETE FROM topo_rein.reindrift_anlegg_linje r
 	WHERE id = id_in;
 	
