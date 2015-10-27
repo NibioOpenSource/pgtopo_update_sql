@@ -38,4 +38,8 @@ DROP FUNCTION IF EXISTS topo_update.delete_topo_surface(id_in int)  cascade;
 DROP FUNCTION IF EXISTS topo_update.delete_topo_line(id_in int)  cascade; 
 DROP FUNCTION IF EXISTS topo_update.delete_topo_point(id_in int)  cascade; 
 
-DROP FUNCTION IF EXISTS topo_rein.get_geom_from_json(feat json, srid_out int)  cascade;
+DROP FUNCTION IF EXISTS topo_rein.get_geom_from_json(feat json, srid_out int) cascade;
+
+DROP FUNCTION IF EXISTS topo_rein.get_edges_within_toposurface(topogeometry) cascade;
+DROP FUNCTION IF EXISTS topo_rein.get_edges_within_faces(faces int[]) cascade;
+DROP FUNCTION IF EXISTS topo_rein.get_edges_within_faces(faces int[], layer_id_in int ) cascade;

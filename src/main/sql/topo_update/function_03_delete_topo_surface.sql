@@ -65,40 +65,38 @@ BEGIN
     WHERE id = id_in;
     
     
-    GET DIAGNOSTICS num_rows_to_delete = ROW_COUNT;
+    GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 
-    RAISE NOTICE 'Rows deleted  %',  num_rows_to_delete;
+    RAISE NOTICE 'Rows deleted  %',  num_rows_affected;
 
     -- Find unused edges 
-    DROP TABLE IF EXISTS tmp_unused_edge_ids;
-    CREATE TEMP TABLE tmp_unused_edge_ids AS 
+    DROP TABLE IF EXISTS topo_rein.ttt_unused_edge_ids;
+    CREATE TABLE topo_rein.ttt_unused_edge_ids AS 
     (
-		SELECT                                                                          
-		topo_rein.get_edges_within_faces(array_agg(x)) AS id from                            
-		topo_rein.get_unused_faces() x
+		SELECT topo_rein.get_edges_within_faces(array_agg(x),border_layer_id) AS id from  topo_rein.get_unused_faces(surface_layer_id) x
     );
     
     -- Used for debug
-    DROP TABLE IF EXISTS tmp_unused_edge_geos;
-    CREATE TEMP TABLE tmp_unused_edge_geos AS 
+    DROP TABLE IF EXISTS topo_rein.ttt_unused_edge_geos;
+    CREATE TABLE topo_rein.ttt_unused_edge_geos AS 
     (
 		SELECT ed.geom, ed.edge_id FROM
 		topo_rein_sysdata.edge_data ed,
-		tmp_unused_edge_ids ued
+		topo_rein.ttt_unused_edge_ids ued
 		WHERE ed.edge_id = ANY(ued.id)
     );
 
 
     -- Find linear objects related to his edges 
-    DROP TABLE IF EXISTS tmp_affected_border_objects;
-    CREATE TEMP TABLE tmp_affected_border_objects AS 
+    DROP TABLE IF EXISTS topo_rein.ttt_affected_border_objects;
+    CREATE TABLE topo_rein.ttt_affected_border_objects AS 
     (
 		select distinct ud.id
 	    FROM 
 		topo_rein_sysdata.relation re,
 		topo_rein.arstidsbeite_var_grense ud, 
 		topo_rein_sysdata.edge_data ed,
-		tmp_unused_edge_ids ued
+		topo_rein.ttt_unused_edge_ids ued
 		WHERE 
 		(ud.grense).id = re.topogeo_id AND
 		re.layer_id =  border_layer_id AND 
@@ -108,16 +106,16 @@ BEGIN
     );
     
     -- Create geoms for for linal objects with out edges that will be deleted
-    DROP TABLE IF EXISTS tmp_new_border_objects;
-    CREATE TEMP TABLE tmp_new_border_objects AS 
+    DROP TABLE IF EXISTS topo_rein.new_border_objects;
+    CREATE TABLE topo_rein.new_border_objects AS 
     (
 		SELECT ud.id, ST_Union(ed.geom) AS geom 
 	    FROM 
 		topo_rein_sysdata.relation re,
 		topo_rein.arstidsbeite_var_grense ud, 
 		topo_rein_sysdata.edge_data ed,
-		tmp_unused_edge_ids ued,
-		tmp_affected_border_objects ab
+		topo_rein.ttt_unused_edge_ids ued,
+		topo_rein.ttt_affected_border_objects ab
 		WHERE 
 		ab.id = ud.id AND
 		(ud.grense).id = re.topogeo_id AND
@@ -131,36 +129,37 @@ BEGIN
     -- Delete border topo objects
     PERFORM topology.clearTopoGeom(a.grense) 
     FROM topo_rein.arstidsbeite_var_grense a,
-    tmp_affected_border_objects b
+    topo_rein.ttt_affected_border_objects b
 	WHERE a.id = b.id;
 	
+	
  	-- Remove edges not used from the edge table
-	command_string := FORMAT('
-	SELECT ST_RemEdgeModFace(%1$L, ed.edge_id)
-	FROM 
-	tmp_unused_edge_ids ued,
-	%2$s ed
-	WHERE 
-	ed.edge_id = ANY(ued.id) 
-	',
-	border_topo_info.topology_name,
-	border_topo_info.topology_name || '.edge_data'
+ 		command_string := FORMAT('
+		SELECT ST_RemEdgeModFace(%1$L, ed.edge_id)
+		FROM 
+		topo_rein.ttt_unused_edge_ids ued,
+		%2$s ed
+		WHERE 
+		ed.edge_id = ANY(ued.id) 
+		',
+		border_topo_info.topology_name,
+		border_topo_info.topology_name || '.edge_data'
 	);
 	
-	RAISE NOTICE '%', command_string;
+	-- RAISE NOTICE '%', command_string;
 
     EXECUTE command_string;
 	
 	-- Delete those rows don't have any geoms left
 	DELETE FROM topo_rein.arstidsbeite_var_grense a
-	USING tmp_new_border_objects b
+	USING topo_rein.new_border_objects b
 	WHERE a.id = b.id AND b.geom IS NULL;
 	
 
     -- update new topo objects topo values
 	UPDATE topo_rein.arstidsbeite_var_grense AS a
 	SET grense =  topology.toTopoGeom(b.geom, border_topo_info.topology_name, border_layer_id, border_topo_info.snap_tolerance)
-	FROM tmp_new_border_objects b
+	FROM topo_rein.new_border_objects b
 	WHERE a.id = b.id AND b.geom IS NOT NULL;
 	
 	
@@ -171,7 +170,7 @@ BEGIN
     SELECT delete_surface as geom
     );	
 
-    RETURN num_rows_to_delete;
+    RETURN num_rows_affected;
 
 END;
 $$ LANGUAGE plpgsql;
