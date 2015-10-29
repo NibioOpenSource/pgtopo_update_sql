@@ -3,7 +3,7 @@
 -- DROP FUNCTION topo_update.create_edge_surfaces(topo topogeometry) cascade;
 
 
-CREATE OR REPLACE FUNCTION topo_update.create_edge_surfaces(new_border_data topogeometry) 
+CREATE OR REPLACE FUNCTION topo_update.create_edge_surfaces(new_border_data topogeometry, valid_user_geometry geometry) 
 RETURNS SETOF topo_update.topogeometry_def AS $$
 DECLARE
 
@@ -74,7 +74,7 @@ BEGIN
 	DROP TABLE IF EXISTS new_faces; 
 	CREATE TEMP TABLE new_faces(face_id int);
 
-	-- find left face
+	-- find left faces
 	INSERT INTO new_faces(face_id) 
 	SELECT DISTINCT(fa.face_id) as face_id
 	FROM 
@@ -91,7 +91,7 @@ BEGIN
     GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 	RAISE NOTICE 'Number of face objects found on the left side  % ',  num_rows_affected;
 
-    -- find right face
+    -- find right faces
 	INSERT INTO new_faces(face_id) 
 	SELECT DISTINCT(fa.face_id) as face_id
 	FROM 
@@ -104,7 +104,8 @@ BEGIN
     re.element_type = 2 AND  -- TODO use variable element_type_edge=2
     ed.edge_id = re.element_id AND
     fa.face_id=ed.right_face AND -- How do I know if a should use left or right ?? 
-    fa.mbr IS NOT NULL;
+    fa.mbr IS NOT NULL AND
+    NOT EXISTS(SELECT 1 FROM new_faces WHERE face_id = new_faces.face_id) ; -- do not select the same twice
     GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 	RAISE NOTICE 'Number of face objects found on the right side  % ',  num_rows_affected;
 
@@ -113,23 +114,49 @@ BEGIN
 	CREATE TEMP TABLE new_surface_data(surface_topo topogeometry);
 	-- create surface geometry if a surface exits for the left side
 
+	-- if input is a closed ring only geneate objects for faces
+
+	-- find faces used by exting topo objects to avoid duplicates
+--	DROP TABLE IF EXISTS used_topo_faces; 
+--	CREATE TEMP TABLE used_topo_faces AS (
+--		SELECT used_faces.face_id 
+--		FROM 
+--		(SELECT (GetTopoGeomElements(v.omrade))[1] AS face_id 
+--		FROM topo_rein.arstidsbeite_var_flate v) as used_faces,
+--		topo_rein_sysdata.face f
+--		WHERE f.face_id = used_faces.face_id AND
+--		f.mbr && valid_user_geometry
+--	);
+
+	-- dont't create objects faces 
+--	DROP TABLE IF EXISTS valid_topo_faces; 
+--	CREATE TEMP TABLE  valid_topo_faces AS (
+--		SELECT f.face_id FROM
+--		topo_rein_sysdata.face f
+--		WHERE ST_Covers(ST_Envelope(ST_buffer(valid_user_geometry,0.0000002)),f.mbr)
+--	);
+
 
 	FOR rec IN SELECT face_id FROM new_faces
 	LOOP
-		new_surface_topo := topology.CreateTopoGeom('topo_rein_sysdata',3,surface_layer_id,topology.TopoElementArray_Agg(ARRAY[rec.face_id,3])  );
-		-- if not null
-		IF new_surface_topo IS NOT NULL THEN
-			-- check if this topo already exist
-			-- TODO find out this chck is needed then we can only check on id 
---			IF NOT EXISTS(SELECT 1 FROM topo_rein.arstidsbeite_var_flate WHERE (omrade).id = (new_surface_topo).id) AND
---			   NOT EXISTS(SELECT 1 FROM new_surface_data WHERE (surface_topo).id = (new_surface_topo).id)
---			THEN
-				INSERT INTO new_surface_data(surface_topo) VALUES(new_surface_topo);
-				RAISE NOTICE 'Use new topo object % for face % created from user input %',  new_surface_topo, rec.face_id, new_border_data;
---			ELSE
---				RAISE NOTICE 'Not Use new topo object % for face %',  new_surface_topo, rec.face_id;
---			END IF;
-		END IF;
+		--IF  NOT EXISTS(SELECT 1 FROM used_topo_faces WHERE face_id = rec.face_id) AND
+		--EXISTS(SELECT 1 FROM valid_topo_faces WHERE face_id = rec.face_id) THEN 
+		-- Test if this surface already used by another topo object
+			new_surface_topo := topology.CreateTopoGeom('topo_rein_sysdata',3,surface_layer_id,topology.TopoElementArray_Agg(ARRAY[rec.face_id,3])  );
+			-- if not null
+			IF new_surface_topo IS NOT NULL THEN
+				-- check if this topo already exist
+				-- TODO find out this chck is needed then we can only check on id 
+	--			IF NOT EXISTS(SELECT 1 FROM topo_rein.arstidsbeite_var_flate WHERE (omrade).id = (new_surface_topo).id) AND
+	--			   NOT EXISTS(SELECT 1 FROM new_surface_data WHERE (surface_topo).id = (new_surface_topo).id)
+	--			THEN
+					INSERT INTO new_surface_data(surface_topo) VALUES(new_surface_topo);
+					RAISE NOTICE 'Use new topo object % for face % created from user input %',  new_surface_topo, rec.face_id, new_border_data;
+	--			ELSE
+	--				RAISE NOTICE 'Not Use new topo object % for face %',  new_surface_topo, rec.face_id;
+	--			END IF;
+			END IF;
+		--END IF;
     END LOOP;
 
     
