@@ -70,33 +70,33 @@ BEGIN
     RAISE NOTICE 'Rows deleted  %',  num_rows_affected;
 
     -- Find unused edges 
-    DROP TABLE IF EXISTS topo_rein.ttt_unused_edge_ids;
-    CREATE TABLE topo_rein.ttt_unused_edge_ids AS 
+    DROP TABLE IF EXISTS ttt_unused_edge_ids;
+    CREATE TEMP TABLE ttt_unused_edge_ids AS 
     (
 		SELECT topo_rein.get_edges_within_faces(array_agg(x),border_layer_id) AS id from  topo_rein.get_unused_faces(surface_layer_id) x
     );
     
     -- Used for debug
-    DROP TABLE IF EXISTS topo_rein.ttt_unused_edge_geos;
-    CREATE TABLE topo_rein.ttt_unused_edge_geos AS 
+    DROP TABLE IF EXISTS ttt_unused_edge_geos;
+    CREATE TEMP TABLE ttt_unused_edge_geos AS 
     (
 		SELECT ed.geom, ed.edge_id FROM
 		topo_rein_sysdata.edge_data ed,
-		topo_rein.ttt_unused_edge_ids ued
+		ttt_unused_edge_ids ued
 		WHERE ed.edge_id = ANY(ued.id)
     );
 
 
     -- Find linear objects related to his edges 
-    DROP TABLE IF EXISTS topo_rein.ttt_affected_border_objects;
-    CREATE TABLE topo_rein.ttt_affected_border_objects AS 
+    DROP TABLE IF EXISTS ttt_affected_border_objects;
+    CREATE TEMP TABLE ttt_affected_border_objects AS 
     (
 		select distinct ud.id
 	    FROM 
 		topo_rein_sysdata.relation re,
 		topo_rein.arstidsbeite_var_grense ud, 
 		topo_rein_sysdata.edge_data ed,
-		topo_rein.ttt_unused_edge_ids ued
+		ttt_unused_edge_ids ued
 		WHERE 
 		(ud.grense).id = re.topogeo_id AND
 		re.layer_id =  border_layer_id AND 
@@ -114,8 +114,8 @@ BEGIN
 		topo_rein_sysdata.relation re,
 		topo_rein.arstidsbeite_var_grense ud, 
 		topo_rein_sysdata.edge_data ed,
-		topo_rein.ttt_unused_edge_ids ued,
-		topo_rein.ttt_affected_border_objects ab
+		ttt_unused_edge_ids ued,
+		ttt_affected_border_objects ab
 		WHERE 
 		ab.id = ud.id AND
 		(ud.grense).id = re.topogeo_id AND
@@ -129,7 +129,7 @@ BEGIN
     -- Delete border topo objects
     PERFORM topology.clearTopoGeom(a.grense) 
     FROM topo_rein.arstidsbeite_var_grense a,
-    topo_rein.ttt_affected_border_objects b
+    ttt_affected_border_objects b
 	WHERE a.id = b.id;
 	
 	
@@ -137,7 +137,7 @@ BEGIN
  		command_string := FORMAT('
 		SELECT ST_RemEdgeModFace(%1$L, ed.edge_id)
 		FROM 
-		topo_rein.ttt_unused_edge_ids ued,
+		ttt_unused_edge_ids ued,
 		%2$s ed
 		WHERE 
 		ed.edge_id = ANY(ued.id) 
