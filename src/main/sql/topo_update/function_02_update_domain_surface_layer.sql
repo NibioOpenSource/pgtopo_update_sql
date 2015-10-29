@@ -231,6 +231,18 @@ BEGIN
     -- ST_overlaps does not work
     -- TODO use the topology relations ti check on this
 
+   	-- update the newly inserted rows with attribute values based from old_rows_table
+    -- TODO use the topology relations ti check on this
+	UPDATE topo_rein.arstidsbeite_var_flate a
+	SET reinbeitebruker_id  = d.reinbeitebruker_id, 
+	reindrift_sesongomrade_kode = d.reindrift_sesongomrade_kode
+	FROM 
+	topo_rein.arstidsbeite_var_flate d
+	WHERE 
+	a.reinbeitebruker_id is null AND
+    ST_Intersects(a.omrade::geometry,d.omrade::geometry);
+
+    
 	
 	RETURN QUERY SELECT a.surface_topo::topogeometry as t FROM new_surface_data a;
 
