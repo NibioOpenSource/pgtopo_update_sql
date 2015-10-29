@@ -447,7 +447,23 @@ reindrift_sesongomrade_kode,
 omrade::geometry(MultiPolygon,4258) as geo 
 from topo_rein.arstidsbeite_var_flate al;
 
--- DROP VIEW topo_rein.reindrift_anlegg_linje_v cascade ;
+--DROP IF EXISTS VIEW topo_rein.arstidsbeite_var_topojson_flate_v cascade ;
+
+
+CREATE OR REPLACE VIEW topo_rein.arstidsbeite_var_topojson_flate_v 
+AS
+select 
+id,
+reindrift_sesongomrade_kode,
+reinbeitebruker_id,
+(al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forsteDatafangsdato", 
+(al.felles_egenskaper).verifiseringsdato AS "fellesegenskaper.verifiseringsdato",
+(al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
+(al.felles_egenskaper).opphav AS "fellesegenslaper.opphav", 
+omrade 
+from topo_rein.arstidsbeite_var_flate al;
+
+--select * from topo_rein.arstidsbeite_var_topojson_flate_v-- DROP VIEW topo_rein.reindrift_anlegg_linje_v cascade ;
 
 
 CREATE OR REPLACE VIEW topo_rein.reindrift_anlegg_linje_v 
@@ -487,5 +503,45 @@ punkt::geometry(MultiPoint,4258) as geo
 from topo_rein.reindrift_anlegg_punkt al;
 
 -- select * from topo_rein.reindrift_anlegg_punkt_v ;
+
+
+-- DROP VIEW IF EXISTS topo_rein.reindrift_anlegg_topojson_linje_v cascade ;
+
+
+CREATE OR REPLACE VIEW topo_rein.reindrift_anlegg_topojson_linje_v 
+AS
+select 
+id,
+reinbeitebruker_id,
+reindriftsanleggstype,
+(al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forsteDatafangsdato", 
+(al.felles_egenskaper).verifiseringsdato AS "fellesegenskaper.verifiseringsdato",
+(al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
+(al.felles_egenskaper).opphav AS "fellesegenslaper.opphav", 
+((al.felles_egenskaper).kvalitet).maalemetode AS "fellesegenslaper.maalemetode",
+linje
+from topo_rein.reindrift_anlegg_linje al;
+
+-- select * from topo_rein.reindrift_anlegg_topojson_linje_v ;
+
+
+--DROP VIEW IF EXISTS topo_rein.reindrift_anlegg_topojson_punkt_v cascade ;
+
+
+CREATE OR REPLACE VIEW topo_rein.reindrift_anlegg_topojson_punkt_v 
+AS
+select 
+id,
+reinbeitebruker_id,
+reindriftsanleggstype,
+(al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forsteDatafangsdato", 
+(al.felles_egenskaper).verifiseringsdato AS "fellesegenskaper.verifiseringsdato",
+(al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
+(al.felles_egenskaper).opphav AS "fellesegenslaper.opphav", 
+((al.felles_egenskaper).kvalitet).maalemetode AS "fellesegenslaper.maalemetode",
+punkt
+from topo_rein.reindrift_anlegg_punkt al;
+
+--select * from topo_rein.reindrift_anlegg_topojson_punkt_v ;
 
 
