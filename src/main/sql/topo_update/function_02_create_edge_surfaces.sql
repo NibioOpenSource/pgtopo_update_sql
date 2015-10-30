@@ -104,8 +104,7 @@ BEGIN
     re.element_type = 2 AND  -- TODO use variable element_type_edge=2
     ed.edge_id = re.element_id AND
     fa.face_id=ed.right_face AND -- How do I know if a should use left or right ?? 
-    fa.mbr IS NOT NULL AND
-    NOT EXISTS(SELECT 1 FROM new_faces WHERE face_id = new_faces.face_id) ; -- do not select the same twice
+    fa.mbr IS NOT NULL;
     GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 	RAISE NOTICE 'Number of face objects found on the right side  % ',  num_rows_affected;
 
@@ -137,7 +136,7 @@ BEGIN
 --	);
 
 
-	FOR rec IN SELECT face_id FROM new_faces
+	FOR rec IN SELECT distinct face_id FROM new_faces
 	LOOP
 		--IF  NOT EXISTS(SELECT 1 FROM used_topo_faces WHERE face_id = rec.face_id) AND
 		--EXISTS(SELECT 1 FROM valid_topo_faces WHERE face_id = rec.face_id) THEN 
