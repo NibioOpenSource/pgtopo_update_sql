@@ -229,19 +229,23 @@ BEGIN
     a.id = b.id AND                           
     ST_Intersects(c.foo_geo,ST_pointOnSurface(a.omrade::geometry));
     -- ST_overlaps does not work
-    -- TODO use the topology relations ti check on this
 
    	-- update the newly inserted rows with attribute values based from old_rows_table
-    -- TODO use the topology relations ti check on this
+
+    -- find the rows toubching
+  	DROP TABLE IF EXISTS touching_surface;
+	CREATE TEMP TABLE touching_surface AS (SELECT topo_update.touches('topo_rein.arstidsbeite_var_flate',a.id) as id FROM new_rows_added_in_org_table a);
+
+    
 	UPDATE topo_rein.arstidsbeite_var_flate a
 	SET reinbeitebruker_id  = d.reinbeitebruker_id, 
 	reindrift_sesongomrade_kode = d.reindrift_sesongomrade_kode
 	FROM 
-	topo_rein.arstidsbeite_var_flate d
+	topo_rein.arstidsbeite_var_flate d,
+	touching_surface b
 	WHERE 
 	a.reinbeitebruker_id is null AND
-    ST_Intersects(a.omrade::geometry,d.omrade::geometry);
-
+	d.id = b.id ;
     
 	
 	RETURN QUERY SELECT a.surface_topo::topogeometry as t FROM new_surface_data a;
