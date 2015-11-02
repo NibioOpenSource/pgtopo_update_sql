@@ -106,8 +106,8 @@ BEGIN
     );
     
     -- Create geoms for for linal objects with out edges that will be deleted
-    DROP TABLE IF EXISTS topo_rein.new_border_objects;
-    CREATE TABLE topo_rein.new_border_objects AS 
+    DROP TABLE IF EXISTS ttt_new_border_objects;
+    CREATE TEMP TABLE ttt_new_border_objects AS 
     (
 		SELECT ud.id, ST_Union(ed.geom) AS geom 
 	    FROM 
@@ -152,24 +152,17 @@ BEGIN
 	
 	-- Delete those rows don't have any geoms left
 	DELETE FROM topo_rein.arstidsbeite_var_grense a
-	USING topo_rein.new_border_objects b
+	USING ttt_new_border_objects b
 	WHERE a.id = b.id AND b.geom IS NULL;
 	
 
     -- update new topo objects topo values
 	UPDATE topo_rein.arstidsbeite_var_grense AS a
 	SET grense =  topology.toTopoGeom(b.geom, border_topo_info.topology_name, border_layer_id, border_topo_info.snap_tolerance)
-	FROM topo_rein.new_border_objects b
+	FROM ttt_new_border_objects b
 	WHERE a.id = b.id AND b.geom IS NOT NULL;
 	
 	
-    		    
-    DROP TABLE IF EXISTS topo_rein.delete_surface;
-    CREATE TABLE topo_rein.delete_surface AS 
-    (
-    SELECT delete_surface as geom
-    );	
-
     RETURN num_rows_affected;
 
 END;
