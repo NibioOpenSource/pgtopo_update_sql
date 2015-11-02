@@ -2,41 +2,64 @@
 -- from: org_rein_korr.rein_korr_arstidsbeite_var_flate 
 -- to: topo_rein.arstidsbeite_var_grense and topo_rein.arstidsbeite_var_flate
 
--- Add Exterior rings first
-
+-- Add Exterior rings first for sirface with holes
 SELECT topo_update.create_surface_edge_domain_obj(f.a) 
 --SELECT f.a
 FROM (
  	SELECT 
  	'{"type": "Feature",' || 
- 	'"geometry":' || ST_AsGeoJSON(ST_setSrid(ST_transform(r.geo,4258),4258),10,2)::json || 
+ 	'"geometry":' || ST_AsGeoJSON(geo,10,2)::json || 
  	'}' as a
 	FROM ( 
 		SELECT ST_setSrid(ST_transform(geo,4258),4258) as geo  FROM 
 		( 
 			SELECT ST_ExteriorRing(b.geo) AS geo, objectid, 1 as type_geo 
-			FROM org_rein_korr.rein_korr_arstidsbeite_var_flate b
+			FROM org_rein_korr.rein_korr_arstidsbeite_var_flate b 
+			WHERE ST_NumInteriorRings(b.geo) > 0
 		) AS d
 	) AS r 
 ) AS f;
 
--- Add interior rings first to make a hole
+-- Remove holes
+SELECT topo_update.delete_topo_surface(delete_id)
+FROM (
+	SELECT topo_update.create_surface_edge_domain_obj(f.a) delete_id, geo 
+	FROM (
+	 	SELECT 
+	 	'{"type": "Feature",' || 
+	 	'"geometry":' || ST_AsGeoJSON(r.geo,10,2)::json || 
+	 	'}' as a,
+	 	r.geo
+	 	
+		FROM ( 
+			SELECT ST_setSrid(ST_transform(geo,4258),4258) as geo  FROM 
+			( 
+				SELECT ST_InteriorRingN(c.geo,generate_series(1,ST_NumInteriorRings(c.geo))) as geo, objectid, 2 as type_geo
+				FROM org_rein_korr.rein_korr_arstidsbeite_var_flate c
+				WHERE ST_NumInteriorRings(c.geo) > 0
+			) AS d
+		) AS r 
+	) AS f
+) AS d; 
+
+-- Add surfaces with no holesd
 SELECT topo_update.create_surface_edge_domain_obj(f.a) 
 --SELECT f.a
 FROM (
  	SELECT 
  	'{"type": "Feature",' || 
- 	'"geometry":' || ST_AsGeoJSON(ST_setSrid(ST_transform(r.geo,4258),4258),10,2)::json || 
+ 	'"geometry":' || ST_AsGeoJSON(geo,10,2)::json || 
  	'}' as a
 	FROM ( 
 		SELECT ST_setSrid(ST_transform(geo,4258),4258) as geo  FROM 
 		( 
-			SELECT ST_InteriorRingN(c.geo,generate_series(1,ST_NumInteriorRings(c.geo))) as geo, objectid, 2 as type_geo
-			FROM org_rein_korr.rein_korr_arstidsbeite_var_flate c
-			WHERE ST_NumInteriorRings(c.geo) > 0
+			SELECT ST_ExteriorRing(b.geo) AS geo, objectid, 1 as type_geo 
+			FROM org_rein_korr.rein_korr_arstidsbeite_var_flate b 
+			WHERE ST_NumInteriorRings(b.geo) = 0
 		) AS d
 	) AS r 
 ) AS f;
+
 
 -- Pick up surface attributtes  and set them by using json
 SELECT topo_update.apply_attr_on_topo_surface(f.a) 
