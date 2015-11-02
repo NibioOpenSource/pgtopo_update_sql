@@ -192,10 +192,26 @@ BEGIN
 		DROP TABLE IF EXISTS topo_rein.create_surface_edge_domain_obj_t2; 
 		CREATE TABLE topo_rein.create_surface_edge_domain_obj_t2 AS 
 		(SELECT surface_topo::geometry AS geo , surface_topo::text AS topo FROM res_from_update_domain_surface_layer);
+		
+		-- get new objects created from topo_update.create_edge_surfaces
+		DROP TABLE IF EXISTS topo_rein.create_surface_edge_domain_obj_t1_p; 
+		CREATE TABLE topo_rein.create_surface_edge_domain_obj_t1_p AS 
+		(SELECT ST_PointOnSurface(surface_topo::geometry) AS geo , surface_topo::text AS topo FROM new_surface_data_for_edge);
+
 	END IF;
 	
-	command_string := 'SELECT tg.id AS id FROM ' || surface_topo_info.layer_schema_name || '.' || surface_topo_info.layer_table_name || ' tg, new_surface_data_for_edge new WHERE (new.surface_topo).id = (tg.omrade).id';
-    -- RAISE NOTICE '%', command_string;
+	IF ST_IsClosed(geo_in) THEN 
+		command_string := format('SELECT tg.id AS id FROM ' || 
+		surface_topo_info.layer_schema_name || '.' || surface_topo_info.layer_table_name || 
+		' tg, new_surface_data_for_edge new ' || 
+		'WHERE (new.surface_topo).id = (tg.omrade).id AND ' || 
+		'ST_intersects(ST_PointOnSurface((new.surface_topo)::geometry), ST_MakePolygon(%1$L))',geo_in);
+    	RAISE NOTICE 'A closed objects only return objects in %', command_string;
+  	ELSE	
+		command_string := 'SELECT tg.id AS id FROM ' || 
+		surface_topo_info.layer_schema_name || '.' || surface_topo_info.layer_table_name || ' tg, new_surface_data_for_edge new ' || 
+		'WHERE (new.surface_topo).id = (tg.omrade).id';
+	END IF;
 
     RETURN QUERY EXECUTE command_string;
     
