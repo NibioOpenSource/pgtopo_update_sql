@@ -95,19 +95,18 @@ FROM (
 -- 	'"geometry":' || ST_AsGeoJSON(geo,10,2)::json || ',' ||
  	'"properties":' || row_to_json((SELECT l FROM (SELECT id,reinbeitebruker_id, reindrift_sesongomrade_kode, verifiseringsdato) As l )) || 
  	'}' as a
-FROM 	
-( 
-SELECT
-r.id,
-k.beitebrukerid AS reinbeitebruker_id, 
-k.sesomr AS reindrift_sesongomrade_kode, 
-k.verifiseringsdato,
-ST_setSrid(ST_transform(ST_PointOnSurface(k.geo),4258),4258) AS geo 
-FROM 
-org_rein_korr.rein_korr_arstidsbeite_var_flate k , 
-topo_rein.arstidsbeite_var_flate r
-WHERE ST_Intersects(r.omrade::geometry,ST_setSrid(ST_transform(ST_PointOnSurface(k.geo),4258),4258)) 
-) as lg
+FROM ( 
+	SELECT
+	r.id,
+	k.beitebrukerid AS reinbeitebruker_id, 
+	k.sesomr AS reindrift_sesongomrade_kode, 
+	k.verifiseringsdato,
+	ST_setSrid(ST_transform(ST_PointOnSurface(k.geo),4258),4258) AS geo 
+	FROM 
+	org_rein_korr.rein_korr_arstidsbeite_var_flate k , 
+	topo_rein.arstidsbeite_var_flate r
+	WHERE ST_Intersects(r.omrade::geometry,ST_setSrid(ST_transform(ST_PointOnSurface(k.geo),4258),4258)) 
+	) as lg
 ) as f;
 
 -- delete holes

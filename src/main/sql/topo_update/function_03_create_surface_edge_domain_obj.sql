@@ -104,7 +104,8 @@ BEGIN
 		RAISE EXCEPTION 'Not valid json_feature %', json_feature;
 	ELSE 
 		SELECT geom FROM ttt_new_attributes_values INTO geo_in;
-	
+
+		-- TODO find another way to handle this
 		SELECT * INTO simple_sosi_felles_egenskaper_linje 
 		FROM json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,
 		(select properties from ttt_new_attributes_values) );

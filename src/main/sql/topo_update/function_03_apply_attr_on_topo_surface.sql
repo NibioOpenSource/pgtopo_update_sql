@@ -29,6 +29,11 @@ num_rows_affected int;
 -- number of rows to delete from org table
 num_rows_to_delete int;
 
+-- used to hold values
+felles_egenskaper_flate topo_rein.sosi_felles_egenskaper;
+simple_sosi_felles_egenskaper_linje topo_rein.simple_sosi_felles_egenskaper;
+
+
 BEGIN
 	
 	-- TODO to be moved is justed for testing now
@@ -52,28 +57,40 @@ BEGIN
 	-- find surface layer id
 	surface_layer_id := topo_update.get_topo_layer_id(surface_topo_info);
 
-	DROP TABLE IF EXISTS new_attributes_values;
+	DROP TABLE IF EXISTS ttt_new_attributes_values;
 
-	CREATE TEMP TABLE new_attributes_values(geom geometry,properties json);
+	CREATE TEMP TABLE ttt_new_attributes_values(geom geometry,properties json);
 	
 	-- get json data
-	INSERT INTO new_attributes_values(properties)
+	INSERT INTO ttt_new_attributes_values(properties)
 	SELECT 
---		topo_rein.get_geom_from_json(feat,4258) as geom,
 		to_json(feat->'properties')::json  as properties
 	FROM (
 	  	SELECT json_feature::json AS feat
 	) AS f;
 
 	--  
+	IF (SELECT count(*) FROM ttt_new_attributes_values) != 1 THEN
+		RAISE EXCEPTION 'Not valid json_feature %', json_feature;
+	ELSE 
+
+		-- TODO find another way to handle this
+		SELECT * INTO simple_sosi_felles_egenskaper_linje 
+		FROM json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,
+		(select properties from ttt_new_attributes_values) );
+
+		felles_egenskaper_flate := topo_rein.get_rein_felles_egenskaper_flate(simple_sosi_felles_egenskaper_linje);
+
+
+	END IF;
 	
 	-- We now know which rows we can reuse clear out old data rom the realation table
 	UPDATE topo_rein.arstidsbeite_var_flate r
 	SET 
 		reindrift_sesongomrade_kode = (t2.properties->>'reindrift_sesongomrade_kode')::int,
-		reinbeitebruker_id = (t2.properties->>'reinbeitebruker_id')::text
-	FROM new_attributes_values t2
-	-- WHERE ST_Intersects(r.omrade::geometry,t2.geom);
+		reinbeitebruker_id = (t2.properties->>'reinbeitebruker_id')::text,
+		felles_egenskaper = topo_rein.get_rein_felles_egenskaper_update(felles_egenskaper, simple_sosi_felles_egenskaper_linje)
+	FROM ttt_new_attributes_values t2
 	WHERE id = (t2.properties->>'id')::int;
 	
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;

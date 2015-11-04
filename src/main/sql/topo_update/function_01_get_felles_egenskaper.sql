@@ -94,6 +94,35 @@ $$ LANGUAGE plpgsql IMMUTABLE ;
 
 
 
+-- used to get felles egenskaper when it is a update
+-- we then only update verifiseringsdato, opphav
+CREATE OR REPLACE FUNCTION topo_rein.get_rein_felles_egenskaper_update(
+res topo_rein.sosi_felles_egenskaper,
+felles topo_rein.simple_sosi_felles_egenskaper ) 
+RETURNS topo_rein.sosi_felles_egenskaper AS $$DECLARE
+
+DECLARE 
+
+BEGIN
+
+	
+-- if we have a value for fellesegenskaper.verifiseringsdato or else use current date
+res.verifiseringsdato :=  (felles)."fellesegenskaper.verifiseringsdato";
+IF res.verifiseringsdato is null THEN
+	res.verifiseringsdato :=  current_date;
+END IF;
+
+res.oppdateringsdato :=  current_date;
+
+res.opphav :=  (felles)."felles_egenskaper.opphav";
+
+
+return res;
+
+END;
+$$ LANGUAGE plpgsql IMMUTABLE ;
+
+
 -- test the function with goven structure
 -- (2015-01-01,,"(,,)",2015-11-04,Reindriftsforvaltningen,2015-01-01,,"(,)")
 -- select * from json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,'{"reinbeitebruker_id":"XI","fellesegenskaper.forstedatafangsdato":null,"fellesegenskaper.verifiseringsdato":"2015-01-01","fellesegenskaper.oppdateringsdato":null,"felles_egenskaper.opphav":"Reindriftsforvaltningen"}');
