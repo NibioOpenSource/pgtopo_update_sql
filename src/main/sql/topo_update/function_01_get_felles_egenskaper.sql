@@ -1,6 +1,33 @@
 
--- used to convert from a flate strcture to a simple structure 
+-- used to get felles egenskaper for with all values
+-- including måle metode
+
 CREATE OR REPLACE FUNCTION topo_rein.get_rein_felles_egenskaper(felles topo_rein.simple_sosi_felles_egenskaper ) 
+RETURNS topo_rein.sosi_felles_egenskaper AS $$DECLARE
+
+DECLARE 
+
+res topo_rein.sosi_felles_egenskaper ;
+res_kvalitet topo_rein.sosi_kvalitet;
+
+
+BEGIN
+
+res := topo_rein.get_rein_felles_egenskaper_flate(felles);
+	
+
+res_kvalitet.maalemetode := (felles)."felles_egenskaper.kvalitet.maalemetode";
+--res_kvalitet.noyaktighet := 200;
+--res_kvalitet.synbarhet := 0;
+res.kvalitet = res_kvalitet;
+return res;
+
+END;
+$$ LANGUAGE plpgsql IMMUTABLE ;
+
+
+-- used to get felles egenskaper for where we don't use målemetode
+CREATE OR REPLACE FUNCTION topo_rein.get_rein_felles_egenskaper_flate(felles topo_rein.simple_sosi_felles_egenskaper ) 
 RETURNS topo_rein.sosi_felles_egenskaper AS $$DECLARE
 
 DECLARE 
@@ -20,11 +47,7 @@ BEGIN
 
 -- res.identifikasjon := 'NO_LDIR_REINDRIFT_VAARBEITE 0 ' || localid_in;
 
-res_kvalitet.maalemetode := (felles)."felles_egenskaper.kvalitet.maalemetode";
---res_kvalitet.noyaktighet := 200;
---res_kvalitet.synbarhet := 0;
-res.kvalitet = res_kvalitet;
-
+	
 -- if we have a value for fellesegenskaper.verifiseringsdato or else use current date
 res.verifiseringsdato :=  (felles)."fellesegenskaper.verifiseringsdato";
 IF res.verifiseringsdato is null THEN
@@ -67,8 +90,7 @@ res.opphav :=  (felles)."felles_egenskaper.opphav";
 return res;
 
 END;
-$$ LANGUAGE plpgsql;
--- to use IMMUTABLE we to add date as parameter
+$$ LANGUAGE plpgsql IMMUTABLE ;
 
 
 

@@ -3,7 +3,7 @@
 -- DROP FUNCTION topo_update.create_edge_surfaces(topo topogeometry) cascade;
 
 
-CREATE OR REPLACE FUNCTION topo_update.create_edge_surfaces(new_border_data topogeometry, valid_user_geometry geometry) 
+CREATE OR REPLACE FUNCTION topo_update.create_edge_surfaces(new_border_data topogeometry, valid_user_geometry geometry, felles_egenskaper_flate topo_rein.sosi_felles_egenskaper) 
 RETURNS SETOF topo_update.topogeometry_def AS $$
 DECLARE
 
@@ -110,7 +110,7 @@ BEGIN
 
 	DROP TABLE IF EXISTS new_surface_data; 
 	-- Create a temp table to hold new surface data
-	CREATE TEMP TABLE new_surface_data(surface_topo topogeometry);
+	CREATE TEMP TABLE new_surface_data(surface_topo topogeometry, felles_egenskaper_flate topo_rein.sosi_felles_egenskaper);
 	-- create surface geometry if a surface exits for the left side
 
 	-- if input is a closed ring only geneate objects for faces
@@ -149,7 +149,7 @@ BEGIN
 	--			IF NOT EXISTS(SELECT 1 FROM topo_rein.arstidsbeite_var_flate WHERE (omrade).id = (new_surface_topo).id) AND
 	--			   NOT EXISTS(SELECT 1 FROM new_surface_data WHERE (surface_topo).id = (new_surface_topo).id)
 	--			THEN
-					INSERT INTO new_surface_data(surface_topo) VALUES(new_surface_topo);
+					INSERT INTO new_surface_data(surface_topo,felles_egenskaper_flate) VALUES(new_surface_topo,felles_egenskaper_flate);
 					RAISE NOTICE 'Use new topo object % for face % created from user input %',  new_surface_topo, rec.face_id, new_border_data;
 	--			ELSE
 	--				RAISE NOTICE 'Not Use new topo object % for face %',  new_surface_topo, rec.face_id;

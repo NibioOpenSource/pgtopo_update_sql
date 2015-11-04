@@ -199,8 +199,8 @@ BEGIN
 	DROP TABLE IF EXISTS new_rows_added_in_org_table;
 	CREATE TEMP TABLE new_rows_added_in_org_table AS (SELECT * FROM topo_rein.arstidsbeite_var_flate limit 0);
 	WITH inserted AS (
-	INSERT INTO  topo_rein.arstidsbeite_var_flate(omrade)
-	SELECT new.surface_topo 
+	INSERT INTO  topo_rein.arstidsbeite_var_flate(omrade,felles_egenskaper)
+	SELECT new.surface_topo, new.felles_egenskaper_flate as felles_egenskaper
 	FROM new_surface_data new
 	WHERE NOT EXISTS ( SELECT f.id FROM topo_rein.arstidsbeite_var_flate f WHERE (new.surface_topo).id = (f.omrade).id )
 	returning *
@@ -221,8 +221,10 @@ BEGIN
 
 	-- update the newly inserted rows with attribute values based from old_rows_table
 	UPDATE topo_rein.arstidsbeite_var_flate a
-	SET reinbeitebruker_id  = c.reinbeitebruker_id, 
-	reindrift_sesongomrade_kode = c.reindrift_sesongomrade_kode
+	SET 
+	reinbeitebruker_id  = c.reinbeitebruker_id, 
+	reindrift_sesongomrade_kode = c.reindrift_sesongomrade_kode,
+	felles_egenskaper = c.felles_egenskaper
 	FROM new_rows_added_in_org_table b, 
 	old_rows_attributes c
 	WHERE 
@@ -236,10 +238,10 @@ BEGIN
   	DROP TABLE IF EXISTS touching_surface;
 	CREATE TEMP TABLE touching_surface AS (SELECT topo_update.touches('topo_rein.arstidsbeite_var_flate',a.id) as id FROM new_rows_added_in_org_table a);
 
-    
 	UPDATE topo_rein.arstidsbeite_var_flate a
 	SET reinbeitebruker_id  = d.reinbeitebruker_id, 
-	reindrift_sesongomrade_kode = d.reindrift_sesongomrade_kode
+	reindrift_sesongomrade_kode = d.reindrift_sesongomrade_kode,
+	felles_egenskaper = d.felles_egenskaper
 	FROM 
 	topo_rein.arstidsbeite_var_flate d,
 	touching_surface b

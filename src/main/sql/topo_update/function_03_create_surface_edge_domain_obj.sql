@@ -56,8 +56,9 @@ geo_in geometry;
 line_intersection_result geometry;
 
 -- holds the value for felles egenskaper from input
-felles_egenskaper_v topo_rein.sosi_felles_egenskaper;
-simple_sosi_felles_egenskaper_v topo_rein.simple_sosi_felles_egenskaper;
+felles_egenskaper_linje topo_rein.sosi_felles_egenskaper;
+felles_egenskaper_flate topo_rein.sosi_felles_egenskaper;
+simple_sosi_felles_egenskaper_linje topo_rein.simple_sosi_felles_egenskaper;
 
 
 BEGIN
@@ -104,11 +105,13 @@ BEGIN
 	ELSE 
 		SELECT geom FROM ttt_new_attributes_values INTO geo_in;
 	
-		SELECT * INTO simple_sosi_felles_egenskaper_v 
+		SELECT * INTO simple_sosi_felles_egenskaper_linje 
 		FROM json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,
 		(select properties from ttt_new_attributes_values) );
 
-		felles_egenskaper_v := topo_rein.get_rein_felles_egenskaper(simple_sosi_felles_egenskaper_v);
+		felles_egenskaper_linje := topo_rein.get_rein_felles_egenskaper(simple_sosi_felles_egenskaper_linje);
+		felles_egenskaper_flate := topo_rein.get_rein_felles_egenskaper_flate(simple_sosi_felles_egenskaper_linje);
+
 
 	END IF;
 
@@ -179,7 +182,7 @@ BEGIN
 
 	-- TODO insert some correct value for attributes
 	INSERT INTO topo_rein.arstidsbeite_var_grense(grense, felles_egenskaper)
-	SELECT new_border_data, felles_egenskaper_v;
+	SELECT new_border_data, felles_egenskaper_linje;
 
 	
 	-- create the new topo object for the surfaces
@@ -187,7 +190,7 @@ BEGIN
 	-- find out if any old topo objects overlaps with this new objects using the relation table
 	-- by using the surface objects owned by the both the new objects and the exting one
 	CREATE TEMP TABLE new_surface_data_for_edge AS 
-	(SELECT topo::topogeometry AS surface_topo FROM topo_update.create_edge_surfaces(new_border_data,geo_in));
+	(SELECT topo::topogeometry AS surface_topo, felles_egenskaper_flate FROM topo_update.create_edge_surfaces(new_border_data,geo_in,felles_egenskaper_flate));
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 	RAISE NOTICE 'Number of topo surfaces added to table new_surface_data_for_edge   %',  num_rows_affected;
 	
