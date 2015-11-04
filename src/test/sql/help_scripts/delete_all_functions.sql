@@ -1,4 +1,8 @@
 -- Drop alle functions
+
+DROP FUNCTION IF EXISTS FUNCTION topo_rein.get_rein_felles_egenskaper(felles topo_rein.simple_sosi_felles_egenskaper ) cascade;
+
+
 DROP FUNCTION IF EXISTS topo_rein.findExtent(schema_name text, table_name text , geocolumn_name text ) cascade;
 DROP FUNCTION IF EXISTS topo_rein.get_rein_felles_egenskaper_linje(localid_in int) cascade; 
 DROP FUNCTION IF EXISTS topo_rein.get_rein_felles_egenskaper_flate(localid_in int) cascade; 
