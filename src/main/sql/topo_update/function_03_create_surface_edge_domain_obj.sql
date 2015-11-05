@@ -80,8 +80,8 @@ BEGIN
 	surface_topo_info.snap_tolerance := 0.0000000001;
 
 	
-	DROP TABLE IF EXISTS ttt_new_attributes_values;
-	CREATE TEMP TABLE ttt_new_attributes_values(geom geometry,properties json, felles_egenskaper topo_rein.sosi_felles_egenskaper);
+	CREATE TEMP TABLE IF NOT EXISTS ttt_new_attributes_values(geom geometry,properties json, felles_egenskaper topo_rein.sosi_felles_egenskaper);
+	TRUNCATE TABLE ttt_new_attributes_values;
 	
 	-- parse the json data
 	INSERT INTO ttt_new_attributes_values(geom,properties)

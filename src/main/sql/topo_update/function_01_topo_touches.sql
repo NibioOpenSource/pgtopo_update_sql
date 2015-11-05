@@ -13,12 +13,19 @@ BEGIN
 
 
 -- TODO rewrite code
-		
-DROP TABLE IF EXISTS idlist_temp;
 
-CREATE TEMP TABLE  idlist_temp(id_t int[]);
+CREATE TEMP TABLE IF NOT EXISTS idlist_temp(id_t int[]);
 
-EXECUTE format('INSERT INTO idlist_temp(id_t) 
+--IF EXISTS (SELECT * FROM pg_tables WHERE tablename='idlist_temp') THEN	
+	TRUNCATE TABLE idlist_temp;
+--ELSE 
+--	CREATE TEMP TABLE  idlist_temp(id_t int[]);
+--END IF;
+
+--DROP TABLE IF EXISTS idlist_temp;
+--CREATE TEMP TABLE  idlist_temp(id_t int[]);
+
+command_string := format('INSERT INTO idlist_temp(id_t) 
 SELECT id_list as id_t FROM 
 	( SELECT array_agg( object_id) id_list, count(*) as antall
 	  FROM (
@@ -43,6 +50,10 @@ WHERE antall > 1
 AND id_list[1] != id_list[2]
 AND (id_list[1] = %2$L OR id_list[2] = %2$L)
 ORDER BY id_t', _new_topo_objects, id_to_check);
+
+RAISE NOTICE 'command_string %',  command_string;
+
+EXECUTE command_string;
 
 DROP TABLE IF EXISTS idlist;
 
