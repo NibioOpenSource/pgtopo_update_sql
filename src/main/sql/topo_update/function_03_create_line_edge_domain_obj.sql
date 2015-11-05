@@ -40,6 +40,10 @@ num_edge_intersects int;
 
 line_intersection_result geometry;
 
+-- holds the value for felles egenskaper from input
+felles_egenskaper_linje topo_rein.sosi_felles_egenskaper;
+simple_sosi_felles_egenskaper_linje topo_rein.simple_sosi_felles_egenskaper;
+
 BEGIN
 	
 	
@@ -60,18 +64,35 @@ BEGIN
 
 	-- get the json values
 	
-	DROP TABLE IF EXISTS new_attributes_values;
+	DROP TABLE IF EXISTS ttt_new_attributes_values;
 
-	CREATE TEMP TABLE new_attributes_values(geom geometry,properties json);
+	CREATE TEMP TABLE ttt_new_attributes_values(geom geometry,properties json);
 	
 	-- get json data
-	INSERT INTO new_attributes_values(geom,properties)
+	INSERT INTO ttt_new_attributes_values(geom,properties)
 	SELECT 
 		topo_rein.get_geom_from_json(feat,4258) as geom,
 		to_json(feat->'properties')::json  as properties
 	FROM (
 	  	SELECT json_feature::json AS feat
 	) AS f;
+
+		-- check that it is only one row put that value into 
+	-- TODO rewrite this to not use table in
+	
+	IF (SELECT count(*) FROM ttt_new_attributes_values) != 1 THEN
+		RAISE EXCEPTION 'Not valid json_feature %', json_feature;
+	ELSE 
+
+		-- TODO find another way to handle this
+		SELECT * INTO simple_sosi_felles_egenskaper_linje 
+		FROM json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,
+		(select properties from ttt_new_attributes_values) );
+
+		felles_egenskaper_linje := topo_rein.get_rein_felles_egenskaper(simple_sosi_felles_egenskaper_linje);
+
+
+	END IF;
 
 	-- insert the data in the org table and keep a copy of the data
 	DROP TABLE IF EXISTS new_rows_added_in_org_table;
@@ -80,10 +101,10 @@ BEGIN
 		INSERT INTO topo_rein.reindrift_anlegg_linje(linje, felles_egenskaper, reindriftsanleggstype,reinbeitebruker_id)
 		SELECT  
 			topology.toTopoGeom(t2.geom, border_topo_info.topology_name, border_layer_id, border_topo_info.snap_tolerance) AS linje,
-			topo_rein.get_rein_felles_egenskaper_linje(0) AS felles_egenskaper,
+			felles_egenskaper_linje AS felles_egenskaper,
 			(t2.properties->>'reindriftsanleggstype')::int AS reindriftsanleggstype,
 			(t2.properties->>'reinbeitebruker_id')::text AS reinbeitebruker_id
-		FROM new_attributes_values t2
+		FROM ttt_new_attributes_values t2
 		RETURNING *
 	)
 	INSERT INTO new_rows_added_in_org_table
