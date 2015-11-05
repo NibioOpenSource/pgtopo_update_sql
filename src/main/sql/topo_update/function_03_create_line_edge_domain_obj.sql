@@ -113,8 +113,23 @@ BEGIN
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 	RAISE NOTICE 'Number num_rows_affected  %',  num_rows_affected;
 	
+
+	-- Find rows that intersects and add them list of objects that should be showed to the end user
+	INSERT INTO new_rows_added_in_org_table(id)
+	SELECT distinct a.id FROM 
+	topo_rein.reindrift_anlegg_linje a, 
+	ttt_new_attributes_values a2,
+	topo_rein_sysdata.relation re, 
+	topology.layer tl,
+	topo_rein_sysdata.edge ed
+	WHERE ST_intersects(ed.geom,a2.geom)
+	AND topo_rein.get_relation_id(a.linje) = re.topogeo_id AND re.layer_id = tl.layer_id AND tl.schema_name = 'topo_rein' AND 
+	tl.table_name = 'reindrift_anlegg_linje' and ed.edge_id=re.element_id;
+
+
+	
 	-- TODO should we also return lines that are close to or intersects and split them so it's possible to ??? 
-	command_string := ' SELECT tg.id AS id FROM  new_rows_added_in_org_table tg';
+	command_string := ' SELECT distinct tg.id AS id FROM  new_rows_added_in_org_table tg';
 	-- command_string := 'SELECT tg.id AS id FROM ' || border_topo_info.layer_schema_name || '.' || border_topo_info.layer_table_name || ' tg, new_rows_added_in_org_table new WHERE new.linje::geometry && tg.linje::geometry';
 	RAISE NOTICE '%', command_string;
     RETURN QUERY EXECUTE command_string;
