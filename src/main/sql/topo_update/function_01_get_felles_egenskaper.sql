@@ -48,14 +48,14 @@ BEGIN
 -- res.identifikasjon := 'NO_LDIR_REINDRIFT_VAARBEITE 0 ' || localid_in;
 
 	
--- if we have a value for fellesegenskaper.verifiseringsdato or else use current date
-res.verifiseringsdato :=  (felles)."fellesegenskaper.verifiseringsdato";
+-- if we have a value for felles_egenskaper.verifiseringsdato or else use current date
+res.verifiseringsdato :=  (felles)."felles_egenskaper.verifiseringsdato";
 IF res.verifiseringsdato is null THEN
 	res.verifiseringsdato :=  current_date;
 END IF;
 
--- if we have a value for fellesegenskaper.forstedatafangstdato or else use verifiseringsdato
-res.forstedatafangstdato :=  (felles)."fellesegenskaper.forstedatafangsdato";
+-- if we have a value for felles_egenskaper.forstedatafangstdato or else use verifiseringsdato
+res.forstedatafangstdato :=  (felles)."felles_egenskaper.forstedatafangsdato";
 IF res.forstedatafangstdato is null THEN
 	res.forstedatafangstdato :=  res.verifiseringsdato;
 END IF;
@@ -64,7 +64,7 @@ END IF;
 -- The only time will have values for oppdateringsdato is when we transfer data from simple feature.
 -- From the client this should always be null
 -- TODO Or should er here always use current_date
---res.oppdateringsdato :=  (felles)."fellesegenskaper.oppdateringsdato";
+--res.oppdateringsdato :=  (felles)."felles_egenskaper.oppdateringsdato";
 --IF res.oppdateringsdato is null THEN
 	res.oppdateringsdato :=  current_date;
 --END IF;
@@ -106,8 +106,8 @@ DECLARE
 BEGIN
 
 	
--- if we have a value for fellesegenskaper.verifiseringsdato or else use current date
-res.verifiseringsdato :=  (felles)."fellesegenskaper.verifiseringsdato";
+-- if we have a value for felles_egenskaper.verifiseringsdato or else use current date
+res.verifiseringsdato :=  (felles)."felles_egenskaper.verifiseringsdato";
 IF res.verifiseringsdato is null THEN
 	res.verifiseringsdato :=  current_date;
 END IF;
@@ -125,7 +125,7 @@ $$ LANGUAGE plpgsql IMMUTABLE ;
 
 -- test the function with goven structure
 -- (2015-01-01,,"(,,)",2015-11-04,Reindriftsforvaltningen,2015-01-01,,"(,)")
--- select * from json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,'{"reinbeitebruker_id":"XI","fellesegenskaper.forstedatafangsdato":null,"fellesegenskaper.verifiseringsdato":"2015-01-01","fellesegenskaper.oppdateringsdato":null,"felles_egenskaper.opphav":"Reindriftsforvaltningen"}');
+-- select * from json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,'{"reinbeitebruker_id":"XI","felles_egenskaper.forstedatafangsdato":null,"felles_egenskaper.verifiseringsdato":"2015-01-01","felles_egenskaper.oppdateringsdato":null,"felles_egenskaper.opphav":"Reindriftsforvaltningen"}');
 --DO $$
 --DECLARE 
 --fe2 topo_rein.sosi_felles_egenskaper;
