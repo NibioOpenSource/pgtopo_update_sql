@@ -23,6 +23,10 @@ command_string text;
 -- holds the num rows affected when needed
 num_rows_affected int;
 
+-- used to hold values
+felles_egenskaper_flate topo_rein.sosi_felles_egenskaper;
+simple_sosi_felles_egenskaper_linje topo_rein.simple_sosi_felles_egenskaper;
+
 BEGIN
 	
 	-- TODO to be moved is justed for testing now
@@ -50,11 +54,24 @@ BEGIN
 
 	--  
 	
+	IF (SELECT count(*) FROM ttt_new_attributes_values) != 1 THEN
+		RAISE EXCEPTION 'Not valid json_feature %', json_feature;
+	ELSE 
+
+		-- TODO find another way to handle this
+		SELECT * INTO simple_sosi_felles_egenskaper_linje 
+		FROM json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,
+		(select properties from ttt_new_attributes_values) );
+
+	END IF;
+
+	
 	-- We now know which rows we can reuse clear out old data rom the realation table
 	UPDATE topo_rein.reindrift_anlegg_linje r
 	SET 
 		reindriftsanleggstype = (t2.properties->>'reindriftsanleggstype')::int,
-		reinbeitebruker_id = (t2.properties->>'reinbeitebruker_id')::text
+		reinbeitebruker_id = (t2.properties->>'reinbeitebruker_id')::text,
+		felles_egenskaper = topo_rein.get_rein_felles_egenskaper_update(felles_egenskaper, simple_sosi_felles_egenskaper_linje)
 	FROM new_attributes_values t2
 	-- WHERE ST_Intersects(r.omrade::geometry,t2.geom);
 	WHERE id = (t2.properties->>'id')::int;
