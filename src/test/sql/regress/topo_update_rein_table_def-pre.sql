@@ -119,6 +119,18 @@ AS (
 	
 );
 
+
+-- this is type used extrac data from json
+CREATE TYPE topo_rein.simple_sosi_felles_egenskaper AS (
+	"felles_egenskaper.forstedatafangsdato" date , 
+	"felles_egenskaper.verifiseringsdato" date ,
+	"felles_egenskaper.oppdateringsdato" date ,
+	"felles_egenskaper.opphav" varchar, 
+	"felles_egenskaper.kvalitet.maalemetode" int 
+);
+
+
+
 -- A composite type to hold key value that will recoreded before a update
 -- and compared after the update, used be sure no changes hapends out side 
 -- the area that should be updated 
@@ -447,7 +459,7 @@ reindrift_sesongomrade_kode,
 omrade::geometry(MultiPolygon,4258) as geo 
 from topo_rein.arstidsbeite_var_flate al;
 
---DROP IF EXISTS VIEW topo_rein.arstidsbeite_var_topojson_flate_v cascade ;
+-- DROP VIEW IF EXISTS topo_rein.arstidsbeite_var_topojson_flate_v cascade ;
 
 
 CREATE OR REPLACE VIEW topo_rein.arstidsbeite_var_topojson_flate_v 
@@ -456,10 +468,10 @@ select
 id,
 reindrift_sesongomrade_kode,
 reinbeitebruker_id,
-(al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forsteDatafangsdato", 
+(al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forstedatafangsdato", 
 (al.felles_egenskaper).verifiseringsdato AS "fellesegenskaper.verifiseringsdato",
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
-(al.felles_egenskaper).opphav AS "fellesegenslaper.opphav", 
+(al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
 omrade 
 from topo_rein.arstidsbeite_var_flate al;
 
@@ -505,7 +517,7 @@ from topo_rein.reindrift_anlegg_punkt al;
 -- select * from topo_rein.reindrift_anlegg_punkt_v ;
 
 
--- DROP VIEW IF EXISTS topo_rein.reindrift_anlegg_topojson_linje_v cascade ;
+ DROP VIEW IF EXISTS topo_rein.reindrift_anlegg_topojson_linje_v cascade ;
 
 
 CREATE OR REPLACE VIEW topo_rein.reindrift_anlegg_topojson_linje_v 
@@ -514,18 +526,18 @@ select
 id,
 reinbeitebruker_id,
 reindriftsanleggstype,
-(al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forsteDatafangsdato", 
+(al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forstedatafangsdato", 
 (al.felles_egenskaper).verifiseringsdato AS "fellesegenskaper.verifiseringsdato",
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
-(al.felles_egenskaper).opphav AS "fellesegenslaper.opphav", 
-((al.felles_egenskaper).kvalitet).maalemetode AS "fellesegenslaper.maalemetode",
+(al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
+((al.felles_egenskaper).kvalitet).maalemetode AS "fellesegenskaper.maalemetode",
 linje
 from topo_rein.reindrift_anlegg_linje al;
 
 -- select * from topo_rein.reindrift_anlegg_topojson_linje_v ;
 
 
---DROP VIEW IF EXISTS topo_rein.reindrift_anlegg_topojson_punkt_v cascade ;
+DROP VIEW IF EXISTS topo_rein.reindrift_anlegg_topojson_punkt_v cascade ;
 
 
 CREATE OR REPLACE VIEW topo_rein.reindrift_anlegg_topojson_punkt_v 
@@ -534,11 +546,11 @@ select
 id,
 reinbeitebruker_id,
 reindriftsanleggstype,
-(al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forsteDatafangsdato", 
+(al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forstedatafangsdato", 
 (al.felles_egenskaper).verifiseringsdato AS "fellesegenskaper.verifiseringsdato",
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
-(al.felles_egenskaper).opphav AS "fellesegenslaper.opphav", 
-((al.felles_egenskaper).kvalitet).maalemetode AS "fellesegenslaper.maalemetode",
+(al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
+((al.felles_egenskaper).kvalitet).maalemetode AS "fellesegenskaper.maalemetode",
 punkt
 from topo_rein.reindrift_anlegg_punkt al;
 

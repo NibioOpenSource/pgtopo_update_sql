@@ -1,6 +1,7 @@
 -- Drop alle functions
 
-DROP FUNCTION IF EXISTS FUNCTION topo_rein.get_rein_felles_egenskaper(felles topo_rein.simple_sosi_felles_egenskaper ) cascade;
+DROP FUNCTION IF EXISTS topo_rein.get_rein_felles_egenskaper(felles topo_rein.simple_sosi_felles_egenskaper ) cascade;
+DROP FUNCTION IF EXISTS topo_rein.get_rein_felles_egenskaper_flate(felles topo_rein.simple_sosi_felles_egenskaper ) cascade;
 
 
 DROP FUNCTION IF EXISTS topo_rein.findExtent(schema_name text, table_name text , geocolumn_name text ) cascade;
@@ -18,6 +19,9 @@ DROP FUNCTION IF EXISTS topo_rein.get_var_flate_topojson(_new_topo_objects regcl
 
 DROP FUNCTION IF EXISTS topo_update.create_edge_surfaces(new_border_data topogeometry) cascade; 
 DROP FUNCTION IF EXISTS topo_update.create_edge_surfaces(new_border_data topogeometry, valid_user_geometry geometry) cascade; 
+DROP FUNCTION IF EXISTS topo_update.create_edge_surfaces(new_border_data topogeometry, valid_user_geometry geometry, felles_egenskaper_v topo_rein.sosi_felles_egenskaper)  cascade; 
+
+
 DROP FUNCTION IF EXISTS topo_update.create_surface_edge(geo_in geometry) cascade; 
 DROP FUNCTION IF EXISTS topo_update.update_domain_surface_layer(_new_topo_objects regclass) cascade; 
 
