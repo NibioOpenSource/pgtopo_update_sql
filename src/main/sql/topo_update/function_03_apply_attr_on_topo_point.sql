@@ -27,6 +27,9 @@ num_rows_affected int;
 felles_egenskaper_flate topo_rein.sosi_felles_egenskaper;
 simple_sosi_felles_egenskaper_linje topo_rein.simple_sosi_felles_egenskaper;
 
+geo_point geometry;
+
+
 
 BEGIN
 	
@@ -45,9 +48,9 @@ BEGIN
 	CREATE TEMP TABLE ttt_new_attributes_values(geom geometry,properties json);
 	
 	-- get json data
-	INSERT INTO ttt_new_attributes_values(properties)
+	INSERT INTO ttt_new_attributes_values(geom,properties)
 	SELECT 
---		topo_rein.get_geom_from_json(feat,4258) as geom,
+		topo_rein.get_geom_from_json(feat,4258) as geom,
 		to_json(feat->'properties')::json  as properties
 	FROM (
 	  	SELECT json_feature::json AS feat
@@ -60,6 +63,8 @@ BEGIN
 		RAISE EXCEPTION 'Not valid json_feature %', json_feature;
 	ELSE 
 
+		SELECT geom FROM ttt_new_attributes_values INTO geo_point;
+		
 		-- TODO find another way to handle this
 		SELECT * INTO simple_sosi_felles_egenskaper_linje 
 		FROM json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,
@@ -75,10 +80,24 @@ BEGIN
 		reindriftsanleggstype = (t2.properties->>'reindriftsanleggstype')::int,
 		reinbeitebruker_id = (t2.properties->>'reinbeitebruker_id')::text,
 		felles_egenskaper = topo_rein.get_rein_felles_egenskaper_update(felles_egenskaper, simple_sosi_felles_egenskaper_linje)
-
 	FROM ttt_new_attributes_values t2
-	-- WHERE ST_Intersects(r.omrade::geometry,t2.geom);
 	WHERE id = (t2.properties->>'id')::int;
+	
+
+	-- if move point
+	IF geo_point is not NULL THEN
+		PERFORM topology.clearTopoGeom(punkt) 
+		FROM topo_rein.reindrift_anlegg_punkt r, 
+		ttt_new_attributes_values t2
+		WHERE id = (t2.properties->>'id')::int;
+
+		UPDATE topo_rein.reindrift_anlegg_punkt r
+		SET 
+			punkt = topology.toTopoGeom(geo_point, point_topo_info.topology_name, point_layer_id, point_topo_info.snap_tolerance)
+		FROM ttt_new_attributes_values t2
+		WHERE id = (t2.properties->>'id')::int;
+	
+	END IF;
 	
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 
