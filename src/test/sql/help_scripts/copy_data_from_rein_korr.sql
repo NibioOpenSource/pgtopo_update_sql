@@ -256,6 +256,7 @@ FROM
 
 -- then read from korr, the layer thats is updated
  SELECT topo_update.create_line_edge_domain_obj(f.a) 
+-- SELECT f.a 
 FROM (
  	SELECT 
  	'{"type": "Feature",' || 
@@ -286,6 +287,7 @@ FROM
 -- to: topo_rein.reindrift_anlegg_punkt
 
 SELECT topo_update. topo_update.create_point_point_domain_obj(f.a) 
+--SELECT f.a
 FROM (
  	SELECT 
  	'{"type": "Feature",' || 
