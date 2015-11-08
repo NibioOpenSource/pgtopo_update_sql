@@ -68,15 +68,12 @@ BEGIN
 	IF (SELECT count(*) FROM ttt_new_attributes_values) != 1 THEN
 		RAISE EXCEPTION 'Not valid json_feature %', json_feature;
 	ELSE 
-
 		-- TODO find another way to handle this
 		SELECT * INTO simple_sosi_felles_egenskaper_linje 
 		FROM json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,
 		(select properties from ttt_new_attributes_values) );
 
 		felles_egenskaper_linje := topo_rein.get_rein_felles_egenskaper(simple_sosi_felles_egenskaper_linje);
-
-
 	END IF;
 
 	-- insert the data in the org table and keep a copy of the data
