@@ -61,6 +61,8 @@ BEGIN
 	
 	RAISE NOTICE 'The JSON input %',  json_feature;
 
+	RAISE NOTICE 'border_layer_id %',  border_layer_id;
+
 
 	-- get the json values
 	
@@ -83,7 +85,6 @@ BEGIN
 	IF (SELECT count(*) FROM ttt_new_attributes_values) != 1 THEN
 		RAISE EXCEPTION 'Not valid json_feature %', json_feature;
 	ELSE 
-
 		-- TODO find another way to handle this
 		SELECT * INTO simple_sosi_felles_egenskaper_linje 
 		FROM json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,
@@ -114,9 +115,115 @@ BEGIN
 	RAISE NOTICE 'Number num_rows_affected  %',  num_rows_affected;
 	
 
-	-- Find rows that intersects and add them list of objects that should be showed to the end user
-	INSERT INTO new_rows_added_in_org_table(id)
-	SELECT distinct a.id FROM 
+
+	-- Find the edges that are used by the input line
+	DROP TABLE IF EXISTS topo_rein.ttt_used_edges;
+	CREATE TABLE topo_rein.ttt_used_edges AS (SELECT ed.* FROM  topo_rein_sysdata.edge_data ed limit 0);
+	INSERT INTO topo_rein.ttt_used_edges
+	SELECT distinct ed.*  
+    FROM 
+	topo_rein_sysdata.relation re,
+	new_rows_added_in_org_table ud, 
+	topo_rein_sysdata.edge_data ed
+	WHERE 
+	(ud.linje).id = re.topogeo_id AND
+	re.layer_id =  border_layer_id AND 
+	re.element_type = 2 AND  -- TODO use variable element_type_edge=2
+	ed.edge_id = re.element_id;
+
+	-- Find edges that are not used by the input line which needs to recreated
+	DROP TABLE IF EXISTS topo_rein.ttt_not_used_edges;
+	CREATE TABLE topo_rein.ttt_not_used_edges AS (SELECT ed.* FROM  topo_rein_sysdata.edge_data ed limit 0);
+	INSERT INTO topo_rein.ttt_not_used_edges
+	SELECT distinct ed.*  
+    FROM 
+	topo_rein_sysdata.relation re,
+	new_rows_added_in_org_table ud, 
+	topo_rein_sysdata.edge_data ed
+	WHERE 
+	(ud.linje).id = re.topogeo_id AND
+	re.layer_id =  border_layer_id AND 
+	re.element_type = 2 AND  -- TODO use variable element_type_edge=2
+	ed.edge_id != re.element_id;
+
+	-- Find anleggs type objects that needs to be adjusted because the new rows has edges that are used by this rows
+	DROP TABLE IF EXISTS topo_rein.ttt_affected_objects_id;
+	CREATE TABLE topo_rein.ttt_affected_objects_id AS (SELECT * FROM  topo_rein.reindrift_anlegg_linje limit 0);
+	INSERT INTO topo_rein.ttt_affected_objects_id
+	SELECT distinct a.*  
+    FROM 
+	topo_rein_sysdata.relation re1,
+	topo_rein_sysdata.relation re2,
+	new_rows_added_in_org_table ud, 
+	topo_rein_sysdata.edge_data ed,
+	topo_rein.reindrift_anlegg_linje a
+	WHERE 
+	(ud.linje).id = re1.topogeo_id AND
+	re1.layer_id =  border_layer_id AND 
+	re1.element_type = 2 AND
+	(ud.linje).id = re2.topogeo_id AND
+	re2.layer_id =  border_layer_id AND 
+	re2.element_type = 2 AND
+	NOT EXISTS (SELECT 1 FROM new_rows_added_in_org_table nr where a.id = nr.id);
+	
+	-- Find objects thay can deleted because all their edges area covered by new input linje
+	-- This is true this objects has no edges in the list of not used edges
+	DROP TABLE IF EXISTS topo_rein.ttt_objects_to_be_delted;
+	CREATE TABLE topo_rein.ttt_objects_to_be_delted AS (SELECT * FROM  topo_rein.reindrift_anlegg_linje limit 0);
+	INSERT INTO topo_rein.ttt_objects_to_be_delted
+	SELECT b.id FROM 
+	topo_rein.ttt_affected_objects_id b
+	WHERE b.id NOT IN
+	( SELECT distinct a.id 
+	FROM 
+	topo_rein_sysdata.relation re1,
+	topo_rein.ttt_affected_objects_id a,
+	topo_rein.ttt_not_used_edges ued1
+	WHERE 
+	(a.linje).id = re1.topogeo_id AND
+	re1.layer_id =  border_layer_id AND 
+	re1.element_type = 2 AND
+	ued1.edge_id = re1.element_id
+	); 
+
+
+	-- Clear the topology elements objects that does not have edges left
+	PERFORM topology.clearTopoGeom(a.linje) 
+	FROM topo_rein.reindrift_anlegg_linje  a,
+	topo_rein.ttt_objects_to_be_delted b
+	WHERE a.id = b.id;
+	
+	-- Delete those topology elements objects that does not have edges left
+	DELETE FROM topo_rein.reindrift_anlegg_linje a
+	USING topo_rein.ttt_objects_to_be_delted b
+	WHERE a.id = b.id;
+
+	
+	-- Update the topo objects with shared edges that stil hava 
+	UPDATE topo_rein.reindrift_anlegg_linje AS a
+	SET linje= topology.toTopoGeom(b.geom, border_topo_info.topology_name, border_layer_id, border_topo_info.snap_tolerance)
+	FROM 
+	( 
+	SELECT b.id, ST_union(ed.geom) AS geom
+	FROM topo_rein.ttt_affected_objects_id b,
+	topo_rein.ttt_not_used_edges ed,
+	topo_rein_sysdata.relation re
+	WHERE (b.linje).id = re.topogeo_id AND
+	re.layer_id =  border_layer_id AND 
+	re.element_type = 2 AND  -- TODO use variable element_type_edge=2
+	ed.edge_id != re.element_id
+	GROUP BY b.id
+	) AS b
+	WHERE a.id = b.id;
+
+
+		-- Find rows that intersects (has shared edges) with the new line drawn by the end user
+	-- This lines should change
+	DROP TABLE IF EXISTS ttt_intersection_id;
+	CREATE TEMP TABLE ttt_intersection_id AS (SELECT * FROM  topo_rein.reindrift_anlegg_linje limit 0);
+	INSERT INTO ttt_intersection_id
+	SELECT distinct a.*  
+	FROM 
 	topo_rein.reindrift_anlegg_linje a, 
 	ttt_new_attributes_values a2,
 	topo_rein_sysdata.relation re, 
@@ -124,7 +231,13 @@ BEGIN
 	topo_rein_sysdata.edge ed
 	WHERE ST_intersects(ed.geom,a2.geom)
 	AND topo_rein.get_relation_id(a.linje) = re.topogeo_id AND re.layer_id = tl.layer_id AND tl.schema_name = 'topo_rein' AND 
-	tl.table_name = 'reindrift_anlegg_linje' and ed.edge_id=re.element_id;
+	tl.table_name = 'reindrift_anlegg_linje' AND ed.edge_id=re.element_id
+	AND NOT EXISTS (SELECT 1 FROM new_rows_added_in_org_table nr where a.id = nr.id);
+
+	-- update the return table with 
+	INSERT INTO new_rows_added_in_org_table(id)
+	SELECT a.id FROM ttt_intersection_id a ;
+	
 
 
 	
@@ -141,3 +254,4 @@ $$ LANGUAGE plpgsql;
 -- select topo_update.create_line_edge_domain_obj('{"type":"Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[23.6848135256,70.2941567505],[23.6861561246,70.2937237249],[23.6888489507,70.2928551851],[23.6896495555,70.2925466063],[23.6917889589,70.292156264],[23.6945956663,70.2918661088],[23.6965659512,70.2915742147],[23.6997477211,70.2913270875],[23.7033391524,70.2915039485],[23.7044653963,70.2916332891],[23.7071834727,70.2915684568],[23.7076455811,70.2914565778],[23.7081927635,70.2912602126],[23.7079468414,70.2907122103]]},"properties":{"reinbeitebruker_id":"YD","reindriftsanleggstype":1}}');
 
 -- select topo_update.create_line_edge_domain_obj('{"type":"Feature","geometry":{"type":"LineString","coordinates":[[582408.943892817,7635222.4433961185],[621500.8918835252,7615523.766478926],[622417.1094145575,7630641.355740958]],"crs":{"type":"name","properties":{"name":"EPSG:32633"}}},"properties":{"Fellesegenskaper.Opphav":"Y","anleggstype":"12","reinbeitebruker_id ":"ZS","Fellesegenskaper.Kvalitet.Maalemetode":82}}');
+
