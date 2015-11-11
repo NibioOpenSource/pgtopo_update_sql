@@ -38,7 +38,7 @@ add_debug_tables int = 0;
 -- the number times the inlut line intersects
 num_edge_intersects int;
 
-line_intersection_result geometry;
+input_geo geometry;
 
 -- holds the value for felles egenskaper from input
 felles_egenskaper_linje topo_rein.sosi_felles_egenskaper;
@@ -87,8 +87,9 @@ BEGIN
 		(select properties from topo_rein.ttt_new_attributes_values) );
 
 		felles_egenskaper_linje := topo_rein.get_rein_felles_egenskaper(simple_sosi_felles_egenskaper_linje);
-
-
+	
+		SELECT geom INTO input_geo FROM topo_rein.ttt_new_attributes_values;
+	
 	END IF;
 
 	-- insert the data in the org table and keep a copy of the data
@@ -251,7 +252,84 @@ BEGIN
 	--------------------- Start: Find short eges to be removed  ---------------------
 	-- Should be moved to a separate proc so we could reuse this code for other line 
 	
+	-- Find edges that are verry short and that are close to the edges that area drawn.
+	-- Find the edges that are used by the input line
 	
+	DROP TABLE IF EXISTS topo_rein.ttt_short_edge_list;
+	CREATE TABLE topo_rein.ttt_short_edge_list(id int, edge_id int);
+	INSERT INTO topo_rein.ttt_short_edge_list(id,edge_id)
+	SELECT distinct a.id, ed.edge_id  
+    FROM 
+	topo_rein_sysdata.relation re,
+	topo_rein.ttt_rows_affected_in_org_table ud, 
+	topo_rein_sysdata.edge_data ed,
+	topo_rein.reindrift_anlegg_linje  a
+	WHERE 
+	ud.id = a.id AND
+	(a.linje).id = re.topogeo_id AND
+	re.layer_id =  border_layer_id AND 
+	re.element_type = 2 AND  -- TODO use variable element_type_edge=2
+	ed.edge_id = re.element_id AND
+	ST_Intersects(ed.geom,input_geo ) AND
+	ST_Length(ed.geom) < ST_Length(input_geo) AND
+	ST_Length(input_geo)/ST_Length(ed.geom) > 20;
+	
+	-- Create the new geo with out the short edges
+	DROP TABLE IF EXISTS topo_rein.ttt_short_object_list;
+	CREATE TABLE topo_rein.ttt_short_object_list(id int, geom geometry);
+	INSERT INTO topo_rein.ttt_short_object_list(id,geom)
+	SELECT b.id, ST_union(ed.geom) AS geom
+	FROM topo_rein.ttt_short_edge_list b,
+	topo_rein_sysdata.edge_data ed,
+	topo_rein_sysdata.relation re,
+	topo_rein.reindrift_anlegg_linje  a
+	WHERE a.id = b.id AND
+	(a.linje).id = re.topogeo_id AND
+	re.layer_id =  border_layer_id AND 
+	re.element_type = 2 AND  -- TODO use variable element_type_edge=2
+	ed.edge_id = re.element_id AND
+	NOT EXISTS (SELECT 1 FROM topo_rein.ttt_short_edge_list WHERE ed.edge_id = edge_id)
+	GROUP BY b.id;
+
+
+	-- Clear the topology elements objects that should be updated
+	PERFORM topology.clearTopoGeom(a.linje) 
+	FROM topo_rein.reindrift_anlegg_linje  a,
+	topo_rein.ttt_short_object_list b
+	WHERE a.id = b.id;
+	
+	-- Remove edges not used from the edge table
+ 	command_string := FORMAT('
+		SELECT ST_RemEdgeModFace(%1$L, ed.edge_id)
+		FROM 
+		topo_rein.ttt_short_edge_list ued,
+		%2$s ed
+		WHERE 
+		ed.edge_id = ued.edge_id 
+		',
+		border_topo_info.topology_name,
+		border_topo_info.topology_name || '.edge_data'
+	);
+	
+	-- RAISE NOTICE '%', command_string;
+
+    EXECUTE command_string;
+
+	-- clean up edga table
+	-- Delete those topology elements objects that does not have edges left
+--	DELETE FROM topo_rein_sysdata.edge_data a
+--	USING topo_rein.ttt_short_edge_list b
+--	WHERE a.edge_id = b.edge_id;
+
+	-- Update the topo objects with shared edges that stil hava 
+	UPDATE topo_rein.reindrift_anlegg_linje AS a
+	SET linje= topology.toTopoGeom(b.geom, border_topo_info.topology_name, border_layer_id, border_topo_info.snap_tolerance)
+	FROM topo_rein.ttt_short_object_list b
+	WHERE a.id = b.id;
+
+	
+	
+																																					
 	
 	
 
