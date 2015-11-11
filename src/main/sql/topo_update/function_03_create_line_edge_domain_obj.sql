@@ -92,8 +92,8 @@ BEGIN
 	END IF;
 
 	-- insert the data in the org table and keep a copy of the data
-	DROP TABLE IF EXISTS topo_rein.ttt_new_rows_added_in_org_table;
-	CREATE TABLE topo_rein.ttt_new_rows_added_in_org_table AS (SELECT * FROM  topo_rein.reindrift_anlegg_linje limit 0);
+	DROP TABLE IF EXISTS topo_rein.ttt_rows_affected_in_org_table;
+	CREATE TABLE topo_rein.ttt_rows_affected_in_org_table AS (SELECT * FROM  topo_rein.reindrift_anlegg_linje limit 0);
 	WITH inserted AS (
 		INSERT INTO topo_rein.reindrift_anlegg_linje(linje, felles_egenskaper, reindriftsanleggstype,reinbeitebruker_id)
 		SELECT  
@@ -104,14 +104,12 @@ BEGIN
 		FROM topo_rein.ttt_new_attributes_values t2
 		RETURNING *
 	)
-	INSERT INTO topo_rein.ttt_new_rows_added_in_org_table
+	INSERT INTO topo_rein.ttt_rows_affected_in_org_table
 	SELECT * FROM inserted;
 
-	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-	RAISE NOTICE 'Number num_rows_affected  %',  num_rows_affected;
+	--------------------- Start: code to remove duplicate edges ---------------------
+	-- Should be moved to a separate proc so we could reuse this code for other line 
 	
-
-
 	-- Find the edges that are used by the input line
 	DROP TABLE IF EXISTS topo_rein.ttt_covered_by_input_line;
 	CREATE TABLE topo_rein.ttt_covered_by_input_line AS (SELECT ed.* FROM  topo_rein_sysdata.edge_data ed limit 0);
@@ -119,7 +117,7 @@ BEGIN
 	SELECT distinct ed.*  
     FROM 
 	topo_rein_sysdata.relation re,
-	topo_rein.ttt_new_rows_added_in_org_table ud, 
+	topo_rein.ttt_rows_affected_in_org_table ud, 
 	topo_rein_sysdata.edge_data ed
 	WHERE 
 	(ud.linje).id = re.topogeo_id AND
@@ -134,7 +132,7 @@ BEGIN
 	SELECT distinct ed.*  
     FROM 
 	topo_rein_sysdata.relation re,
-	topo_rein.ttt_new_rows_added_in_org_table ud, 
+	topo_rein.ttt_rows_affected_in_org_table ud, 
 	topo_rein_sysdata.edge_data ed
 	WHERE 
 	(ud.linje).id = re.topogeo_id AND
@@ -151,7 +149,7 @@ BEGIN
     FROM 
 	topo_rein_sysdata.relation re1,
 	topo_rein_sysdata.relation re2,
-	topo_rein.ttt_new_rows_added_in_org_table ud, 
+	topo_rein.ttt_rows_affected_in_org_table ud, 
 	topo_rein_sysdata.edge_data ed,
 	topo_rein.reindrift_anlegg_linje a
 	WHERE 
@@ -161,7 +159,7 @@ BEGIN
 	(ud.linje).id = re2.topogeo_id AND
 	re2.layer_id =  border_layer_id AND 
 	re2.element_type = 2 AND
-	NOT EXISTS (SELECT 1 FROM topo_rein.ttt_new_rows_added_in_org_table nr where a.id = nr.id);
+	NOT EXISTS (SELECT 1 FROM topo_rein.ttt_rows_affected_in_org_table nr where a.id = nr.id);
 	
 	-- Find objects thay can deleted because all their edges area covered by new input linje
 	-- This is true this objects has no edges in the list of not used edges
@@ -171,18 +169,18 @@ BEGIN
 	SELECT b.id FROM 
 	topo_rein.ttt_affected_objects_id b
 	WHERE b.id NOT IN
-	( SELECT distinct a.id 
-	FROM 
-	topo_rein_sysdata.relation re1,
-	topo_rein.ttt_affected_objects_id a,
-	topo_rein.ttt_not_covered_by_input_line ued1
-	WHERE 
-	(a.linje).id = re1.topogeo_id AND
-	re1.layer_id =  border_layer_id AND 
-	re1.element_type = 2 AND
-	ued1.edge_id = re1.element_id
+	(	
+		SELECT distinct a.id 
+		FROM 
+		topo_rein_sysdata.relation re1,
+		topo_rein.ttt_affected_objects_id a,
+		topo_rein.ttt_not_covered_by_input_line ued1
+		WHERE 
+		(a.linje).id = re1.topogeo_id AND
+		re1.layer_id =  border_layer_id AND 
+		re1.element_type = 2 AND
+		ued1.edge_id = re1.element_id
 	); 
-
 
 	-- Clear the topology elements objects that does not have edges left
 	PERFORM topology.clearTopoGeom(a.linje) 
@@ -214,7 +212,6 @@ BEGIN
 	FROM topo_rein.reindrift_anlegg_linje  a,
 	topo_rein.ttt_objects_to_be_updated b
 	WHERE a.id = b.id;
-
 	
 	-- Update the topo objects with shared edges that stil hava 
 	UPDATE topo_rein.reindrift_anlegg_linje AS a
@@ -222,9 +219,12 @@ BEGIN
 	FROM topo_rein.ttt_objects_to_be_updated b
 	WHERE a.id = b.id;
 
+	-- We have now removed duplicate ref to any edges, this means that each edge is only used once
+	--------------------- Stop: code to remove duplicate edges ---------------------
 
-		-- Find rows that intersects (has shared edges) with the new line drawn by the end user
-	-- This lines should change
+	
+	-- Find rows that intersects with the new line drawn by the end user
+	-- This lines should be returned to affected together with the line created
 	DROP TABLE IF EXISTS ttt_intersection_id;
 	CREATE TEMP TABLE ttt_intersection_id AS (SELECT * FROM  topo_rein.reindrift_anlegg_linje limit 0);
 	INSERT INTO ttt_intersection_id
@@ -238,14 +238,28 @@ BEGIN
 	WHERE ST_intersects(ed.geom,a2.geom)
 	AND topo_rein.get_relation_id(a.linje) = re.topogeo_id AND re.layer_id = tl.layer_id AND tl.schema_name = 'topo_rein' AND 
 	tl.table_name = 'reindrift_anlegg_linje' AND ed.edge_id=re.element_id
-	AND NOT EXISTS (SELECT 1 FROM topo_rein.ttt_new_rows_added_in_org_table nr where a.id = nr.id);
+	AND NOT EXISTS (SELECT 1 FROM topo_rein.ttt_rows_affected_in_org_table nr where a.id = nr.id);
 
 	-- update the return table with 
-	INSERT INTO topo_rein.ttt_new_rows_added_in_org_table(id)
+	INSERT INTO topo_rein.ttt_rows_affected_in_org_table(id)
 	SELECT a.id FROM ttt_intersection_id a ;
+
+	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
+	RAISE NOTICE 'Number num_rows_affected  %',  num_rows_affected;
+	
+	
+	--------------------- Start: Find short eges to be removed  ---------------------
+	-- Should be moved to a separate proc so we could reuse this code for other line 
+	
+	
+	
+	
+
+	--------------------- Stop: Find short eges to be removed  ---------------------
+
 	
 	-- TODO should we also return lines that are close to or intersects and split them so it's possible to ??? 
-	command_string := ' SELECT distinct tg.id AS id FROM  topo_rein.ttt_new_rows_added_in_org_table tg';
+	command_string := ' SELECT distinct tg.id AS id FROM  topo_rein.ttt_rows_affected_in_org_table tg';
 	-- command_string := 'SELECT tg.id AS id FROM ' || border_topo_info.layer_schema_name || '.' || border_topo_info.layer_table_name || ' tg, new_rows_added_in_org_table new WHERE new.linje::geometry && tg.linje::geometry';
 	RAISE NOTICE '%', command_string;
     RETURN QUERY EXECUTE command_string;
