@@ -61,12 +61,12 @@ BEGIN
 	
 	RAISE NOTICE 'The JSON input %',  json_feature;
 
-	RAISE NOTICE 'border_layer_id %',  border_layer_id;
+	RAISE NOTICE 'border_layer_id %', border_layer_id;
 
 
 	-- get the json values
-	DROP TABLE IF EXISTS topo_rein.ttt_new_attributes_values;
-	CREATE TABLE topo_rein.ttt_new_attributes_values(geom geometry,properties json);
+	CREATE TABLE IF NOT EXISTS topo_rein.ttt_new_attributes_values(geom geometry,properties json);
+	TRUNCATE TABLE topo_rein.ttt_new_attributes_values;
 	INSERT INTO topo_rein.ttt_new_attributes_values(geom,properties)
 	SELECT 
 		topo_rein.get_geom_from_json(feat,4258) as geom,
@@ -78,6 +78,8 @@ BEGIN
 		-- check that it is only one row put that value into 
 	-- TODO rewrite this to not use table in
 	
+	RAISE NOTICE 'Step::::::::::::::::: 1';
+
 	IF (SELECT count(*) FROM topo_rein.ttt_new_attributes_values) != 1 THEN
 		RAISE EXCEPTION 'Not valid json_feature %', json_feature;
 	ELSE 
@@ -92,9 +94,11 @@ BEGIN
 	
 	END IF;
 
+	RAISE NOTICE 'Step::::::::::::::::: 2';
+
 	-- insert the data in the org table and keep a copy of the data
-	DROP TABLE IF EXISTS topo_rein.ttt_rows_affected_in_org_table;
-	CREATE TABLE topo_rein.ttt_rows_affected_in_org_table AS (SELECT * FROM  topo_rein.reindrift_anlegg_linje limit 0);
+	CREATE TABLE IF NOT EXISTS topo_rein.ttt_rows_affected_in_org_table (LIKE topo_rein.reindrift_anlegg_linje EXCLUDING CONSTRAINTS);
+	TRUNCATE TABLE topo_rein.ttt_rows_affected_in_org_table;
 	WITH inserted AS (
 		INSERT INTO topo_rein.reindrift_anlegg_linje(linje, felles_egenskaper, reindriftsanleggstype,reinbeitebruker_id)
 		SELECT  
@@ -108,12 +112,15 @@ BEGIN
 	INSERT INTO topo_rein.ttt_rows_affected_in_org_table
 	SELECT * FROM inserted;
 
+	RAISE NOTICE 'Step::::::::::::::::: 3';
+
 	--------------------- Start: code to remove duplicate edges ---------------------
 	-- Should be moved to a separate proc so we could reuse this code for other line 
 	
 	-- Find the edges that are used by the input line
-	DROP TABLE IF EXISTS topo_rein.ttt_covered_by_input_line;
-	CREATE TABLE topo_rein.ttt_covered_by_input_line AS (SELECT ed.* FROM  topo_rein_sysdata.edge_data ed limit 0);
+	CREATE TABLE IF NOT EXISTS topo_rein.ttt_covered_by_input_line (LIKE topo_rein_sysdata.edge_data EXCLUDING CONSTRAINTS);
+	TRUNCATE TABLE topo_rein.ttt_covered_by_input_line;
+	
 	INSERT INTO topo_rein.ttt_covered_by_input_line
 	SELECT distinct ed.*  
     FROM 
@@ -122,29 +129,40 @@ BEGIN
 	topo_rein_sysdata.edge_data ed
 	WHERE 
 	(ud.linje).id = re.topogeo_id AND
-	re.layer_id =  border_layer_id AND 
+	re.layer_id = border_layer_id AND 
 	re.element_type = 2 AND  -- TODO use variable element_type_edge=2
 	ed.edge_id = re.element_id;
 
+	RAISE NOTICE 'Step::::::::::::::::: 4';
+
 	-- Find edges that are not used by the input line which needs to recreated
-	DROP TABLE IF EXISTS topo_rein.ttt_not_covered_by_input_line;
-	CREATE TABLE topo_rein.ttt_not_covered_by_input_line AS (SELECT ed.* FROM  topo_rein_sysdata.edge_data ed limit 0);
+	CREATE TABLE IF NOT EXISTS topo_rein.ttt_not_covered_by_input_line (LIKE topo_rein_sysdata.edge_data EXCLUDING CONSTRAINTS);
+	TRUNCATE TABLE topo_rein.ttt_not_covered_by_input_line;
 	INSERT INTO topo_rein.ttt_not_covered_by_input_line
 	SELECT distinct ed.*  
     FROM 
-	topo_rein_sysdata.relation re,
 	topo_rein.ttt_rows_affected_in_org_table ud, 
+	topo_rein_sysdata.relation re,
+	topo_rein_sysdata.relation re2,
+	topo_rein_sysdata.relation re3,
 	topo_rein_sysdata.edge_data ed
 	WHERE 
 	(ud.linje).id = re.topogeo_id AND
-	re.layer_id =  border_layer_id AND 
+	re.layer_id = border_layer_id AND 
 	re.element_type = 2 AND  -- TODO use variable element_type_edge=2
-	ed.edge_id != re.element_id  AND
-	NOT EXISTS (SELECT 1 FROM topo_rein.ttt_covered_by_input_line t WHERE t.edge_id = ed.edge_id);
+	re2.layer_id = border_layer_id AND 
+	re2.element_type = 2 AND  -- TODO use variable element_type_edge=2
+	re2.element_id = re.element_id AND
+	re3.topogeo_id = re2.topogeo_id AND
+	re3.element_id = ed.edge_id AND
+	NOT EXISTS (SELECT 1 FROM topo_rein.ttt_covered_by_input_line where ed.edge_id = edge_id);
+
+
+	RAISE NOTICE 'Step::::::::::::::::: 5';
 
 	-- Find anleggs type objects that needs to be adjusted because the new rows has edges that are used by this rows
-	DROP TABLE IF EXISTS topo_rein.ttt_affected_objects_id;
-	CREATE TABLE topo_rein.ttt_affected_objects_id AS (SELECT * FROM  topo_rein.reindrift_anlegg_linje limit 0);
+	CREATE TABLE IF NOT EXISTS topo_rein.ttt_affected_objects_id (LIKE topo_rein.reindrift_anlegg_linje EXCLUDING CONSTRAINTS);
+	TRUNCATE TABLE topo_rein.ttt_affected_objects_id;
 	INSERT INTO topo_rein.ttt_affected_objects_id
 	SELECT distinct a.*  
     FROM 
@@ -155,20 +173,24 @@ BEGIN
 	topo_rein.reindrift_anlegg_linje a
 	WHERE 
 	(ud.linje).id = re1.topogeo_id AND
-	re1.layer_id =  border_layer_id AND 
+	re1.layer_id = border_layer_id AND 
 	re1.element_type = 2 AND
 	(ud.linje).id = re2.topogeo_id AND
-	re2.layer_id =  border_layer_id AND 
+	re2.layer_id = border_layer_id AND 
 	re2.element_type = 2 AND
 	NOT EXISTS (SELECT 1 FROM topo_rein.ttt_rows_affected_in_org_table nr where a.id = nr.id);
 	
+	RAISE NOTICE 'Step::::::::::::::::: 6';
+
 	-- Find objects thay can deleted because all their edges area covered by new input linje
 	-- This is true this objects has no edges in the list of not used edges
-	DROP TABLE IF EXISTS topo_rein.ttt_objects_to_be_delted;
-	CREATE TABLE topo_rein.ttt_objects_to_be_delted AS (SELECT * FROM  topo_rein.reindrift_anlegg_linje limit 0);
+	CREATE TABLE IF NOT EXISTS topo_rein.ttt_objects_to_be_delted (LIKE topo_rein.reindrift_anlegg_linje EXCLUDING CONSTRAINTS);
+	TRUNCATE TABLE topo_rein.ttt_objects_to_be_delted;
 	INSERT INTO topo_rein.ttt_objects_to_be_delted
 	SELECT b.id FROM 
-	topo_rein.ttt_affected_objects_id b
+	topo_rein.ttt_affected_objects_id b,
+	topo_rein.ttt_covered_by_input_line c,
+	topo_rein_sysdata.relation re2
 	WHERE b.id NOT IN
 	(	
 		SELECT distinct a.id 
@@ -178,10 +200,17 @@ BEGIN
 		topo_rein.ttt_not_covered_by_input_line ued1
 		WHERE 
 		(a.linje).id = re1.topogeo_id AND
-		re1.layer_id =  border_layer_id AND 
+		re1.layer_id = border_layer_id AND 
 		re1.element_type = 2 AND
 		ued1.edge_id = re1.element_id
-	); 
+	) AND
+	b.id = re2.topogeo_id AND
+	re2.layer_id = border_layer_id AND 
+	re2.element_type = 2 AND
+	c.edge_id = re2.element_id;
+		
+
+	RAISE NOTICE 'Step::::::::::::::::: 7';
 
 	-- Clear the topology elements objects that does not have edges left
 	PERFORM topology.clearTopoGeom(a.linje) 
@@ -189,24 +218,33 @@ BEGIN
 	topo_rein.ttt_objects_to_be_delted b
 	WHERE a.id = b.id;
 	
+	RAISE NOTICE 'Step::::::::::::::::: 8';
+
 	-- Delete those topology elements objects that does not have edges left
 	DELETE FROM topo_rein.reindrift_anlegg_linje a
 	USING topo_rein.ttt_objects_to_be_delted b
 	WHERE a.id = b.id;
 
+	RAISE NOTICE 'Step::::::::::::::::: 93';
+
 	-- Find  lines that shoul be added again the which object they belong to
-	DROP TABLE IF EXISTS topo_rein.ttt_objects_to_be_updated;
-	CREATE TABLE topo_rein.ttt_objects_to_be_updated(id int, geom geometry);
+	CREATE TABLE IF NOT EXISTS topo_rein.ttt_objects_to_be_updated(id int, geom geometry);
+	TRUNCATE TABLE topo_rein.ttt_objects_to_be_updated;
+	
+		RAISE NOTICE 'Step::::::::::::::::: 94';
+
 	INSERT INTO topo_rein.ttt_objects_to_be_updated(id,geom)
 	SELECT b.id, ST_union(ed.geom) AS geom
 	FROM topo_rein.ttt_affected_objects_id b,
 	topo_rein.ttt_not_covered_by_input_line ed,
 	topo_rein_sysdata.relation re
 	WHERE (b.linje).id = re.topogeo_id AND
-	re.layer_id =  border_layer_id AND 
+	re.layer_id = border_layer_id AND 
 	re.element_type = 2 AND  -- TODO use variable element_type_edge=2
 	ed.edge_id != re.element_id
 	GROUP BY b.id;
+
+	RAISE NOTICE 'StepA::::::::::::::::: 1';
 
 	-- Clear the topology elements objects that should be updated
 	PERFORM topology.clearTopoGeom(a.linje) 
@@ -214,11 +252,16 @@ BEGIN
 	topo_rein.ttt_objects_to_be_updated b
 	WHERE a.id = b.id;
 	
+	RAISE NOTICE 'StepA::::::::::::::::: 2';
+
 	-- Update the topo objects with shared edges that stil hava 
 	UPDATE topo_rein.reindrift_anlegg_linje AS a
 	SET linje= topology.toTopoGeom(b.geom, border_topo_info.topology_name, border_layer_id, border_topo_info.snap_tolerance)
 	FROM topo_rein.ttt_objects_to_be_updated b
 	WHERE a.id = b.id;
+
+	
+	RAISE NOTICE 'StepA::::::::::::::::: 3';
 
 	-- We have now removed duplicate ref to any edges, this means that each edge is only used once
 	--------------------- Stop: code to remove duplicate edges ---------------------
@@ -226,28 +269,32 @@ BEGIN
 	
 	-- Find rows that intersects with the new line drawn by the end user
 	-- This lines should be returned to affected together with the line created
-	DROP TABLE IF EXISTS ttt_intersection_id;
-	CREATE TEMP TABLE ttt_intersection_id AS (SELECT * FROM  topo_rein.reindrift_anlegg_linje limit 0);
-	INSERT INTO ttt_intersection_id
+	CREATE TABLE IF NOT EXISTS topo_rein.ttt_intersection_id (LIKE topo_rein.reindrift_anlegg_linje EXCLUDING CONSTRAINTS);
+	TRUNCATE TABLE topo_rein.ttt_intersection_id;
+	INSERT INTO topo_rein.ttt_intersection_id
 	SELECT distinct a.*  
 	FROM 
 	topo_rein.reindrift_anlegg_linje a, 
 	topo_rein.ttt_new_attributes_values a2,
 	topo_rein_sysdata.relation re, 
 	topology.layer tl,
-	topo_rein_sysdata.edge ed
+	topo_rein_sysdata.edge_data  ed
 	WHERE ST_intersects(ed.geom,a2.geom)
 	AND topo_rein.get_relation_id(a.linje) = re.topogeo_id AND re.layer_id = tl.layer_id AND tl.schema_name = 'topo_rein' AND 
 	tl.table_name = 'reindrift_anlegg_linje' AND ed.edge_id=re.element_id
 	AND NOT EXISTS (SELECT 1 FROM topo_rein.ttt_rows_affected_in_org_table nr where a.id = nr.id);
 
+	RAISE NOTICE 'StepA::::::::::::::::: 4';
+
 	-- update the return table with 
 	INSERT INTO topo_rein.ttt_rows_affected_in_org_table(id)
-	SELECT a.id FROM ttt_intersection_id a ;
+	SELECT a.id FROM topo_rein.ttt_intersection_id a ;
 
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 	RAISE NOTICE 'Number num_rows_affected  %',  num_rows_affected;
 	
+		RAISE NOTICE 'StepA::::::::::::::::: 5';
+
 	
 	--------------------- Start: Find short eges to be removed  ---------------------
 	-- Should be moved to a separate proc so we could reuse this code for other line 
@@ -255,8 +302,8 @@ BEGIN
 	-- Find edges that are verry short and that are close to the edges that area drawn.
 	-- Find the edges that are used by the input line
 	
-	DROP TABLE IF EXISTS topo_rein.ttt_short_edge_list;
-	CREATE TABLE topo_rein.ttt_short_edge_list(id int, edge_id int);
+	CREATE TABLE IF NOT EXISTS topo_rein.ttt_short_edge_list(id int, edge_id int);
+	TRUNCATE TABLE topo_rein.ttt_short_edge_list;
 	INSERT INTO topo_rein.ttt_short_edge_list(id,edge_id)
 	SELECT distinct a.id, ed.edge_id  
     FROM 
@@ -267,16 +314,18 @@ BEGIN
 	WHERE 
 	ud.id = a.id AND
 	(a.linje).id = re.topogeo_id AND
-	re.layer_id =  border_layer_id AND 
+	re.layer_id = border_layer_id AND 
 	re.element_type = 2 AND  -- TODO use variable element_type_edge=2
 	ed.edge_id = re.element_id AND
 	ST_Intersects(ed.geom,input_geo ) AND
 	ST_Length(ed.geom) < ST_Length(input_geo) AND
-	ST_Length(input_geo)/ST_Length(ed.geom) > 20;
+	ST_Length(input_geo)/ST_Length(ed.geom) > 10;
 	
+		RAISE NOTICE 'StepA::::::::::::::::: 6';
+
 	-- Create the new geo with out the short edges
-	DROP TABLE IF EXISTS topo_rein.ttt_short_object_list;
-	CREATE TABLE topo_rein.ttt_short_object_list(id int, geom geometry);
+	CREATE TABLE IF NOT EXISTS topo_rein.ttt_short_object_list(id int, geom geometry);
+	TRUNCATE TABLE topo_rein.ttt_short_object_list;
 	INSERT INTO topo_rein.ttt_short_object_list(id,geom)
 	SELECT b.id, ST_union(ed.geom) AS geom
 	FROM topo_rein.ttt_short_edge_list b,
@@ -285,11 +334,13 @@ BEGIN
 	topo_rein.reindrift_anlegg_linje  a
 	WHERE a.id = b.id AND
 	(a.linje).id = re.topogeo_id AND
-	re.layer_id =  border_layer_id AND 
+	re.layer_id = border_layer_id AND 
 	re.element_type = 2 AND  -- TODO use variable element_type_edge=2
 	ed.edge_id = re.element_id AND
 	NOT EXISTS (SELECT 1 FROM topo_rein.ttt_short_edge_list WHERE ed.edge_id = edge_id)
 	GROUP BY b.id;
+
+		RAISE NOTICE 'StepA::::::::::::::::: 7';
 
 
 	-- Clear the topology elements objects that should be updated
@@ -311,7 +362,7 @@ BEGIN
 		border_topo_info.topology_name || '.edge_data'
 	);
 	
-	-- RAISE NOTICE '%', command_string;
+	RAISE NOTICE '%', command_string;
 
     EXECUTE command_string;
 
