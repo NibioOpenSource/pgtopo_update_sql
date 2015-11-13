@@ -39,12 +39,12 @@ BEGIN
 	-- find line layer id
 	line_layer_id := topo_update.get_topo_layer_id(line_topo_info);
 	
-	DROP TABLE IF EXISTS new_attributes_values;
+	DROP TABLE IF EXISTS ttt_new_attributes_values;
 
-	CREATE TEMP TABLE new_attributes_values(geom geometry,properties json);
+	CREATE TEMP TABLE ttt_new_attributes_values(geom geometry,properties json);
 	
 	-- get json data
-	INSERT INTO new_attributes_values(properties)
+	INSERT INTO ttt_new_attributes_values(properties)
 	SELECT 
 --		topo_rein.get_geom_from_json(feat,4258) as geom,
 		to_json(feat->'properties')::json  as properties
@@ -72,7 +72,7 @@ BEGIN
 		reindriftsanleggstype = (t2.properties->>'reindriftsanleggstype')::int,
 		reinbeitebruker_id = (t2.properties->>'reinbeitebruker_id')::text,
 		felles_egenskaper = topo_rein.get_rein_felles_egenskaper_update(felles_egenskaper, simple_sosi_felles_egenskaper_linje)
-	FROM new_attributes_values t2
+	FROM ttt_new_attributes_values t2
 	-- WHERE ST_Intersects(r.omrade::geometry,t2.geom);
 	WHERE id = (t2.properties->>'id')::int;
 	
