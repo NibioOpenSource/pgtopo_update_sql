@@ -97,8 +97,8 @@ BEGIN
 	RAISE NOTICE 'Step::::::::::::::::: 2';
 
 	-- insert the data in the org table and keep a copy of the data
-	CREATE TABLE IF NOT EXISTS topo_rein.ttt_rows_affected_in_org_table (LIKE topo_rein.reindrift_anlegg_linje EXCLUDING CONSTRAINTS);
-	TRUNCATE TABLE topo_rein.ttt_rows_affected_in_org_table;
+	CREATE TABLE IF NOT EXISTS topo_rein.ttt_new_topo_rows_in_org_table (LIKE topo_rein.reindrift_anlegg_linje EXCLUDING CONSTRAINTS);
+	TRUNCATE TABLE topo_rein.ttt_new_topo_rows_in_org_table;
 	WITH inserted AS (
 		INSERT INTO topo_rein.reindrift_anlegg_linje(linje, felles_egenskaper, reindriftsanleggstype,reinbeitebruker_id)
 		SELECT  
@@ -109,7 +109,7 @@ BEGIN
 		FROM topo_rein.ttt_new_attributes_values t2
 		RETURNING *
 	)
-	INSERT INTO topo_rein.ttt_rows_affected_in_org_table
+	INSERT INTO topo_rein.ttt_new_topo_rows_in_org_table
 	SELECT * FROM inserted;
 
 	RAISE NOTICE 'Step::::::::::::::::: 3';
@@ -125,7 +125,7 @@ BEGIN
 	SELECT distinct ed.*  
     FROM 
 	topo_rein_sysdata.relation re,
-	topo_rein.ttt_rows_affected_in_org_table ud, 
+	topo_rein.ttt_new_topo_rows_in_org_table ud, 
 	topo_rein_sysdata.edge_data ed
 	WHERE 
 	(ud.linje).id = re.topogeo_id AND
@@ -141,7 +141,7 @@ BEGIN
 	INSERT INTO topo_rein.ttt_not_covered_by_input_line
 	SELECT distinct ed.*  
     FROM 
-	topo_rein.ttt_rows_affected_in_org_table ud, 
+	topo_rein.ttt_new_topo_rows_in_org_table ud, 
 	topo_rein_sysdata.relation re,
 	topo_rein_sysdata.relation re2,
 	topo_rein_sysdata.relation re3,
@@ -168,7 +168,7 @@ BEGIN
     FROM 
 	topo_rein_sysdata.relation re1,
 	topo_rein_sysdata.relation re2,
-	topo_rein.ttt_rows_affected_in_org_table ud, 
+	topo_rein.ttt_new_topo_rows_in_org_table ud, 
 	topo_rein_sysdata.edge_data ed,
 	topo_rein.reindrift_anlegg_linje a
 	WHERE 
@@ -178,7 +178,7 @@ BEGIN
 	(ud.linje).id = re2.topogeo_id AND
 	re2.layer_id = border_layer_id AND 
 	re2.element_type = 2 AND
-	NOT EXISTS (SELECT 1 FROM topo_rein.ttt_rows_affected_in_org_table nr where a.id = nr.id);
+	NOT EXISTS (SELECT 1 FROM topo_rein.ttt_new_topo_rows_in_org_table nr where a.id = nr.id);
 	
 	RAISE NOTICE 'Step::::::::::::::::: 6';
 
@@ -265,6 +265,9 @@ BEGIN
 
 	-- We have now removed duplicate ref to any edges, this means that each edge is only used once
 	--------------------- Stop: code to remove duplicate edges ---------------------
+	--==============================================================================
+	--==============================================================================
+
 
 	
 	-- Find rows that intersects with the new line drawn by the end user
@@ -282,18 +285,25 @@ BEGIN
 	WHERE ST_intersects(ed.geom,a2.geom)
 	AND topo_rein.get_relation_id(a.linje) = re.topogeo_id AND re.layer_id = tl.layer_id AND tl.schema_name = 'topo_rein' AND 
 	tl.table_name = 'reindrift_anlegg_linje' AND ed.edge_id=re.element_id
-	AND NOT EXISTS (SELECT 1 FROM topo_rein.ttt_rows_affected_in_org_table nr where a.id = nr.id);
+	AND NOT EXISTS (SELECT 1 FROM topo_rein.ttt_new_topo_rows_in_org_table nr where a.id = nr.id);
 
 	RAISE NOTICE 'StepA::::::::::::::::: 4';
 
-	-- update the return table with 
-	INSERT INTO topo_rein.ttt_rows_affected_in_org_table(id)
-	SELECT a.id FROM topo_rein.ttt_intersection_id a ;
-
-	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-	RAISE NOTICE 'Number num_rows_affected  %',  num_rows_affected;
 	
-		RAISE NOTICE 'StepA::::::::::::::::: 5';
+	-- create a list of id from the inserted rows og rows that intersets.
+	-- TODO this should have moved to anothe place, but we need the result below
+	CREATE TABLE IF NOT EXISTS topo_rein.ttt_id_return_list (LIKE topo_rein.ttt_new_topo_rows_in_org_table EXCLUDING CONSTRAINTS);
+	TRUNCATE TABLE topo_rein.ttt_id_return_list;
+
+	-- update the return table with intersected rows
+	INSERT INTO topo_rein.ttt_id_return_list(id)
+	SELECT a.id FROM topo_rein.ttt_new_topo_rows_in_org_table a ;
+
+	-- update the return table with intersected rows
+	INSERT INTO topo_rein.ttt_id_return_list(id)
+	SELECT a.id FROM topo_rein.ttt_intersection_id a ;
+	
+	RAISE NOTICE 'StepA::::::::::::::::: 5';
 
 	
 	--------------------- Start: Find short eges to be removed  ---------------------
@@ -308,7 +318,7 @@ BEGIN
 	SELECT distinct a.id, ed.edge_id  
     FROM 
 	topo_rein_sysdata.relation re,
-	topo_rein.ttt_rows_affected_in_org_table ud, 
+	topo_rein.ttt_id_return_list ud, 
 	topo_rein_sysdata.edge_data ed,
 	topo_rein.reindrift_anlegg_linje  a
 	WHERE 
@@ -321,7 +331,7 @@ BEGIN
 	ST_Length(ed.geom) < ST_Length(input_geo) AND
 	ST_Length(input_geo)/ST_Length(ed.geom) > 10;
 	
-		RAISE NOTICE 'StepA::::::::::::::::: 6';
+	RAISE NOTICE 'StepA::::::::::::::::: 6';
 
 	-- Create the new geo with out the short edges
 	CREATE TABLE IF NOT EXISTS topo_rein.ttt_short_object_list(id int, geom geometry);
@@ -340,7 +350,7 @@ BEGIN
 	NOT EXISTS (SELECT 1 FROM topo_rein.ttt_short_edge_list WHERE ed.edge_id = edge_id)
 	GROUP BY b.id;
 
-		RAISE NOTICE 'StepA::::::::::::::::: 7';
+	RAISE NOTICE 'StepA::::::::::::::::: 7';
 
 
 	-- Clear the topology elements objects that should be updated
@@ -378,17 +388,17 @@ BEGIN
 	FROM topo_rein.ttt_short_object_list b
 	WHERE a.id = b.id;
 
-	
-	
-																																					
-	
-	
-
 	--------------------- Stop: Find short eges to be removed  ---------------------
+	--==============================================================================
+	--==============================================================================
+
+
+			
+
 
 	
 	-- TODO should we also return lines that are close to or intersects and split them so it's possible to ??? 
-	command_string := ' SELECT distinct tg.id AS id FROM  topo_rein.ttt_rows_affected_in_org_table tg';
+	command_string := ' SELECT distinct tg.id AS id FROM   topo_rein.ttt_id_return_list tg';
 	-- command_string := 'SELECT tg.id AS id FROM ' || border_topo_info.layer_schema_name || '.' || border_topo_info.layer_table_name || ' tg, new_rows_added_in_org_table new WHERE new.linje::geometry && tg.linje::geometry';
 	RAISE NOTICE '%', command_string;
     RETURN QUERY EXECUTE command_string;
