@@ -259,7 +259,6 @@ BEGIN
 	FROM topo_rein.ttt_objects_to_be_updated b
 	WHERE a.id = b.id;
 
-	
 	RAISE NOTICE 'StepA::::::::::::::::: 3';
 
 	-- We have now removed duplicate ref to any edges, this means that each edge is only used once
@@ -382,6 +381,8 @@ BEGIN
 	FROM topo_rein.ttt_short_object_list b
 	WHERE a.id = b.id;
 
+	
+
 	--------------------- Stop: Find short eges to be removed  ---------------------
 	--==============================================================================
 	--==============================================================================
@@ -416,7 +417,7 @@ BEGIN
 	ed.edge_id = re.element_id
 	GROUP BY ud.id;
 
-	-- find all edges intersected by input by but tyhe input line it self by using topo_rein.ttt_final_edge_list_for_intersect_line a ;
+	-- find all edges intersected by input by but not input line it self by using topo_rein.ttt_final_edge_list_for_intersect_line a ;
 	-- TODO this is already done above most times but in scases where the input line is not changed all we have to do it
 	-- TDOO is this faster ? or should we just use to simple feature ???
 	CREATE TABLE IF NOT EXISTS topo_rein.ttt_final_edge_list_for_intersect_line(id int, edge_id int, geom geometry);
@@ -437,6 +438,25 @@ BEGIN
 	ed.edge_id = re.element_id AND
 	ST_Intersects(fl.geom,ed.geom);
 
+		-- find out eges in the touching objects that does not intesect withinput line and that also needs to be recreated
+	CREATE TABLE IF NOT EXISTS topo_rein.ttt_final_edge_left_list_intersect_line(id int, edge_id int, geom geometry);
+	TRUNCATE TABLE topo_rein.ttt_final_edge_left_list_intersect_line;
+	INSERT INTO topo_rein.ttt_final_edge_left_list_intersect_line
+	SELECT distinct ud.id, ed.edge_id, ed.geom AS geom
+    FROM 
+	topo_rein_sysdata.relation re,
+	topo_rein.ttt_intersection_id ud, 
+	topo_rein_sysdata.edge_data ed,
+	topo_rein.reindrift_anlegg_linje a
+	WHERE 
+	a.id = ud.id AND
+	(a.linje).id = re.topogeo_id AND
+	re.layer_id = 3 AND 
+	re.element_type = 2 AND  -- TODO use variable element_type_edge=2
+	ed.edge_id = re.element_id AND
+	NOT EXISTS (SELECT 1 FROM topo_rein.ttt_final_edge_list_for_intersect_line WHERE ed.edge_id = edge_id);
+
+
 	-- we are only interested in intersections with two or more edges are involved
 	-- so remove this id with less than 2  
 	DELETE FROM topo_rein.ttt_final_edge_list_for_intersect_line a
@@ -444,7 +464,7 @@ BEGIN
 	( 
 		SELECT g.id FROM
 		(SELECT e.id, count(*) AS num FROM  topo_rein.ttt_final_edge_list_for_intersect_line AS e GROUP BY e.id) AS g
-		WHERE num < 3
+		WHERE num < 2
 	) AS b
 	WHERE a.id = b.id;
 
@@ -469,25 +489,8 @@ BEGIN
 	INSERT INTO topo_rein.ttt_new_intersected_split_objects
 	SELECT * FROM inserted;
 
-	-- We have now added new topo objects for egdes that intersetcs no we need to modify the orignal topoobjects so we don't get any duplicates
 
-	-- find out eges in the touching objects that does not intesect withinput line and that also needs to be recreated
-	CREATE TABLE IF NOT EXISTS topo_rein.ttt_final_edge_left_list_intersect_line(id int, edge_id int, geom geometry);
-	TRUNCATE TABLE topo_rein.ttt_final_edge_left_list_intersect_line;
-	INSERT INTO topo_rein.ttt_final_edge_left_list_intersect_line
-	SELECT distinct ud.id, ed.edge_id, ed.geom AS geom
-    FROM 
-	topo_rein_sysdata.relation re,
-	topo_rein.ttt_intersection_id ud, 
-	topo_rein_sysdata.edge_data ed,
-	topo_rein.reindrift_anlegg_linje a
-	WHERE 
-	a.id = ud.id AND
-	(a.linje).id = re.topogeo_id AND
-	re.layer_id = 3 AND 
-	re.element_type = 2 AND  -- TODO use variable element_type_edge=2
-	ed.edge_id = re.element_id AND
-	NOT EXISTS (SELECT 1 FROM topo_rein.ttt_final_edge_list_for_intersect_line WHERE ed.edge_id = edge_id);
+	-- We have now added new topo objects for egdes that intersetcs no we need to modify the orignal topoobjects so we don't get any duplicates
 
 	-- Clear the topology elements objects that should be updated
 	PERFORM topology.clearTopoGeom( c.linje) 
@@ -508,6 +511,7 @@ BEGIN
 		GROUP BY g.id
 	) AS b
 	WHERE a.id = b.id;
+
 
 	-- Delete those with now egdes left both in return list
 	WITH deleted AS (
