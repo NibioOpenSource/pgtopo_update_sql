@@ -117,7 +117,7 @@ BEGIN
 	--------------------- Start: code to remove duplicate edges ---------------------
 	-- Should be moved to a separate proc so we could reuse this code for other line 
 	
-	-- Find the edges that are used by the input line
+	-- Find the edges that are used by the input line 
 	CREATE TABLE IF NOT EXISTS topo_rein.ttt_covered_by_input_line (LIKE topo_rein_sysdata.edge_data EXCLUDING CONSTRAINTS);
 	TRUNCATE TABLE topo_rein.ttt_covered_by_input_line;
 	INSERT INTO topo_rein.ttt_covered_by_input_line
@@ -326,7 +326,7 @@ BEGIN
 	re.element_type = 2 AND  -- TODO use variable element_type_edge=2
 	ed.edge_id = re.element_id AND
 	ST_Intersects(ed.geom,input_geo ) AND
-	NOT EXISTS
+	NOT EXISTS -- don't remove small line pices that are connected to another edges
 	( 
 		SELECT 1 FROM 
 		(
@@ -336,6 +336,24 @@ BEGIN
 			ST_Intersects(ed2.geom,ed.geom ) 
 		) AS r2
 		WHERE r2.num_edge_int > 4
+	) AND
+	EXISTS -- dont't remove small pices if this has the same length as single topoobject 
+	( 
+		SELECT 1 FROM 
+		(
+			SELECT ST_Length(ST_Union(eda.geom)) AS topo_length FROM 
+			topo_rein_sysdata.relation re3,
+			topo_rein_sysdata.relation re4,
+			topo_rein_sysdata.edge_data eda
+			WHERE 
+			re3.layer_id = border_layer_id AND 
+			re3.element_type = 2 AND  -- TODO use variable element_type_edge=2
+			ed.edge_id = re3.element_id AND
+			re4.topogeo_id = re3.topogeo_id AND
+			re4.element_id = eda.edge_id
+			GROUP BY eda.edge_id
+		) AS r2
+		WHERE ST_Length(ed.geom) < topo_length -- TODO adde test the relative length of the topo object
 	) AND
 	ST_Length(ed.geom) < ST_Length(input_geo) AND
 	ST_Length(input_geo)/ST_Length(ed.geom) > 10;
@@ -428,7 +446,7 @@ BEGIN
 	WHERE 
 	a.id = ud.id AND
 	(a.linje).id = re.topogeo_id AND
-	re.layer_id = 3 AND 
+	re.layer_id = layer_id AND 
 	re.element_type = 2 AND  -- TODO use variable element_type_edge=2
 	ed.edge_id = re.element_id
 	GROUP BY ud.id;
@@ -449,7 +467,7 @@ BEGIN
 	WHERE 
 	a.id = ud.id AND
 	(a.linje).id = re.topogeo_id AND
-	re.layer_id = 3 AND 
+	re.layer_id = layer_id AND 
 	re.element_type = 2 AND  -- TODO use variable element_type_edge=2
 	ed.edge_id = re.element_id AND
 	ST_Intersects(fl.geom,ed.geom);
