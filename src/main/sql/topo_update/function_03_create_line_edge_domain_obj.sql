@@ -226,7 +226,7 @@ BEGIN
 
 	RAISE NOTICE 'Step::::::::::::::::: 93';
 
-	-- Find  lines that shoul be added again the which object they belong to
+	-- Find  lines that should be added again the which object they belong to
 	CREATE TABLE IF NOT EXISTS topo_rein.ttt_objects_to_be_updated(id int, geom geometry);
 	TRUNCATE TABLE topo_rein.ttt_objects_to_be_updated;
 	
@@ -326,6 +326,17 @@ BEGIN
 	re.element_type = 2 AND  -- TODO use variable element_type_edge=2
 	ed.edge_id = re.element_id AND
 	ST_Intersects(ed.geom,input_geo ) AND
+	NOT EXISTS
+	( 
+		SELECT 1 FROM 
+		(
+			SELECT count(ed2.edge_id) AS num_edge_int FROM 
+			topo_rein_sysdata.edge_data AS ed2
+			WHERE 
+			ST_Intersects(ed2.geom,ed.geom ) 
+		) AS r2
+		WHERE r2.num_edge_int > 4
+	) AND
 	ST_Length(ed.geom) < ST_Length(input_geo) AND
 	ST_Length(input_geo)/ST_Length(ed.geom) > 10;
 	
@@ -349,6 +360,11 @@ BEGIN
 	GROUP BY b.id;
 
 	RAISE NOTICE 'StepA::::::::::::::::: 7';
+
+	
+--	IF (SELECT ST_StartPoint(geom) FROM topo_rein.ttt_new_attributes_values)::text = '0101000020A2100000E15D2EE23BD11640A0353FFED2464D40' THEN
+-- return;
+--END IF;
 
 
 	-- Clear the topology elements objects that should be updated
@@ -412,7 +428,7 @@ BEGIN
 	WHERE 
 	a.id = ud.id AND
 	(a.linje).id = re.topogeo_id AND
-	re.layer_id = border_layer_id AND 
+	re.layer_id = 3 AND 
 	re.element_type = 2 AND  -- TODO use variable element_type_edge=2
 	ed.edge_id = re.element_id
 	GROUP BY ud.id;
@@ -433,7 +449,7 @@ BEGIN
 	WHERE 
 	a.id = ud.id AND
 	(a.linje).id = re.topogeo_id AND
-	re.layer_id = border_layer_id AND 
+	re.layer_id = 3 AND 
 	re.element_type = 2 AND  -- TODO use variable element_type_edge=2
 	ed.edge_id = re.element_id AND
 	ST_Intersects(fl.geom,ed.geom);
@@ -451,11 +467,10 @@ BEGIN
 	WHERE 
 	a.id = ud.id AND
 	(a.linje).id = re.topogeo_id AND
-	re.layer_id = 3 AND 
+	re.layer_id = border_layer_id AND 
 	re.element_type = 2 AND  -- TODO use variable element_type_edge=2
 	ed.edge_id = re.element_id AND
 	NOT EXISTS (SELECT 1 FROM topo_rein.ttt_final_edge_list_for_intersect_line WHERE ed.edge_id = edge_id);
-
 
 	-- we are only interested in intersections with two or more edges are involved
 	-- so remove this id with less than 2  
@@ -464,7 +479,7 @@ BEGIN
 	( 
 		SELECT g.id FROM
 		(SELECT e.id, count(*) AS num FROM  topo_rein.ttt_final_edge_list_for_intersect_line AS e GROUP BY e.id) AS g
-		WHERE num < 2
+		WHERE num < 3
 	) AS b
 	WHERE a.id = b.id;
 
