@@ -424,9 +424,9 @@ BEGIN
 		topo_rein.ttt_id_return_list ud, 
 		topo_rein_sysdata.edge_data ed,
 		topo_rein.reindrift_anlegg_linje  a,
-		topo_rein.ttt_new_topo_rows_in_org_table nr2
-	--	topo_rein_sysdata.relation re2,
-	--	topo_rein_sysdata.edge_data ed2
+		topo_rein.ttt_new_topo_rows_in_org_table nr2,
+		topo_rein_sysdata.relation re2,
+		topo_rein_sysdata.edge_data ed2
 		
 		WHERE 
 		ud.id = a.id AND
@@ -436,32 +436,32 @@ BEGIN
 		ed.edge_id = re.element_id AND
 		
 		-- replaces ST_Intersects(ed.geom,input_geom)
-		ST_Intersects(nr2.linje,a.linje) and
+		-- ST_Intersects(nr2.linje,a.linje) and
 	
-		--(nr2.linje).id = re2.topogeo_id and
-		--re2.layer_id = border_layer_id and 
-		--re2.element_type = 2 and  -- todo use variable element_type_edge=2
-		--ed2.edge_id = re2.element_id and
-		--(ed2.start_node = ed.start_node or
-		--ed2.end_node = ed.end_node or
-		--ed2.start_node = ed.end_node or
-		--ed2.start_node = ed.end_node) AND
+		(nr2.linje).id = re2.topogeo_id and
+		re2.layer_id = border_layer_id and 
+		re2.element_type = 2 and  -- todo use variable element_type_edge=2
+		ed2.edge_id = re2.element_id and
+		(ed2.start_node = ed.start_node or
+		ed2.end_node = ed.end_node or
+		ed2.start_node = ed.end_node or
+		ed2.start_node = ed.end_node) AND
 	
 		NOT EXISTS -- don't remove small line pices that are connected to another edges
 		( 
 			SELECT 1 FROM 
-			(
-				SELECT 
-				count(ed3.edge_id) AS num_edge_int FROM 
-				topo_rein_sysdata.edge_data AS ed3
+				topo_rein_sysdata.edge_data AS ed3,
+				topo_rein_sysdata.edge_data AS ed4
+			--	topo_rein_sysdata.edge_data ed
 				WHERE 
-				--ST_Intersects(ed3.geom,ed.geom ) 
-				(ed3.start_node = ed.start_node or
-				ed3.end_node = ed.end_node or
-				ed3.start_node = ed.end_node or
-				ed3.start_node = ed.end_node) 
-			) AS r2
-			WHERE r2.num_edge_int > 4
+--				ed2.edge_id != ed.edge_id AND -- This role is applied to it self
+				(ed3.edge_id != ed.edge_id AND  
+				(ed3.start_node = ed.start_node OR
+				ed3.end_node = ed.start_node))
+				AND
+				(ed4.edge_id != ed.edge_id AND  
+				(ed4.start_node = ed.end_node OR
+				ed4.end_node = ed.end_node))
 		) AND
 		
 		-- don't remove line that ara on line line and does
@@ -491,8 +491,24 @@ BEGIN
 			) AS r2
 			WHERE ST_Length(ed.geom) < topo_length -- TODO adde test the relative length of the topo object
 		) AND
-		ST_Length(ed.geom) < ST_Length(input_geo) AND
-		ST_Length(input_geo)/ST_Length(ed.geom) > 9;
+		
+		(
+			-- for the lines drwan by the user we dont' need to check on min length 
+			( 
+				(a.linje).id = (nr2.linje).id AND
+				ST_Length(ed.geom) < ST_Length(input_geo) AND
+				ST_Length(input_geo)/ST_Length(ed.geom) > 9-- TODO find out what values to use here is this performance problem ?
+			)
+		OR
+			(
+				(a.linje).id != (nr2.linje).id AND
+				ST_Length(ed.geom) < ST_Length(input_geo) AND
+				ST_Length(input_geo)/ST_Length(ed.geom) > 9 AND -- TODO find out what values to use here is this performance problem ?
+				ST_Length(ST_transform(ed.geom,32632)) < 500  -- TODO find out what values to use here is this performance problem ?
+			)
+		);
+		
+		
 		
 		RAISE NOTICE 'StepA::::::::::::::::: 6 sl %', (select count(*) from topo_rein.ttt_short_edge_list);
 	
