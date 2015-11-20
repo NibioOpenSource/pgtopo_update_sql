@@ -4,6 +4,12 @@ CREATE SCHEMA topo_rein;
 GRANT USAGE ON SCHEMA topo_rein TO public;
 
 select CreateTopology('topo_rein_sysdata',4258,0.0000000001);
+-- Workaround for PostGIS bug, see
+-- http://trac.osgeo.org/postgis/ticket/3359
+-- Start edge_id from 2
+-- Start face_id from 3
+SELECT setval('topo_rein_sysdata.edge_data_edge_id_seq', 2, false),
+       setval('topo_rein_sysdata.face_face_id_seq', 3, false);
 -- give puclic access
 GRANT USAGE ON SCHEMA topo_rein_sysdata TO public;
 
