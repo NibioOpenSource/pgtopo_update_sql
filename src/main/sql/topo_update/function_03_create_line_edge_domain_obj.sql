@@ -2,7 +2,9 @@
 -- TODO move this function to it's file
 
 -- DROP function topo_update.create_temp_tbl_as(tblname text,qry text);
-CREATE OR replace function topo_update.create_temp_tbl_as(tblname text,qry text) returns text as
+-- {
+CREATE OR replace function topo_update.create_temp_tbl_as(tblname text,qry text)
+returns text as
 $$ 
 BEGIN
 $1 = trim($1);
@@ -16,11 +18,14 @@ END IF;
 END
 $$
 language plpgsql;
+--}
 
 -- TODO move this function to it's file
 
 -- DROP function topo_update.create_temp_tbl_def(tblname text,def text);
-CREATE OR replace function topo_update.create_temp_tbl_def(tblname text,def text) returns text as
+-- {
+CREATE OR replace function topo_update.create_temp_tbl_def(tblname text,def text)
+returns text as
 $$ 
 BEGIN
 $1 = trim($1);
@@ -34,6 +39,7 @@ END IF;
 END
 $$
 language plpgsql;
+--}
 
 
 --DO $$
@@ -55,13 +61,10 @@ language plpgsql;
 -- TODO set attributtes for the line
 
 
+-- {
 CREATE OR REPLACE FUNCTION topo_update.create_line_edge_domain_obj(json_feature text) 
 RETURNS TABLE(id integer) AS $$
 DECLARE
-
-json_result text;
-
-new_border_data topogeometry;
 
 -- this border layer id will picked up by input parameters
 border_layer_id int;
@@ -72,17 +75,8 @@ snap_tolerance float8 = 0.0000000001;
 -- TODO use as parameter put for testing we just have here for now
 border_topo_info topo_update.input_meta_info ;
 
--- hold striped gei
-edge_with_out_loose_ends geometry = null;
-
 -- holds dynamic sql to be able to use the same code for different
 command_string text;
-
--- used for logging
-num_rows_affected int;
-
--- used for logging
-add_debug_tables int = 0;
 
 -- the number times the input line intersects
 num_edge_intersects int;
@@ -746,6 +740,7 @@ BEGIN
     
 END;
 $$ LANGUAGE plpgsql;
+--}
 
 
 -- select topo_update.create_line_edge_domain_obj('{"type":"Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[23.6848135256,70.2941567505],[23.6861561246,70.2937237249],[23.6888489507,70.2928551851],[23.6896495555,70.2925466063],[23.6917889589,70.292156264],[23.6945956663,70.2918661088],[23.6965659512,70.2915742147],[23.6997477211,70.2913270875],[23.7033391524,70.2915039485],[23.7044653963,70.2916332891],[23.7071834727,70.2915684568],[23.7076455811,70.2914565778],[23.7081927635,70.2912602126],[23.7079468414,70.2907122103]]},"properties":{"reinbeitebruker_id":"YD","reindriftsanleggstype":1}}');
