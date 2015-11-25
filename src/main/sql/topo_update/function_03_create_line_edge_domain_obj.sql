@@ -445,7 +445,7 @@ ttt2_new_topo_rows_in_org_table SELECT * FROM inserted ',
 	RAISE NOTICE 'StepA::::::::::::::::: 5';
 
 
-	IF num_edge_intersects < 3 THEN
+	IF num_edge_intersects < 3 THEN -- {
 
 		--------------------- Start: Find short eges to be removed  ---------------------
 		-- Should be moved to a separate proc so we could reuse this code for other line 
@@ -765,7 +765,7 @@ ttt2_new_topo_rows_in_org_table SELECT * FROM inserted ',
 		SELECT a.id FROM ttt2_new_intersected_split_objects a 
 		WHERE NOT EXISTS (SELECT 1 FROM ttt2_final_edge_left_list_intersect_line c WHERE a.id = c.id);
 
-	END IF;
+	END IF; -- }
 	
 	
 	
