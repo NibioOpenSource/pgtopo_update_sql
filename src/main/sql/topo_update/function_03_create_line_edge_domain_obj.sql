@@ -101,15 +101,23 @@ BEGIN
 	border_topo_info.snap_tolerance := snap_tolerance;
 
 	-- Find out topology name and element_type from layer identifier
-	SELECT t.name, l.feature_type
-	FROM topology.topology t, topology.layer l
-	WHERE l.level = 0 -- need be primitive
-    AND l.schema_name = border_topo_info.layer_schema_name
-	  AND l.table_name = border_topo_info.layer_table_name
-	  AND l.feature_column = border_topo_info.layer_feature_column
-	  AND t.id = l.topology_id
-	INTO STRICT border_topo_info.topology_name,
-	            border_topo_info.element_type;
+  BEGIN
+    SELECT t.name, l.feature_type
+    FROM topology.topology t, topology.layer l
+    WHERE l.level = 0 -- need be primitive
+      AND l.schema_name = border_topo_info.layer_schema_name
+      AND l.table_name = border_topo_info.layer_table_name
+      AND l.feature_column = border_topo_info.layer_feature_column
+      AND t.id = l.topology_id
+    INTO STRICT border_topo_info.topology_name,
+                border_topo_info.element_type;
+  EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+      RAISE EXCEPTION 'Cannot find info for primitive layer %.%.%',
+        border_topo_info.layer_schema_name,
+        border_topo_info.layer_table_name,
+        border_topo_info.layer_feature_column;
+  END;
 
 		-- find border layer id
 	border_layer_id := topo_update.get_topo_layer_id(border_topo_info);
