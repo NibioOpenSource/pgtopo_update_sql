@@ -86,6 +86,11 @@ input_geo geometry;
 felles_egenskaper_linje topo_rein.sosi_felles_egenskaper;
 simple_sosi_felles_egenskaper_linje topo_rein.simple_sosi_felles_egenskaper;
 
+-- array of quoted field identifiers
+-- for attribute fields passed in by user and known (by name)
+-- in the target table
+not_null_fields text[];
+
 BEGIN
 	
 	
@@ -187,12 +192,12 @@ BEGIN
   RAISE NOTICE 'Set felles_egenskaper field';
 
   -- Extract name of fields with not-null values:
-  SELECT array_to_string(array_agg(quote_ident(key)),',')
+  SELECT array_agg(quote_ident(key))
     FROM ttt2_new_topo_rows_in_org_table t, json_each_text(to_json((t)))
    WHERE value IS NOT NULL
-    INTO command_string;
+    INTO not_null_fields;
 
-  RAISE NOTICE 'Extract name of not-null fields: %', command_string;
+  RAISE NOTICE 'Extract name of not-null fields: %', not_null_fields;
 
   -- Copy full record from temp table to actual table and
   -- update temp table with actual table values
@@ -203,7 +208,9 @@ FROM ttt2_new_topo_rows_in_org_table ) INSERT INTO
 ttt2_new_topo_rows_in_org_table SELECT * FROM inserted ',
     border_topo_info.layer_schema_name,
     border_topo_info.layer_table_name,
-    command_string, command_string);
+    array_to_string(not_null_fields, ','),
+    array_to_string(not_null_fields, ',')
+    );
 	EXECUTE command_string;
 
 	RAISE NOTICE 'Step::::::::::::::::: 3';
@@ -257,27 +264,39 @@ ttt2_new_topo_rows_in_org_table SELECT * FROM inserted ',
 	-- Should be moved to a separate proc so we could reuse this code for other line 
 	
 	-- Find the edges that are used by the input line 
-	command_string := topo_update.create_temp_tbl_as('ttt2_covered_by_input_line','SELECT * FROM  topo_rein_sysdata.edge_data limit 0');
+	command_string := topo_update.create_temp_tbl_as('ttt2_covered_by_input_line',
+    'SELECT * FROM ' || quote_ident(border_topo_info.topology_name)
+    || '.edge_data limit 0');
 	EXECUTE command_string;
 	-- TRUNCATE TABLE ttt2_covered_by_input_line;
+
+  command_string := format('
 	INSERT INTO ttt2_covered_by_input_line
 	SELECT distinct ed.*  
     FROM 
-	topo_rein_sysdata.relation re,
+	%I.relation re,
 	ttt2_new_topo_rows_in_org_table ud, 
-	topo_rein_sysdata.edge_data ed
+	%I.edge_data ed
 	WHERE 
-	(ud.linje).id = re.topogeo_id AND
-	re.layer_id = border_layer_id AND 
+	(ud.%I).id = re.topogeo_id AND
+	re.layer_id = %L AND 
 	re.element_type = 2 AND  -- TODO use variable element_type_edge=2
-	ed.edge_id = re.element_id;
+	ed.edge_id = re.element_id',
+  border_topo_info.topology_name,
+  border_topo_info.topology_name,
+  border_topo_info.layer_feature_column,
+  border_layer_id
+  );
+  EXECUTE command_string;
 
 	RAISE NOTICE 'Step::::::::::::::::: 4 ny';
 
 	-- Find edges that are not used by the input line which needs to recreated.
 	-- This only the case when ypu have direct overlap. Will only happen when part of the same line is added twice.
 	-- Exlude the object createed now
-	command_string := topo_update.create_temp_tbl_as('ttt2_not_covered_by_input_line','SELECT * FROM  topo_rein_sysdata.edge_data limit 0');
+	command_string := topo_update.create_temp_tbl_as('ttt2_not_covered_by_input_line',
+    'SELECT * FROM ' || quote_ident(border_topo_info.topology_name)
+    || '.edge_data limit 0');
 	EXECUTE command_string;
 
 	command_string := format('INSERT INTO ttt2_not_covered_by_input_line
@@ -490,7 +509,7 @@ topo_update.create_temp_tbl_as('ttt2_intersection_id','SELECT * FROM ttt2_new_to
 	topology.layer tl,
 	%I.edge_data  ed
 	WHERE ST_intersects(ed.geom,a2.geom)
-	AND topo_rein.get_relation_id(a.linje) = re.topogeo_id AND
+	AND topo_rein.get_relation_id(a.%I) = re.topogeo_id AND
 re.layer_id = tl.layer_id AND tl.schema_name = %L AND 
 	tl.table_name = %L AND ed.edge_id=re.element_id
 	AND NOT EXISTS (SELECT 1 FROM ttt2_new_topo_rows_in_org_table nr
@@ -499,6 +518,7 @@ where a.id = nr.id)',
   border_topo_info.layer_table_name,
   border_topo_info.topology_name,
   border_topo_info.topology_name,
+  border_topo_info.layer_feature_column,
   border_topo_info.layer_schema_name,
   border_topo_info.layer_table_name
   );
@@ -816,57 +836,78 @@ where a.id = nr.id)',
 	--	WHERE a.id = b.id;
 	
 	
-		-- for ecah of this edges create new separate topo objects so they are selectable for the user
+		-- for each of this edges create new separate topo objects so they are selectable for the user
 		-- Update the topo objects with shared edges that stil hava 
 		command_string := topo_update.create_temp_tbl_as('ttt2_new_intersected_split_objects','SELECT * FROM ttt2_new_topo_rows_in_org_table limit 0');
 		EXECUTE command_string;
 		-- TRUNCATE TABLE ttt2_new_intersected_split_objects;
 
+    command_string := format('
 		WITH inserted AS (
-			INSERT INTO topo_rein.reindrift_anlegg_linje(linje, felles_egenskaper, reindriftsanleggstype,reinbeitebruker_id)
-			SELECT  
-				topology.toTopoGeom(b.geom, border_topo_info.topology_name, border_layer_id, border_topo_info.snap_tolerance) AS linje,
-				a.felles_egenskaper,
-				a.reindriftsanleggstype,
-				a.reinbeitebruker_id
-			FROM 
+			INSERT INTO %I.%I('
+      || quote_ident(border_topo_info.layer_feature_column) || ','
+      || array_to_string(array_remove(not_null_fields, border_topo_info.layer_feature_column::text),',')
+      || ') SELECT topology.toTopoGeom(b.geom, %L, %L, %L), '
+      || array_to_string(array_remove(not_null_fields, border_topo_info.layer_feature_column::text),',')
+      || ' FROM 
 			ttt2_final_edge_list_for_intersect_line b,
-			topo_rein.reindrift_anlegg_linje a
+			%I.%I a
 			WHERE a.id = b.id
 			RETURNING *
 		)
 		INSERT INTO ttt2_new_intersected_split_objects
-		SELECT * FROM inserted;
+		SELECT * FROM inserted
+    ',
+    border_topo_info.layer_schema_name,
+    border_topo_info.layer_table_name,
+    border_topo_info.topology_name,
+    border_layer_id, border_topo_info.snap_tolerance,
+    border_topo_info.layer_schema_name,
+    border_topo_info.layer_table_name
+    );
+		EXECUTE command_string;
 	
 	
 		-- We have now added new topo objects for egdes that intersetcs no we need to modify the orignal topoobjects so we don't get any duplicates
 	
 		-- Clear the topology elements objects that should be updated
-		PERFORM topology.clearTopoGeom( c.linje) 
+		command_string := format('SELECT  topology.clearTopoGeom( c.%I ) 
 		FROM 
 		( 
-			SELECT distinct a.linje
-			FROM topo_rein.reindrift_anlegg_linje  a,
+			SELECT distinct a.%I
+			FROM %I.%I  a,
 			ttt2_final_edge_list_for_intersect_line b
 			WHERE a.id = b.id
-		) AS c;
-	
-	
+		) AS c',
+    border_topo_info.layer_feature_column,
+    border_topo_info.layer_feature_column,
+    border_topo_info.layer_schema_name,
+    border_topo_info.layer_table_name
+    );
+    EXECUTE command_string;
+
 		-- Update the topo objects with shared edges that stil hava 
-		UPDATE topo_rein.reindrift_anlegg_linje AS a
-		SET linje= topology.toTopoGeom(b.geom, border_topo_info.topology_name, border_layer_id, border_topo_info.snap_tolerance)
-		FROM ( 
+    -- TODO: avoid another toTopoGeom call here
+    command_string := format('UPDATE %I.%I AS a
+    SET %I = topology.toTopoGeom(b.geom, %L, %L, %L)
+    FROM ( 
 			SELECT g.id, ST_Union(g.geom) as geom
 			FROM ttt2_final_edge_left_list_intersect_line g
 			GROUP BY g.id
-		) AS b
-		WHERE a.id = b.id;
-	
-	
+    ) as b
+    WHERE a.id = b.id',
+    border_topo_info.layer_schema_name,
+    border_topo_info.layer_table_name,
+    border_topo_info.layer_feature_column,
+    border_topo_info.topology_name, border_layer_id, 
+    border_topo_info.snap_tolerance
+    );
+    EXECUTE command_string;
 		
 		-- Delete those with now egdes left both in return list
+    command_string := format('
 		WITH deleted AS (
-			DELETE FROM topo_rein.reindrift_anlegg_linje a
+			DELETE FROM %I.%I a
 			USING 
 			ttt2_final_edge_list_for_intersect_line b
 			WHERE a.id = b.id AND
@@ -877,6 +918,11 @@ where a.id = nr.id)',
 		ttt2_id_return_list a
 		USING deleted
 		WHERE a.id = deleted.id;
+    ',
+    border_topo_info.layer_schema_name,
+    border_topo_info.layer_table_name
+    );
+    EXECUTE command_string;
 
 		
 		-- update return list
