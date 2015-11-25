@@ -60,7 +60,10 @@ language plpgsql;
 
 
 -- {
-CREATE OR REPLACE FUNCTION topo_update.create_line_edge_domain_obj(json_feature text) 
+CREATE OR REPLACE FUNCTION
+topo_update.create_line_edge_domain_obj(json_feature text,
+  layer_schema text, layer_table text, layer_column text,
+  snap_tolerance float8)
 RETURNS TABLE(id integer) AS $$
 DECLARE
 
@@ -68,8 +71,6 @@ DECLARE
 border_layer_id int;
 
 -- this is the tolerance used for snap to 
-snap_tolerance float8 = 0.0000000001;
-
 -- TODO use as parameter put for testing we just have here for now
 border_topo_info topo_update.input_meta_info ;
 
@@ -88,11 +89,11 @@ simple_sosi_felles_egenskaper_linje topo_rein.simple_sosi_felles_egenskaper;
 BEGIN
 	
 	
-	-- TODO take as parameters
-	border_topo_info.layer_schema_name := 'topo_rein';
-	border_topo_info.layer_table_name := 'reindrift_anlegg_linje';
-	border_topo_info.layer_feature_column := 'linje';
-	border_topo_info.snap_tolerance := 1e-10;
+	-- Read parameters
+	border_topo_info.layer_schema_name := layer_schema;
+	border_topo_info.layer_table_name := layer_table;
+	border_topo_info.layer_feature_column := layer_column;
+	border_topo_info.snap_tolerance := snap_tolerance;
 
 	-- Find out topology name and element_type from layer identifier
 	SELECT t.name, l.feature_type
@@ -747,6 +748,13 @@ BEGIN
     
 END;
 $$ LANGUAGE plpgsql;
+--}
+
+--{ kept for backward compatility
+CREATE OR REPLACE FUNCTION topo_update.create_line_edge_domain_obj(json_feature text) 
+RETURNS TABLE(id integer) AS $$
+  SELECT topo_update.create_line_edge_domain_obj($1, 'topo_rein', 'reindrift_anlegg_linje', 'linje', 1e-10);
+$$ LANGUAGE 'sql';
 --}
 
 
