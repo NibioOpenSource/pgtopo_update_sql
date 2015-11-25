@@ -11,3 +11,5 @@ select edge_id,start_node,end_node,next_left_edge,abs_next_left_edge,next_right_
 from topo_rein_sysdata.edge_data   order by  edge_id;
 select face_id from topo_rein_sysdata.face;
 
+
+ create extension pg_stat_statements
