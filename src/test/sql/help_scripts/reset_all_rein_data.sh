@@ -7,6 +7,7 @@ cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/tables_01_kode_topo_rein.sql >
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_arstidsbeite_var.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_reindrift_anlegg_linje.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_reindrift_anlegg_punkt.sql >> /tmp/trein.sql
+cat ~/dev/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_rein_trekklei_linje.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/view*.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/roles_tables.sql  >> /tmp/trein.sql 
 cat ~/dev/git/topologi/pgtopo_update_sql/src/main/sql/topo_update/schema_*  >> /tmp/trein.sql

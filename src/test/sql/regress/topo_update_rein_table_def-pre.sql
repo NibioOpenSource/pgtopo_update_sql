@@ -451,6 +451,57 @@ SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata', 'topo_rein', 'reindri
 
 -- create function basded index to get performance
 CREATE INDEX topo_rein_reindrift_anlegg_punkt_geo_relation_id_idx ON topo_rein.reindrift_anlegg_punkt(topo_rein.get_relation_id(punkt));	
+
+-- Should we have one table for all årstidsbeite thems or 5 different tables as today ?
+-- We go for the solution with 5 tables now because then it's probably more easy to handle non overlap rules
+-- and logically two and two thems form one single map. The only differemse between the 5 tables will be the table name.
+-- But if Sandro Santoli says this is easy to use a view to handle toplogy we may need to discuss this again
+-- We could also use inheritance but then we aslo get mix rows from different maps.
+
+
+-- clear out old data added to make testing more easy
+-- drop table topo_rein.arstidsbeite_var_flate;
+-- drop table topo_rein.rein_trekklei_linje;
+-- SELECT topology.DropTopoGeometryColumn('topo_rein', 'arstidsbeite_var_flate', 'omrade');
+-- SELECT topology.DropTopoGeometryColumn('topo_rein', 'rein_trekklei_linje', 'grense');
+
+
+-- Do we want attributtes on the borders or only on the surface ?
+-- If yes is it only felles_egenskaper ? 
+-- If yes should we felles_egenskaper remove from the surface ?
+-- If yes should how should we get value from the old data, 
+-- do we then have use the sosi files and not org_rein tables ?
+
+-- If yes then we need the table rein_trekklei_linje
+CREATE TABLE topo_rein.rein_trekklei_linje(
+
+-- a internal id will that can be changed when ver needed
+-- may be used by the update client when reffering to a certain row when we do a update
+-- We could here use indefikajons from the composite type felles_egenskaper, but I am not sure how to use this a primary key ?
+-- We could also define this as UUID and use a copy from felles_egenskaper
+id serial PRIMARY KEY NOT NULL,
+-- gjøres om til lokalid
+
+-- objtype VARCHAR(40) from sosi and what should the value be ????
+
+-- contains felles egenskaper for rein
+-- may be null because it is updated after id is set because it this id is used a localid
+felles_egenskaper topo_rein.sosi_felles_egenskaper,
+
+-- angir hvilket reinbeitedistrikt som bruker beiteområdet 
+-- Definition -- indicates which reindeer pasture district uses the pasture area
+-- TODO add not null
+reinbeitebruker_id varchar(3) CHECK (reinbeitebruker_id IN ('XI','ZA','ZB','ZC','ZD','ZE','ZF','ØG','UW','UX','UY','UZ','ØA','ØB','ØC','ØE','ØF','ZG','ZH','ZJ','ZS','ZL','ZÅ','YA','YB','YC','YD','YE','YF','YG','XM','XR','XT','YH','YI','YJ','YK','YL','YM','YN','YP','YX','YR','YS','YT','YU','YV','YW','YY','XA','XD','XE','XG','XH','XJ','XK','XL','XM','XR','XS','XT','XN','XØ','XP','XU','XV','XW','XZ','XX','XY','WA','WB','WD','WF','WK','WL','WN','WP','WR','WS','WX','WZ','VA','VF','VG','VJ','VM','VR','YQA','YQB','YQC','ZZ','RR','ZQA'))
+
+);
+
+-- add a topogeometry column to get a ref to the borders
+-- should this be called grense or geo ?
+SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata', 'topo_rein', 'rein_trekklei_linje', 'linje', 'LINESTRING') As new_layer_id;
+
+
+-- create function basded index to get performance
+CREATE INDEX topo_rein_rein_trekklei_linje_geo_relation_id_idx ON topo_rein.rein_trekklei_linje(topo_rein.get_relation_id(linje));	
 -- DROP VIEW topo_rein.arstidsbeite_var_flate_v cascade ;
 
 
