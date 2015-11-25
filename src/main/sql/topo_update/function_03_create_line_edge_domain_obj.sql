@@ -279,31 +279,42 @@ ttt2_new_topo_rows_in_org_table SELECT * FROM inserted ',
 	-- Exlude the object createed now
 	command_string := topo_update.create_temp_tbl_as('ttt2_not_covered_by_input_line','SELECT * FROM  topo_rein_sysdata.edge_data limit 0');
 	EXECUTE command_string;
-	INSERT INTO ttt2_not_covered_by_input_line
+
+	command_string := format('INSERT INTO ttt2_not_covered_by_input_line
 	SELECT distinct ed.*  
     FROM 
 	ttt2_new_topo_rows_in_org_table ud, 
-	topo_rein_sysdata.relation re,
-	topo_rein_sysdata.relation re2,
-	topo_rein_sysdata.relation re3,
-	topo_rein_sysdata.edge_data ed
+	%I.relation re,
+	%I.relation re2,
+	%I.relation re3,
+	%I.edge_data ed
 	WHERE 
-	(ud.linje).id = re.topogeo_id AND
-	re.layer_id = border_layer_id AND 
+	(ud.%I).id = re.topogeo_id AND
+	re.layer_id = %L AND 
 	re.element_type = 2 AND  -- TODO use variable element_type_edge=2
-	re2.layer_id = border_layer_id AND 
+	re2.layer_id = %L AND 
 	re2.element_type = 2 AND  -- TODO use variable element_type_edge=2
 	re2.element_id = re.element_id AND
 	re3.topogeo_id = re2.topogeo_id AND
-	re3.element_id = ed.edge_id AND
-	NOT EXISTS (SELECT 1 FROM ttt2_covered_by_input_line where ed.edge_id = edge_id);
+	re3.element_id = ed.edge_id AND NOT EXISTS
+  (SELECT 1 FROM ttt2_covered_by_input_line where ed.edge_id = edge_id)',
+  border_topo_info.topology_name,
+  border_topo_info.topology_name,
+  border_topo_info.topology_name,
+  border_topo_info.topology_name,
+	border_topo_info.layer_feature_column,
+	border_layer_id,
+	border_layer_id
+  );
+	EXECUTE command_string;
 
 
 	RAISE NOTICE 'Step::::::::::::::::: 5 cb %' , (select count(*) from ttt2_not_covered_by_input_line);
 
 	-- Find topo objects that needs to be adjusted because old topo object has edges that are used by this new topo object
 	-- Exlude the object createed now
-	command_string := topo_update.create_temp_tbl_as('ttt2_affected_objects_id','SELECT * FROM  topo_rein.reindrift_anlegg_linje limit 0');
+	command_string :=
+topo_update.create_temp_tbl_as('ttt2_affected_objects_id','SELECT * FROM  ttt2_new_topo_rows_in_org_table limit 0');
 	EXECUTE command_string;
 	INSERT INTO ttt2_affected_objects_id
 	SELECT distinct a.*  
