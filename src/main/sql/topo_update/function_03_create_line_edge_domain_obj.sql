@@ -152,9 +152,11 @@ BEGIN
 	RAISE NOTICE 'Step::::::::::::::::: 2';
 
 	-- insert the data in the org table and keep a copy of the data
-	-- CREATEE TEMP TABLE IF NOT EXISTS ttt2_new_topo_rows_in_org_table','SELECT * FROM  topo_rein.reindrift_anlegg_linje limit 0');
-	-- TRUNCATEE TABLE ttt2_covered_by_input_line;
-	command_string := topo_update.create_temp_tbl_as('ttt2_new_topo_rows_in_org_table','SELECT * FROM  topo_rein.reindrift_anlegg_linje limit 0');
+	command_string := topo_update.create_temp_tbl_as(
+	  'ttt2_new_topo_rows_in_org_table',
+	  format('SELECT * FROM %s.%s LIMIT 0',
+	         quote_ident(border_topo_info.layer_schema_name),
+	         quote_ident(border_topo_info.layer_table_name)));
 	EXECUTE command_string;
 	
 	WITH inserted AS (
