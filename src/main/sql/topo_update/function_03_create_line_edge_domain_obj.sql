@@ -125,7 +125,7 @@ BEGIN
 	INSERT INTO ttt2_new_attributes_values(geom,properties)
 	SELECT 
 		topo_rein.get_geom_from_json(feat,4258) as geom,
-		to_json(feat->'properties')::json  as properties
+		to_json(feat->'properties')  as properties
 	FROM (
 	  	SELECT json_feature::json AS feat
 	) AS f;
@@ -137,17 +137,17 @@ BEGIN
 
 	IF (SELECT count(*) FROM ttt2_new_attributes_values) != 1 THEN
 		RAISE EXCEPTION 'Not valid json_feature %', json_feature;
-	ELSE 
-		-- TODO find another way to handle this
-		SELECT * INTO simple_sosi_felles_egenskaper_linje 
-		FROM json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,
-		(select properties from ttt2_new_attributes_values) );
-
-		felles_egenskaper_linje := topo_rein.get_rein_felles_egenskaper(simple_sosi_felles_egenskaper_linje);
-	
-		SELECT geom INTO input_geo FROM ttt2_new_attributes_values;
-	
 	END IF;
+
+	-- TODO find another way to handle this
+	SELECT * INTO simple_sosi_felles_egenskaper_linje
+	FROM json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,
+	(select properties from ttt2_new_attributes_values) );
+
+	felles_egenskaper_linje := topo_rein.get_rein_felles_egenskaper(simple_sosi_felles_egenskaper_linje);
+
+	SELECT geom INTO input_geo FROM ttt2_new_attributes_values;
+	
 
 	RAISE NOTICE 'Step::::::::::::::::: 2';
 
