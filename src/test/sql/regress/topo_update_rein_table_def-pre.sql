@@ -4,13 +4,16 @@ CREATE SCHEMA topo_rein;
 GRANT USAGE ON SCHEMA topo_rein TO public;
 
 select CreateTopology('topo_rein_sysdata',4258,0.0000000001);
--- Workaround for PostGIS bug, see
+
+-- Workaround for PostGIS bug from Sandro, see
 -- http://trac.osgeo.org/postgis/ticket/3359
 -- Start edge_id from 2
 -- Start face_id from 3
 SELECT setval('topo_rein_sysdata.edge_data_edge_id_seq', 2, false),
        setval('topo_rein_sysdata.face_face_id_seq', 3, false);
+
 -- give puclic access
+
 GRANT USAGE ON SCHEMA topo_rein_sysdata TO public;
 
 
@@ -373,7 +376,7 @@ id serial PRIMARY KEY NOT NULL,
 
 -- contains felles egenskaper for rein
 -- may be null because it is updated after id is set because it this id is used a localid
-felles_egenskaper topo_rein.sosi_felles_egenskaper NOT NULL,
+felles_egenskaper topo_rein.sosi_felles_egenskaper,
 
 -- angir hvilket reinbeitedistrikt som bruker beiteområdet 
 -- Definition -- indicates which reindeer pasture district uses the pasture area
@@ -429,7 +432,7 @@ id serial PRIMARY KEY NOT NULL,
 
 -- contains felles egenskaper for rein
 -- may be null because it is updated after id is set because it this id is used a localid
-felles_egenskaper topo_rein.sosi_felles_egenskaper NOT NULL,
+felles_egenskaper topo_rein.sosi_felles_egenskaper,
 
 -- angir hvilket reinbeitedistrikt som bruker beiteområdet 
 -- Definition -- indicates which reindeer pasture district uses the pasture area
