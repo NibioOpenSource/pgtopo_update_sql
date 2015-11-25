@@ -316,68 +316,100 @@ ttt2_new_topo_rows_in_org_table SELECT * FROM inserted ',
 	command_string :=
 topo_update.create_temp_tbl_as('ttt2_affected_objects_id','SELECT * FROM  ttt2_new_topo_rows_in_org_table limit 0');
 	EXECUTE command_string;
-	INSERT INTO ttt2_affected_objects_id
+
+  command_string := format('INSERT INTO ttt2_affected_objects_id
 	SELECT distinct a.*  
     FROM 
-	topo_rein_sysdata.relation re1,
-	topo_rein_sysdata.relation re2,
+	%I.relation re1,
+	%I.relation re2,
 	ttt2_new_topo_rows_in_org_table ud, 
-	topo_rein.reindrift_anlegg_linje a
+	%I.%I a
 	WHERE 
-	(ud.linje).id = re1.topogeo_id AND
-	re1.layer_id = border_layer_id AND 
+	(ud.%I).id = re1.topogeo_id AND
+	re1.layer_id = %L AND 
 	re1.element_type = 2 AND
 	re1.element_id = re2.element_id AND 
-	(a.linje).id = re2.topogeo_id AND
-	re2.layer_id = border_layer_id AND 
+	(a.%I).id = re2.topogeo_id AND
+	re2.layer_id = %L AND 
 	re2.element_type = 2 AND
-	NOT EXISTS (SELECT 1 FROM ttt2_new_topo_rows_in_org_table nr where a.id = nr.id);
+	NOT EXISTS
+  (SELECT 1 FROM ttt2_new_topo_rows_in_org_table nr where a.id = nr.id)',
+  border_topo_info.topology_name,
+  border_topo_info.topology_name,
+  border_topo_info.layer_schema_name,
+  border_topo_info.layer_table_name,
+  border_topo_info.layer_feature_column,
+  border_layer_id,
+  border_topo_info.layer_feature_column,
+  border_layer_id
+  );
+	EXECUTE command_string;
 	
 	RAISE NOTICE 'Step::::::::::::::::: 6 af %' , (select count(*) from ttt2_affected_objects_id);
 
 
 	-- Find topo objects thay can deleted because all their edges area covered by new input linje
 	-- This is true this objects has no edges in the list of not used edges
-	command_string := topo_update.create_temp_tbl_as('ttt2_objects_to_be_delted','SELECT * FROM  topo_rein.reindrift_anlegg_linje limit 0');
+	command_string :=
+topo_update.create_temp_tbl_as('ttt2_objects_to_be_delted','SELECT * FROM  ttt2_new_topo_rows_in_org_table limit 0');
 	EXECUTE command_string;
+
+  command_string := format('
 	INSERT INTO ttt2_objects_to_be_delted
 	SELECT b.id FROM 
 	ttt2_affected_objects_id b,
 	ttt2_covered_by_input_line c,
-	topo_rein_sysdata.relation re2
+	%I.relation re2
 	WHERE b.id NOT IN
 	(	
 		SELECT distinct a.id 
 		FROM 
-		topo_rein_sysdata.relation re1,
+		%I.relation re1,
 		ttt2_affected_objects_id a,
 		ttt2_not_covered_by_input_line ued1
 		WHERE 
-		(a.linje).id = re1.topogeo_id AND
-		re1.layer_id = border_layer_id AND 
+		(a.%I).id = re1.topogeo_id AND
+		re1.layer_id = %L AND 
 		re1.element_type = 2 AND
 		ued1.edge_id = re1.element_id
 	) AND
 	b.id = re2.topogeo_id AND
-	re2.layer_id = border_layer_id AND 
+	re2.layer_id = %L AND 
 	re2.element_type = 2 AND
-	c.edge_id = re2.element_id;
+	c.edge_id = re2.element_id',
+	border_topo_info.topology_name,
+	border_topo_info.topology_name,
+	border_topo_info.layer_feature_column,
+  border_layer_id,
+  border_layer_id
+  );
+	EXECUTE command_string;
 		
 
 	RAISE NOTICE 'Step::::::::::::::::: 7';
 
 	-- Clear the topology elements objects that does not have edges left
-	PERFORM topology.clearTopoGeom(a.linje) 
-	FROM topo_rein.reindrift_anlegg_linje  a,
+	command_string = format('SELECT topology.clearTopoGeom(a.%I) 
+	FROM %I.%I  a,
 	ttt2_objects_to_be_delted b
-	WHERE a.id = b.id;
+	WHERE a.id = b.id', 
+	border_topo_info.layer_feature_column,
+  border_topo_info.layer_schema_name,
+  border_topo_info.layer_table_name
+  );
+  EXECUTE command_string;
 	
 	RAISE NOTICE 'Step::::::::::::::::: 8';
 
 	-- Delete those topology elements objects that does not have edges left
-	DELETE FROM topo_rein.reindrift_anlegg_linje a
+  command_string := format('
+	DELETE FROM %I.%I a
 	USING ttt2_objects_to_be_delted b
-	WHERE a.id = b.id;
+	WHERE a.id = b.id',
+  border_topo_info.layer_schema_name,
+  border_topo_info.layer_table_name
+  );
+  EXECUTE command_string;
 
 	
 	RAISE NOTICE 'Step::::::::::::::::: 94 af %, nc %',  (select count(*) from ttt2_affected_objects_id), (select count(*) from ttt2_not_covered_by_input_line);
@@ -385,34 +417,51 @@ topo_update.create_temp_tbl_as('ttt2_affected_objects_id','SELECT * FROM  ttt2_n
 	-- Find  lines that should be added again the because the objects which they belong to will be deleted
 	command_string := topo_update.create_temp_tbl_def('ttt2_objects_to_be_updated','(id int, geom geometry)');
 	EXECUTE command_string;
-	-- TRUNCATE TABLE ttt2_objects_to_be_updated;
-	INSERT INTO ttt2_objects_to_be_updated(id,geom)
+
+	command_string := format('INSERT INTO ttt2_objects_to_be_updated(id,geom)
 	SELECT b.id, ST_union(ed.geom) AS geom
 	FROM ttt2_affected_objects_id b,
 	ttt2_not_covered_by_input_line ed,
-	topo_rein_sysdata.relation re
-	WHERE (b.linje).id = re.topogeo_id AND
-	re.layer_id = border_layer_id AND 
+	%I.relation re
+	WHERE (b.%I).id = re.topogeo_id AND
+	re.layer_id = %L AND 
 	re.element_type = 2 AND  -- TODO use variable element_type_edge=2
 	ed.edge_id != re.element_id
-	GROUP BY b.id;
+	GROUP BY b.id',
+	border_topo_info.topology_name,
+	border_topo_info.layer_feature_column,
+	border_layer_id
+  );
+	EXECUTE command_string;
 
 	RAISE NOTICE 'StepA::::::::::::::::: 1, rows %', (select count(*) from ttt2_objects_to_be_updated) ;
 
 	-- Clear the old topology elements objects that should be updated
-	PERFORM topology.clearTopoGeom(a.linje) 
-	FROM topo_rein.reindrift_anlegg_linje  a,
+	command_string := format('SELECT topology.clearTopoGeom(a.%I) 
+	FROM %I.%I  a,
 	ttt2_objects_to_be_updated b
-	WHERE a.id = b.id;
+	WHERE a.id = b.id', 
+	border_topo_info.layer_feature_column,
+  border_topo_info.layer_schema_name,
+  border_topo_info.layer_table_name
+  );
+  EXECUTE command_string;
 	
 	
 	RAISE NOTICE 'StepA::::::::::::::::: 2';
 
 	-- Update the old topo objects with new values
-	UPDATE topo_rein.reindrift_anlegg_linje AS a
-	SET linje= topology.toTopoGeom(b.geom, border_topo_info.topology_name, border_layer_id, border_topo_info.snap_tolerance)
+  -- TODO: avoid another toTopoGeom call here
+	command_string := format('UPDATE %I.%I AS a
+	SET %I = topology.toTopoGeom(b.geom, %L, %L, %L)
 	FROM ttt2_objects_to_be_updated b
-	WHERE a.id = b.id;
+	WHERE a.id = b.id',
+  border_topo_info.layer_schema_name,
+  border_topo_info.layer_table_name,
+	border_topo_info.layer_feature_column,
+	border_topo_info.topology_name, border_layer_id, 
+	border_topo_info.snap_tolerance
+  );
 
 
 	-- We have now removed duplicate ref to any edges, this means that each edge is only used once
@@ -426,21 +475,34 @@ topo_update.create_temp_tbl_as('ttt2_affected_objects_id','SELECT * FROM  ttt2_n
 	
 	-- Find topto that intersects with the new line drawn by the end user
 	-- This lines should be returned, together with the topo object created
-	command_string := topo_update.create_temp_tbl_as('ttt2_intersection_id','SELECT * FROM  topo_rein.reindrift_anlegg_linje limit 0');
+	command_string :=
+topo_update.create_temp_tbl_as('ttt2_intersection_id','SELECT * FROM ttt2_new_topo_rows_in_org_table limit 0');
 	EXECUTE command_string;
 	-- TRUNCATE TABLE ttt2_intersection_id;
+
+  command_string := format('
 	INSERT INTO ttt2_intersection_id
 	SELECT distinct a.*  
 	FROM 
-	topo_rein.reindrift_anlegg_linje a, 
+	%I.%I a, 
 	ttt2_new_attributes_values a2,
-	topo_rein_sysdata.relation re, 
+	%I.relation re, 
 	topology.layer tl,
-	topo_rein_sysdata.edge_data  ed
+	%I.edge_data  ed
 	WHERE ST_intersects(ed.geom,a2.geom)
-	AND topo_rein.get_relation_id(a.linje) = re.topogeo_id AND re.layer_id = tl.layer_id AND tl.schema_name = 'topo_rein' AND 
-	tl.table_name = 'reindrift_anlegg_linje' AND ed.edge_id=re.element_id
-	AND NOT EXISTS (SELECT 1 FROM ttt2_new_topo_rows_in_org_table nr where a.id = nr.id);
+	AND topo_rein.get_relation_id(a.linje) = re.topogeo_id AND
+re.layer_id = tl.layer_id AND tl.schema_name = %L AND 
+	tl.table_name = %L AND ed.edge_id=re.element_id
+	AND NOT EXISTS (SELECT 1 FROM ttt2_new_topo_rows_in_org_table nr
+where a.id = nr.id)',
+  border_topo_info.layer_schema_name,
+  border_topo_info.layer_table_name,
+  border_topo_info.topology_name,
+  border_topo_info.topology_name,
+  border_topo_info.layer_schema_name,
+  border_topo_info.layer_table_name
+  );
+	EXECUTE command_string;
 
 	RAISE NOTICE 'StepA::::::::::::::::: 4';
 
