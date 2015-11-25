@@ -51,8 +51,6 @@ language plpgsql;
 --	EXECUTE command_string;
 --END $$;
 
-
-
 -- This a function that will be called from the client when user is drawing a line
 -- This line will be applied the data in the line layer
 
@@ -62,7 +60,10 @@ language plpgsql;
 
 
 -- {
-CREATE OR REPLACE FUNCTION topo_update.create_line_edge_domain_obj(json_feature text) 
+CREATE OR REPLACE FUNCTION
+topo_update.create_line_edge_domain_obj(json_feature text,
+  layer_schema text, layer_table text, layer_column text,
+  snap_tolerance float8)
 RETURNS TABLE(id integer) AS $$
 DECLARE
 
@@ -70,8 +71,6 @@ DECLARE
 border_layer_id int;
 
 -- this is the tolerance used for snap to 
-snap_tolerance float8 = 0.0000000001;
-
 -- TODO use as parameter put for testing we just have here for now
 border_topo_info topo_update.input_meta_info ;
 
@@ -90,14 +89,23 @@ simple_sosi_felles_egenskaper_linje topo_rein.simple_sosi_felles_egenskaper;
 BEGIN
 	
 	
-	-- TODO to be moved is justed for testing now
-	border_topo_info.topology_name := 'topo_rein_sysdata';
-	border_topo_info.layer_schema_name := 'topo_rein';
-	border_topo_info.layer_table_name := 'reindrift_anlegg_linje';
-	border_topo_info.layer_feature_column := 'linje';
-	border_topo_info.snap_tolerance := 0.0000000001;
-	border_topo_info.element_type = 2;
-	
+	-- Read parameters
+	border_topo_info.layer_schema_name := layer_schema;
+	border_topo_info.layer_table_name := layer_table;
+	border_topo_info.layer_feature_column := layer_column;
+	border_topo_info.snap_tolerance := snap_tolerance;
+
+	-- Find out topology name and element_type from layer identifier
+	SELECT t.name, l.feature_type
+	FROM topology.topology t, topology.layer l
+	WHERE l.level = 0 -- need be primitive
+    AND l.schema_name = border_topo_info.layer_schema_name
+	  AND l.table_name = border_topo_info.layer_table_name
+	  AND l.feature_column = border_topo_info.layer_feature_column
+	  AND t.id = l.topology_id
+	INTO STRICT border_topo_info.topology_name,
+	            border_topo_info.element_type;
+
 		-- find border layer id
 	border_layer_id := topo_update.get_topo_layer_id(border_topo_info);
 
@@ -740,6 +748,13 @@ BEGIN
     
 END;
 $$ LANGUAGE plpgsql;
+--}
+
+--{ kept for backward compatility
+CREATE OR REPLACE FUNCTION topo_update.create_line_edge_domain_obj(json_feature text) 
+RETURNS TABLE(id integer) AS $$
+  SELECT topo_update.create_line_edge_domain_obj($1, 'topo_rein', 'reindrift_anlegg_linje', 'linje', 1e-10);
+$$ LANGUAGE 'sql';
 --}
 
 
