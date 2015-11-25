@@ -208,39 +208,45 @@ ttt2_new_topo_rows_in_org_table SELECT * FROM inserted ',
 
 	RAISE NOTICE 'Step::::::::::::::::: 3';
 
-	-- SELECT ST_AsText(ST_Intersection(nr2.linje,a.linje)::geometry) FROM topo_rein.reindrift_anlegg_linje  a, ttt2_new_topo_rows_in_org_table nr2 WHERE	a.id != nr2.id;
-	-- IF I use the abouve I get "mvn clean install -Dtest=Test_AddData_3_RAN_L#addLinesCase3"
-	--                st_astext                 
-	-- GEOMETRYCOLLECTION EMPTY
- 	-- GEOMETRYCOLLECTION EMPTY
- 	--..
- 	--..
- 	-- POINT(17.0907328274024 68.7282948978786)
- 	-- 
-	-- So I use this instead
-	SELECT count(distinct a.id) INTO  num_edge_intersects
+  -- Count number of objects sharing edges with this new one
+  command_string := format('
+	SELECT count(distinct a.id)
     FROM 
-	topo_rein_sysdata.relation re,
-	topo_rein_sysdata.edge_data ed,
-	topo_rein.reindrift_anlegg_linje  a,
+	%I.relation re,
+	%I.edge_data ed,
+	%I.%I  a,
 	ttt2_new_topo_rows_in_org_table nr2,
-	topo_rein_sysdata.relation re2,
-	topo_rein_sysdata.edge_data ed2
-	
+	%I.relation re2,
+	%I.edge_data ed2
 	WHERE 
-	(a.linje).id = re.topogeo_id AND
-	re.layer_id = border_layer_id AND 
+	(a.%I).id = re.topogeo_id AND
+	re.layer_id = %L AND 
 	re.element_type = 2 AND  -- TODO use variable element_type_edge=2
 	ed.edge_id = re.element_id AND
-	(nr2.linje).id = re2.topogeo_id and
-	re2.layer_id = border_layer_id and 
+	(nr2.%I).id = re2.topogeo_id and
+	re2.layer_id = %L and 
 	re2.element_type = 2 and  -- todo use variable element_type_edge=2
 	ed2.edge_id = re2.element_id and
 	(ed2.start_node = ed.start_node or
 	ed2.end_node = ed.end_node or
 	ed2.start_node = ed.end_node or
 	ed2.start_node = ed.end_node) AND
-	(a.linje).id != (nr2.linje).id;
+	(a.%I).id != (nr2.%I).id;
+  ',
+	  border_topo_info.topology_name,
+	  border_topo_info.topology_name,
+    border_topo_info.layer_schema_name,
+	  border_topo_info.layer_table_name,
+	  border_topo_info.topology_name,
+	  border_topo_info.topology_name,
+	  border_topo_info.layer_feature_column,
+    border_layer_id,
+	  border_topo_info.layer_feature_column,
+    border_layer_id,
+	  border_topo_info.layer_feature_column,
+	  border_topo_info.layer_feature_column
+  );
+  EXECUTE command_string INTO  num_edge_intersects;
 	
 
 	RAISE NOTICE 'num_object_intersects::::::::::::::::: %', num_edge_intersects;
