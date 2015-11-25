@@ -51,8 +51,6 @@ language plpgsql;
 --	EXECUTE command_string;
 --END $$;
 
-
-
 -- This a function that will be called from the client when user is drawing a line
 -- This line will be applied the data in the line layer
 
@@ -90,14 +88,23 @@ simple_sosi_felles_egenskaper_linje topo_rein.simple_sosi_felles_egenskaper;
 BEGIN
 	
 	
-	-- TODO to be moved is justed for testing now
-	border_topo_info.topology_name := 'topo_rein_sysdata';
+	-- TODO take as parameters
 	border_topo_info.layer_schema_name := 'topo_rein';
 	border_topo_info.layer_table_name := 'reindrift_anlegg_linje';
 	border_topo_info.layer_feature_column := 'linje';
-	border_topo_info.snap_tolerance := 0.0000000001;
-	border_topo_info.element_type = 2;
-	
+	border_topo_info.snap_tolerance := 1e-10;
+
+	-- Find out topology name and element_type from layer identifier
+	SELECT t.name, l.feature_type
+	FROM topology.topology t, topology.layer l
+	WHERE l.level = 0 -- need be primitive
+    AND l.schema_name = border_topo_info.layer_schema_name
+	  AND l.table_name = border_topo_info.layer_table_name
+	  AND l.feature_column = border_topo_info.layer_feature_column
+	  AND t.id = l.topology_id
+	INTO STRICT border_topo_info.topology_name,
+	            border_topo_info.element_type;
+
 		-- find border layer id
 	border_layer_id := topo_update.get_topo_layer_id(border_topo_info);
 
