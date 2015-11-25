@@ -151,26 +151,60 @@ BEGIN
 
 	RAISE NOTICE 'Step::::::::::::::::: 2';
 
-	-- insert the data in the org table and keep a copy of the data
+	-- Create temporary table to receive the new record
 	command_string := topo_update.create_temp_tbl_as(
 	  'ttt2_new_topo_rows_in_org_table',
-	  format('SELECT * FROM %s.%s LIMIT 0',
-	         quote_ident(border_topo_info.layer_schema_name),
-	         quote_ident(border_topo_info.layer_table_name)));
+	  format('SELECT * FROM %I.%I LIMIT 0',
+	         border_topo_info.layer_schema_name,
+	         border_topo_info.layer_table_name));
 	EXECUTE command_string;
-	
-	WITH inserted AS (
-		INSERT INTO topo_rein.reindrift_anlegg_linje(linje, felles_egenskaper, reindriftsanleggstype,reinbeitebruker_id)
-		SELECT  
-			topology.toTopoGeom(t2.geom, border_topo_info.topology_name, border_layer_id, border_topo_info.snap_tolerance) AS linje,
-			felles_egenskaper_linje AS felles_egenskaper,
-			(t2.properties->>'reindriftsanleggstype')::int AS reindriftsanleggstype,
-			(t2.properties->>'reinbeitebruker_id')::text AS reinbeitebruker_id
-		FROM ttt2_new_attributes_values t2
-		RETURNING *
-	)
+
+  -- Insert all matching column names into temp table
 	INSERT INTO ttt2_new_topo_rows_in_org_table
-	SELECT * FROM inserted;
+		SELECT r.* --, t2.geom
+		FROM ttt2_new_attributes_values t2,
+         json_populate_record(
+            null::ttt2_new_topo_rows_in_org_table,
+            t2.properties) r;
+
+  RAISE NOTICE 'Added all attributes to ttt2_new_topo_rows_in_org_table';
+
+  -- Convert geometry to TopoGeometry, write it in the temp table
+  command_string := format('UPDATE ttt2_new_topo_rows_in_org_table
+    SET %I = topology.toTopoGeom(%L, %L, %L, %L)',
+    border_topo_info.layer_feature_column, input_geo,
+    border_topo_info.topology_name, border_layer_id,
+    border_topo_info.snap_tolerance);
+	EXECUTE command_string;
+
+  RAISE NOTICE 'Converted to TopoGeometry';
+
+  -- Add the common felles_egenskaper field
+  command_string := format('UPDATE ttt2_new_topo_rows_in_org_table
+    SET felles_egenskaper = %L', felles_egenskaper_linje);
+	EXECUTE command_string;
+
+  RAISE NOTICE 'Set felles_egenskaper field';
+
+  -- Extract name of fields with not-null values:
+  SELECT array_to_string(array_agg(quote_ident(key)),',')
+    FROM ttt2_new_topo_rows_in_org_table t, json_each_text(to_json((t)))
+   WHERE value IS NOT NULL
+    INTO command_string;
+
+  RAISE NOTICE 'Extract name of not-null fields: %', command_string;
+
+  -- Copy full record from temp table to actual table and
+  -- update temp table with actual table values
+  command_string := format(
+    'WITH inserted AS ( INSERT INTO %I.%I (%s) SELECT %s FROM
+ttt2_new_topo_rows_in_org_table RETURNING * ), deleted AS ( DELETE
+FROM ttt2_new_topo_rows_in_org_table ) INSERT INTO
+ttt2_new_topo_rows_in_org_table SELECT * FROM inserted ',
+    border_topo_info.layer_schema_name,
+    border_topo_info.layer_table_name,
+    command_string, command_string);
+	EXECUTE command_string;
 
 	RAISE NOTICE 'Step::::::::::::::::: 3';
 
