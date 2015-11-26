@@ -490,6 +490,7 @@ topo_update.create_temp_tbl_as('ttt2_objects_to_be_delted','SELECT * FROM  ttt2_
 	border_topo_info.snap_tolerance
   );
 
+	EXECUTE command_string;
 
 	-- We have now removed duplicate ref to any edges, this means that each edge is only used once
 	--------------------- Stop: code to remove duplicate edges ---------------------
