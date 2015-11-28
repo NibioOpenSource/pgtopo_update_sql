@@ -13,7 +13,7 @@
 
 
 CREATE OR REPLACE FUNCTION topo_update.create_surface_edge_domain_obj(json_feature text) 
-RETURNS TABLE(id integer) AS $$
+RETURNS TABLE(result text) AS $$
 DECLARE
 
 json_result text;
@@ -222,16 +222,21 @@ BEGIN
 	END IF;
 	
 	IF ST_IsClosed(geo_in) THEN 
-		command_string := format('SELECT tg.id AS id FROM ' || 
+		command_string := format('SELECT json_agg(row_to_json(t))::text FROM (' ||
+		'SELECT tg.id AS id, ''S''::text AS id_type FROM ' || 
 		surface_topo_info.layer_schema_name || '.' || surface_topo_info.layer_table_name || 
 		' tg, new_surface_data_for_edge new ' || 
 		'WHERE (new.surface_topo).id = (tg.omrade).id AND ' || 
-		'ST_intersects(ST_PointOnSurface((new.surface_topo)::geometry), ST_MakePolygon(%1$L))',geo_in);
+		'ST_intersects(ST_PointOnSurface((new.surface_topo)::geometry), ST_MakePolygon(%1$L))'
+		|| ') AS t'
+		,geo_in);
     	RAISE NOTICE 'A closed objects only return objects in %', command_string;
   	ELSE	
-		command_string := 'SELECT tg.id AS id FROM ' || 
+		command_string := 'SELECT json_agg(row_to_json(t))::text FROM (' ||
+		' SELECT tg.id AS id, ''S'' AS id_type FROM ' || 
 		surface_topo_info.layer_schema_name || '.' || surface_topo_info.layer_table_name || ' tg, new_surface_data_for_edge new ' || 
-		'WHERE (new.surface_topo).id = (tg.omrade).id';
+		'WHERE (new.surface_topo).id = (tg.omrade).id '
+		|| ') AS t';
 	END IF;
 
     RETURN QUERY EXECUTE command_string;
