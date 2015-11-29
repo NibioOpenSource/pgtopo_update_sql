@@ -181,9 +181,23 @@ BEGIN
 	new_border_data := topo_update.create_surface_edge(geo_in);
 	RAISE NOTICE 'The new topo object created for based on the input geo  %',  new_border_data;
 
+	
+	-- perpare result 
+	DROP TABLE IF EXISTS create_surface_edge_domain_obj_r1_r; 
+	CREATE TEMP TABLE create_surface_edge_domain_obj_r1_r(id int, id_type text) ;
+	
 	-- TODO insert some correct value for attributes
-	INSERT INTO topo_rein.arstidsbeite_var_grense(grense, felles_egenskaper)
-	SELECT new_border_data, felles_egenskaper_linje;
+	WITH inserted AS (
+		INSERT INTO topo_rein.arstidsbeite_var_grense(grense, felles_egenskaper)
+		SELECT new_border_data, felles_egenskaper_linje
+		RETURNING *
+
+	)
+	INSERT INTO create_surface_edge_domain_obj_r1_r(id,id_type)
+	SELECT id, 'L' as id_type FROM inserted;
+
+	
+	
 
 	
 	-- create the new topo object for the surfaces
@@ -220,24 +234,26 @@ BEGIN
 		(SELECT ST_PointOnSurface(surface_topo::geometry) AS geo , surface_topo::text AS topo FROM new_surface_data_for_edge);
 
 	END IF;
-	
+
 	IF ST_IsClosed(geo_in) THEN 
-		command_string := format('SELECT json_agg(row_to_json(t))::text FROM (' ||
+		command_string := format('INSERT INTO create_surface_edge_domain_obj_r1_r(id,id_type) ' ||
 		'SELECT tg.id AS id, ''S''::text AS id_type FROM ' || 
 		surface_topo_info.layer_schema_name || '.' || surface_topo_info.layer_table_name || 
 		' tg, new_surface_data_for_edge new ' || 
 		'WHERE (new.surface_topo).id = (tg.omrade).id AND ' || 
 		'ST_intersects(ST_PointOnSurface((new.surface_topo)::geometry), ST_MakePolygon(%1$L))'
-		|| ') AS t'
 		,geo_in);
     	RAISE NOTICE 'A closed objects only return objects in %', command_string;
   	ELSE	
-		command_string := 'SELECT json_agg(row_to_json(t))::text FROM (' ||
+		command_string := 'INSERT INTO create_surface_edge_domain_obj_r1_r(id,id_type) ' ||
 		' SELECT tg.id AS id, ''S'' AS id_type FROM ' || 
 		surface_topo_info.layer_schema_name || '.' || surface_topo_info.layer_table_name || ' tg, new_surface_data_for_edge new ' || 
-		'WHERE (new.surface_topo).id = (tg.omrade).id '
-		|| ') AS t';
+		'WHERE (new.surface_topo).id = (tg.omrade).id ';
 	END IF;
+
+	EXECUTE command_string;
+
+	command_string := 'SELECT json_agg(row_to_json(t.*))::text FROM create_surface_edge_domain_obj_r1_r AS t';
 
     RETURN QUERY EXECUTE command_string;
     
