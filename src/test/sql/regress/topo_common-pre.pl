@@ -7,7 +7,7 @@ my ($pre_filename) = @ARGV;
 
 print "\n Output file is $pre_filename \n";
 
-$REIN_TABLES_DEF='topo_update_rein_table_def-pre.sql';
+$REIN_TABLES_DEF='topo_common-pre.sql';
 
 if ( -e '/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/schema_topo_rein.sql' ) 
 {
