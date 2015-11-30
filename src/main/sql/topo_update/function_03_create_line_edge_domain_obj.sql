@@ -962,10 +962,10 @@ $$ LANGUAGE plpgsql;
 --}
 
 --{ kept for backward compatility
-CREATE OR REPLACE FUNCTION topo_update.create_line_edge_domain_obj(json_feature text) 
-RETURNS TABLE(id integer) AS $$
-  SELECT topo_update.create_line_edge_domain_obj($1, 'topo_rein', 'reindrift_anlegg_linje', 'linje', 1e-10);
-$$ LANGUAGE 'sql';
+--CREATE OR REPLACE FUNCTION topo_update.create_line_edge_domain_obj(json_feature text) 
+--RETURNS TABLE(id integer) AS $$
+--  SELECT topo_update.create_line_edge_domain_obj($1, 'topo_rein', 'reindrift_anlegg_linje', 'linje', 1e-10);
+--$$ LANGUAGE 'sql';
 --}
 
 
