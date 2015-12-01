@@ -1,6 +1,11 @@
 -- this is a script used for testing on my own mac
 
 sh ~/dev/git/topologi/pgtopo_update_sql/src/test/sql/help_scripts/reset_all_rein_data.sh | psql sl
+cat /Users/lop/dev/git/topologi/pgtopo_update_sql/src/test/sql/help_scripts/copy_new_from_rein_korr_flate.sql | psql sl
+cat /Users/lop/dev/git/topologi/pgtopo_update_sql/src/test/sql/help_scripts/copy_new_from_rein_korr_linje.sql | psql sl
+cat /Users/lop/dev/git/topologi/pgtopo_update_sql/src/test/sql/help_scripts/copy_new_from_rein_korr_punkt.sql | psql sl
+
+
 cat ~/dev/git/topologi/pgtopo_update_sql/src/test/sql/help_scripts/test_01_create_surface_edge_domain_obj.sql | psql sl
 
 select count(*) from topo_rein.arstidsbeite_var_grense;

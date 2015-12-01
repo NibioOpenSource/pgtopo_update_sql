@@ -11,6 +11,7 @@ DROP FUNCTION IF EXISTS topo_update.get_linestring_no_loose_ends(topo_info topo_
 DROP FUNCTION IF EXISTS topo_update.get_topo_layer_id(topo_info topo_update.input_meta_info) cascade; 
 DROP FUNCTION IF EXISTS topo_update.has_linestring_loose_ends(topo_info topo_update.input_meta_info, topo topogeometry) cascade; 
 DROP FUNCTION IF EXISTS topo_update.touches(_new_topo_objects regclass,id_to_check int)  cascade; 
+DROP FUNCTION IF EXISTS topo_update.make_input_meta_info(layer_schema text, layer_table text, layer_column text, snap_tolerance float8)   cascade;
 
 DROP FUNCTION IF EXISTS topo_rein.query_to_topojson(query text, srid_out int, maxdecimaldigits int) cascade;
 DROP FUNCTION IF EXISTS topo_rein.get_var_flate_topojson(env box2d, srid_out int, maxdecimaldigits int) cascade;
