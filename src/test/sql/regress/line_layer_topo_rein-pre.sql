@@ -4014,7 +4014,7 @@ RETURNS TABLE(id integer) AS $$
 $$ LANGUAGE 'sql';
 --}
 
-select topo_update.delete_topo_line(1, 'topo_rein', 'reindrift_anlegg_linje', 'linje');
+
 
 -- delete line that intersects with given point
 
