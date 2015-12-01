@@ -19,7 +19,10 @@ AS (
 
 	-- this is the snapp to tolerance used for snap to when adding new vector data 
 	-- a typical value used for degrees is 0.0000000001
-	snap_tolerance float8
+	snap_tolerance float8,
+	
+	-- this is computed by using function topo_update.get_topo_layer_id
+	border_layer_id int
 	
 
 );
