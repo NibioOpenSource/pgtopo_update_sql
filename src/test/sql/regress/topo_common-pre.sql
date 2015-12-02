@@ -131,11 +131,11 @@ AS (
 
 -- this is type used extrac data from json
 CREATE TYPE topo_rein.simple_sosi_felles_egenskaper AS (
-	"felles_egenskaper.forstedatafangsdato" date , 
-	"felles_egenskaper.verifiseringsdato" date ,
-	"felles_egenskaper.oppdateringsdato" date ,
-	"felles_egenskaper.opphav" varchar, 
-	"felles_egenskaper.kvalitet.maalemetode" int 
+	"fellesegenskaper.forstedatafangstdato" date , 
+	"fellesegenskaper.verifiseringsdato" date ,
+	"fellesegenskaper.oppdateringsdato" date ,
+	"fellesegenskaper.opphav" varchar, 
+	"fellesegenskaper.kvalitet.maalemetode" int 
 );
 
 
@@ -528,7 +528,7 @@ select
 id,
 reindrift_sesongomrade_kode,
 reinbeitebruker_id,
-(al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forstedatafangsdato", 
+(al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forstedatafangstdato", 
 (al.felles_egenskaper).verifiseringsdato AS "fellesegenskaper.verifiseringsdato",
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
@@ -586,7 +586,7 @@ select
 id,
 reinbeitebruker_id,
 reindriftsanleggstype,
-(al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forstedatafangsdato", 
+(al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forstedatafangstdato", 
 (al.felles_egenskaper).verifiseringsdato AS "fellesegenskaper.verifiseringsdato",
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
@@ -606,7 +606,7 @@ select
 id,
 reinbeitebruker_id,
 reindriftsanleggstype,
-(al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forstedatafangsdato", 
+(al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forstedatafangstdato", 
 (al.felles_egenskaper).verifiseringsdato AS "fellesegenskaper.verifiseringsdato",
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 

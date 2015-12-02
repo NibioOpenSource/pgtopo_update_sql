@@ -131,11 +131,11 @@ AS (
 
 -- this is type used extrac data from json
 CREATE TYPE topo_rein.simple_sosi_felles_egenskaper AS (
-	"felles_egenskaper.forstedatafangsdato" date , 
-	"felles_egenskaper.verifiseringsdato" date ,
-	"felles_egenskaper.oppdateringsdato" date ,
-	"felles_egenskaper.opphav" varchar, 
-	"felles_egenskaper.kvalitet.maalemetode" int 
+	"fellesegenskaper.forstedatafangstdato" date , 
+	"fellesegenskaper.verifiseringsdato" date ,
+	"fellesegenskaper.oppdateringsdato" date ,
+	"fellesegenskaper.opphav" varchar, 
+	"fellesegenskaper.kvalitet.maalemetode" int 
 );
 
 
@@ -528,7 +528,7 @@ select
 id,
 reindrift_sesongomrade_kode,
 reinbeitebruker_id,
-(al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forstedatafangsdato", 
+(al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forstedatafangstdato", 
 (al.felles_egenskaper).verifiseringsdato AS "fellesegenskaper.verifiseringsdato",
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
@@ -586,7 +586,7 @@ select
 id,
 reinbeitebruker_id,
 reindriftsanleggstype,
-(al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forstedatafangsdato", 
+(al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forstedatafangstdato", 
 (al.felles_egenskaper).verifiseringsdato AS "fellesegenskaper.verifiseringsdato",
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
@@ -606,7 +606,7 @@ select
 id,
 reinbeitebruker_id,
 reindriftsanleggstype,
-(al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forstedatafangsdato", 
+(al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forstedatafangstdato", 
 (al.felles_egenskaper).verifiseringsdato AS "fellesegenskaper.verifiseringsdato",
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
@@ -737,6 +737,49 @@ AS (
 	
 
 );
+
+-- TODO move this function to it's file
+
+-- DROP function topo_update.create_temp_tbl_as(tblname text,qry text);
+-- {
+CREATE OR replace function topo_update.create_temp_tbl_as(tblname text,qry text)
+returns text as
+$$ 
+BEGIN
+$1 = trim($1);
+IF NOT EXISTS (SELECT relname FROM pg_catalog.pg_class where relname =$1) THEN
+	return 'CREATE TEMP TABLE '||$1||' ON COMMIT DROP AS '||$2||'';
+--IF NOT EXISTS (SELECT 1 FROM pg_tables where tablename = substr($1,strpos($1,'.')+1) AND schemaname = substr($1,0,strpos($1,'.')) ) THEN
+--	return 'CREATE TABLE '||$1||' AS '||$2||'';
+else
+	return 'TRUNCATE TABLE '||$1||'';
+END IF;
+END
+$$
+language plpgsql;
+--}
+
+-- TODO move this function to it's file
+
+-- DROP function topo_update.create_temp_tbl_def(tblname text,def text);
+-- {
+CREATE OR replace function topo_update.create_temp_tbl_def(tblname text,def text)
+returns text as
+$$ 
+BEGIN
+$1 = trim($1);
+IF NOT EXISTS (SELECT relname FROM pg_catalog.pg_class where relname =$1) THEN
+	return 'CREATE TEMP TABLE '||$1||''||$2||' ON COMMIT DROP';
+--IF NOT EXISTS (SELECT 1 FROM pg_tables where tablename = substr($1,strpos($1,'.')+1) AND schemaname=substr($1,0,strpos($1,'.')) ) THEN
+--	return 'CREATE TABLE '||$1||''||$2||'';
+else
+	return 'TRUNCATE TABLE '||$1||'';
+END IF;
+END
+$$
+language plpgsql;
+--}
+
 
 CREATE OR REPLACE FUNCTION topo_rein.findExtent(schema_name text, table_name text , geocolumn_name text )
 RETURNS geometry AS $$
@@ -924,7 +967,7 @@ BEGIN
 res := topo_rein.get_rein_felles_egenskaper_flate(felles);
 	
 
-res_kvalitet.maalemetode := (felles)."felles_egenskaper.kvalitet.maalemetode";
+res_kvalitet.maalemetode := (felles)."fellesegenskaper.kvalitet.maalemetode";
 --res_kvalitet.noyaktighet := 200;
 --res_kvalitet.synbarhet := 0;
 res.kvalitet = res_kvalitet;
@@ -957,13 +1000,13 @@ BEGIN
 
 	
 -- if we have a value for felles_egenskaper.verifiseringsdato or else use current date
-res.verifiseringsdato :=  (felles)."felles_egenskaper.verifiseringsdato";
+res.verifiseringsdato :=  (felles)."fellesegenskaper.verifiseringsdato";
 IF res.verifiseringsdato is null THEN
 	res.verifiseringsdato :=  current_date;
 END IF;
 
 -- if we have a value for felles_egenskaper.forstedatafangstdato or else use verifiseringsdato
-res.forstedatafangstdato :=  (felles)."felles_egenskaper.forstedatafangsdato";
+res.forstedatafangstdato :=  (felles)."fellesegenskaper.forstedatafangstdato";
 IF res.forstedatafangstdato is null THEN
 	res.forstedatafangstdato :=  res.verifiseringsdato;
 END IF;
@@ -972,17 +1015,17 @@ END IF;
 -- The only time will have values for oppdateringsdato is when we transfer data from simple feature.
 -- From the client this should always be null
 -- TODO Or should er here always use current_date
---res.oppdateringsdato :=  (felles)."felles_egenskaper.oppdateringsdato";
---IF res.oppdateringsdato is null THEN
+res.oppdateringsdato :=  (felles)."fellesegenskaper.oppdateringsdato";
+IF res.oppdateringsdato is null THEN
 	res.oppdateringsdato :=  current_date;
---END IF;
+END IF;
 
 -- TODO verufy that we always should reset oppdaterings dato
 -- If this is the case we may remove oppdateringsdato
 
 -- TODO that will be a input from the user
 -- How to handle lines that crosses municipality
-res.opphav :=  (felles)."felles_egenskaper.opphav";
+res.opphav :=  (felles)."fellesegenskaper.opphav";
 
 --res.prosess_historie
 
@@ -1015,14 +1058,14 @@ BEGIN
 
 	
 -- if we have a value for felles_egenskaper.verifiseringsdato or else use current date
-res.verifiseringsdato :=  (felles)."felles_egenskaper.verifiseringsdato";
+res.verifiseringsdato :=  (felles)."fellesegenskaper.verifiseringsdato";
 IF res.verifiseringsdato is null THEN
 	res.verifiseringsdato :=  current_date;
 END IF;
 
 res.oppdateringsdato :=  current_date;
 
-res.opphav :=  (felles)."felles_egenskaper.opphav";
+res.opphav :=  (felles)."fellesegenskaper.opphav";
 
 
 return res;
@@ -1030,25 +1073,6 @@ return res;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE ;
 
-
--- test the function with goven structure
--- (2015-01-01,,"(,,)",2015-11-04,Reindriftsforvaltningen,2015-01-01,,"(,)")
--- select * from json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,'{"reinbeitebruker_id":"XI","felles_egenskaper.forstedatafangsdato":null,"felles_egenskaper.verifiseringsdato":"2015-01-01","felles_egenskaper.oppdateringsdato":null,"felles_egenskaper.opphav":"Reindriftsforvaltningen"}');
---DO $$
---DECLARE 
---fe2 topo_rein.sosi_felles_egenskaper;
---fe topo_rein.simple_sosi_felles_egenskaper;
---BEGIN
---	SELECT * INTO fe FROM json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,
---	(select properties from topo_rein.ttt_new_attributes_values) 
---	);
---	
---	fe2 := topo_rein.get_rein_felles_egenskaper(fe);
---	RAISE NOTICE 'topo_rein.get_rein_felles_egenskapers %',  fe2;
---	RAISE NOTICE 'forstedatafangstdato %',  (fe2).forstedatafangstdato;
---	RAISE NOTICE 'verifiseringsdato %',  (fe2).verifiseringsdato;
---	RAISE NOTICE 'oppdateringsdato %',  (fe2).oppdateringsdato;
---END $$;
 
 
 
@@ -2241,23 +2265,16 @@ $$ LANGUAGE plpgsql;
 
 
 
-
 -- update attribute values for given topo object
-CREATE OR REPLACE FUNCTION topo_update.apply_attr_on_topo_line(json_feature text) 
+
+CREATE OR REPLACE FUNCTION topo_update.apply_attr_on_topo_line(json_feature text,
+  layer_schema text, layer_table text, layer_column text) 
 RETURNS int AS $$DECLARE
 
 num_rows int;
 
-
--- this line layer id will picked up by input parameters
-line_layer_id int;
-
-
--- TODO use as parameter put for testing we just have here for now
-line_topo_info topo_update.input_meta_info ;
-
--- hold striped gei
-edge_with_out_loose_ends geometry = null;
+-- common meta info
+topo_info topo_update.input_meta_info ;
 
 -- holds dynamic sql to be able to use the same code for different
 command_string text;
@@ -2265,58 +2282,107 @@ command_string text;
 -- holds the num rows affected when needed
 num_rows_affected int;
 
--- used to hold values
-felles_egenskaper_flate topo_rein.sosi_felles_egenskaper;
+-- used to hold values temp values
 simple_sosi_felles_egenskaper_linje topo_rein.simple_sosi_felles_egenskaper;
 
-BEGIN
-	
-	-- TODO to be moved is justed for testing now
-	line_topo_info.topology_name := 'topo_rein_sysdata';
-	line_topo_info.layer_schema_name := 'topo_rein';
-	line_topo_info.layer_table_name := 'reindrift_anlegg_linje';
-	line_topo_info.layer_feature_column := 'linje';
-	line_topo_info.snap_tolerance := 0.0000000001;
-	line_topo_info.element_type = 2;
-	-- find line layer id
-	line_layer_id := topo_update.get_topo_layer_id(line_topo_info);
-	
-	DROP TABLE IF EXISTS ttt_new_attributes_values;
+-- array of quoted field identifiers
+-- for attribute fields passed in by user and known (by name)
+-- in the target table
+update_fields text[];
 
-	CREATE TEMP TABLE ttt_new_attributes_values(geom geometry,properties json);
+-- array of quoted field identifiers
+-- for attribute fields passed in by user and known (by name)
+-- in the temp table
+update_fields_t text[];
+
+BEGIN
+
+	-- get meta data
+	topo_info := topo_update.make_input_meta_info(layer_schema, layer_table , layer_column );
 	
-	-- get json data
-	INSERT INTO ttt_new_attributes_values(properties)
+
+	-- get the rows from json_feature into a table
+	DROP TABLE IF EXISTS topo_rein.ttt2_new_attributes_values;
+	CREATE TABLE topo_rein.ttt2_new_attributes_values(geom geometry,properties json);
+	-- get json data with out geometry properties
+	INSERT INTO topo_rein.ttt2_new_attributes_values(properties)
 	SELECT 
---		topo_rein.get_geom_from_json(feat,4258) as geom,
+-- 		topo_rein.get_geom_from_json(feat,4258) as geom, there is now gemeyry
 		to_json(feat->'properties')::json  as properties
 	FROM (
 	  	SELECT json_feature::json AS feat
 	) AS f;
 
-	--  
-	
-	IF (SELECT count(*) FROM ttt_new_attributes_values) != 1 THEN
+	--  update the variable simple_sosi_felles_egenskaper_linje  with a value from topo_rein.ttt2_new_attributes_values
+	IF (SELECT count(*) FROM topo_rein.ttt2_new_attributes_values) != 1 THEN
 		RAISE EXCEPTION 'Not valid json_feature %', json_feature;
 	ELSE 
-
 		-- TODO find another way to handle this
 		SELECT * INTO simple_sosi_felles_egenskaper_linje 
 		FROM json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,
-		(select properties from ttt_new_attributes_values) );
-
+		(select properties from topo_rein.ttt2_new_attributes_values) );
+		
 	END IF;
 
+	RAISE NOTICE 'simple_sosi_felles_egenskaper_linje %', simple_sosi_felles_egenskaper_linje;
+
+	-- Create temporary table ttt2_new_topo_rows_in_org_table to receive the new record
+	command_string := topo_update.create_temp_tbl_as(
+	  'ttt2_new_topo_rows_in_org_table',
+	  format('SELECT * FROM %I.%I LIMIT 0',
+	         topo_info.layer_schema_name,
+	         topo_info.layer_table_name));
+	EXECUTE command_string;
+
+  	-- Insert all matching column names into temp table ttt2_new_topo_rows_in_org_table 
+	INSERT INTO ttt2_new_topo_rows_in_org_table
+		SELECT r.* --, t2.geom 
+		FROM topo_rein.ttt2_new_attributes_values t2,
+         json_populate_record(
+            null::ttt2_new_topo_rows_in_org_table,
+            t2.properties) r;
+	RAISE NOTICE 'Added all attributes to ttt2_new_topo_rows_in_org_table';
+
+	-- Update felles egenskaper with new values
+	command_string := format('UPDATE ttt2_new_topo_rows_in_org_table 
+	SET felles_egenskaper = topo_rein.get_rein_felles_egenskaper_update(r.felles_egenskaper, %L)
+	FROM  %I.%I r',
+	simple_sosi_felles_egenskaper_linje,
+    topo_info.layer_schema_name,
+    topo_info.layer_table_name
+	);
+	RAISE NOTICE 'command_string %', command_string;
+	EXECUTE command_string;
+
+  RAISE NOTICE 'Set felles_egenskaper field';
+
+  -- Extract name of fields with not-null values:
+  SELECT array_agg(quote_ident(key))
+    FROM ttt2_new_topo_rows_in_org_table t, json_each_text(to_json((t)))
+   WHERE key != 'id'
+    INTO update_fields;
+  RAISE NOTICE 'Extract name of not-null fields: %', update_fields;
+  
+  -- Extract name of fields with not-null values and append the table prefix n.:
+  SELECT array_agg('n.'||quote_ident(key))
+    FROM ttt2_new_topo_rows_in_org_table t, json_each_text(to_json((t)))
+   WHERE key != 'id'
+    INTO update_fields_t;
+  RAISE NOTICE 'Extract name of not-null fields: %', update_fields_t;
+  
+  -- update the org table with not null values
+  command_string := format(
+    'UPDATE %I.%I s SET
+	(%s) = (%s) 
+	FROM ttt2_new_topo_rows_in_org_table n WHERE n.id = s.id',
+    topo_info.layer_schema_name,
+    topo_info.layer_table_name,
+    array_to_string(update_fields, ','),
+    array_to_string(update_fields_t, ',')
+    );
+	RAISE NOTICE 'command_string %', command_string;
+	EXECUTE command_string;
 	
-	-- We now know which rows we can reuse clear out old data rom the realation table
-	UPDATE topo_rein.reindrift_anlegg_linje r
-	SET 
-		reindriftsanleggstype = (t2.properties->>'reindriftsanleggstype')::int,
-		reinbeitebruker_id = (t2.properties->>'reinbeitebruker_id')::text,
-		felles_egenskaper = topo_rein.get_rein_felles_egenskaper_update(felles_egenskaper, simple_sosi_felles_egenskaper_linje)
-	FROM ttt_new_attributes_values t2
-	-- WHERE ST_Intersects(r.omrade::geometry,t2.geom);
-	WHERE id = (t2.properties->>'id')::int;
 	
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 
@@ -2331,6 +2397,12 @@ $$ LANGUAGE plpgsql;
 
 
 
+--{ kept for backward compatility
+CREATE OR REPLACE FUNCTION  topo_update.apply_attr_on_topo_line(json_feature text) 
+RETURNS TABLE(id integer) AS $$
+  SELECT topo_update.apply_attr_on_topo_line($1, 'topo_rein', 'reindrift_anlegg_linje', 'linje');
+$$ LANGUAGE 'sql';
+--}
 
 
 -- update attribute values for given topo object
@@ -2563,59 +2635,6 @@ $$ LANGUAGE plpgsql;
 
 
 -- SELECT * FROM topo_rein.arstidsbeite_var_flate;
-
-
--- TODO move this function to it's file
-
--- DROP function topo_update.create_temp_tbl_as(tblname text,qry text);
--- {
-CREATE OR replace function topo_update.create_temp_tbl_as(tblname text,qry text)
-returns text as
-$$ 
-BEGIN
-$1 = trim($1);
-IF NOT EXISTS (SELECT relname FROM pg_catalog.pg_class where relname =$1) THEN
-	return 'CREATE TEMP TABLE '||$1||' ON COMMIT DROP AS '||$2||'';
---IF NOT EXISTS (SELECT 1 FROM pg_tables where tablename = substr($1,strpos($1,'.')+1) AND schemaname = substr($1,0,strpos($1,'.')) ) THEN
---	return 'CREATE TABLE '||$1||' AS '||$2||'';
-else
-	return 'TRUNCATE TABLE '||$1||'';
-END IF;
-END
-$$
-language plpgsql;
---}
-
--- TODO move this function to it's file
-
--- DROP function topo_update.create_temp_tbl_def(tblname text,def text);
--- {
-CREATE OR replace function topo_update.create_temp_tbl_def(tblname text,def text)
-returns text as
-$$ 
-BEGIN
-$1 = trim($1);
-IF NOT EXISTS (SELECT relname FROM pg_catalog.pg_class where relname =$1) THEN
-	return 'CREATE TEMP TABLE '||$1||''||$2||' ON COMMIT DROP';
---IF NOT EXISTS (SELECT 1 FROM pg_tables where tablename = substr($1,strpos($1,'.')+1) AND schemaname=substr($1,0,strpos($1,'.')) ) THEN
---	return 'CREATE TABLE '||$1||''||$2||'';
-else
-	return 'TRUNCATE TABLE '||$1||'';
-END IF;
-END
-$$
-language plpgsql;
---}
-
-
---DO $$
---DECLARE 
---command_string text;
---BEGIN
---	command_string := topo_update.create_temp_tbl_def('ttt2_new_attributes_values','(geom geometry,properties json)');
---	RAISE NOTICE 'command_string %',  command_string;
---	EXECUTE command_string;
---END $$;
 
 -- This a function that will be called from the client when user is drawing a line
 -- This line will be applied the data in the line layer

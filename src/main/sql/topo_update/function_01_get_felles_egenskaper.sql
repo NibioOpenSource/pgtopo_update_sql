@@ -16,7 +16,7 @@ BEGIN
 res := topo_rein.get_rein_felles_egenskaper_flate(felles);
 	
 
-res_kvalitet.maalemetode := (felles)."felles_egenskaper.kvalitet.maalemetode";
+res_kvalitet.maalemetode := (felles)."fellesegenskaper.kvalitet.maalemetode";
 --res_kvalitet.noyaktighet := 200;
 --res_kvalitet.synbarhet := 0;
 res.kvalitet = res_kvalitet;
@@ -49,13 +49,13 @@ BEGIN
 
 	
 -- if we have a value for felles_egenskaper.verifiseringsdato or else use current date
-res.verifiseringsdato :=  (felles)."felles_egenskaper.verifiseringsdato";
+res.verifiseringsdato :=  (felles)."fellesegenskaper.verifiseringsdato";
 IF res.verifiseringsdato is null THEN
 	res.verifiseringsdato :=  current_date;
 END IF;
 
 -- if we have a value for felles_egenskaper.forstedatafangstdato or else use verifiseringsdato
-res.forstedatafangstdato :=  (felles)."felles_egenskaper.forstedatafangsdato";
+res.forstedatafangstdato :=  (felles)."fellesegenskaper.forstedatafangstdato";
 IF res.forstedatafangstdato is null THEN
 	res.forstedatafangstdato :=  res.verifiseringsdato;
 END IF;
@@ -64,7 +64,7 @@ END IF;
 -- The only time will have values for oppdateringsdato is when we transfer data from simple feature.
 -- From the client this should always be null
 -- TODO Or should er here always use current_date
---res.oppdateringsdato :=  (felles)."felles_egenskaper.oppdateringsdato";
+--res.oppdateringsdato :=  (felles)."fellesegenskaper.oppdateringsdato";
 --IF res.oppdateringsdato is null THEN
 	res.oppdateringsdato :=  current_date;
 --END IF;
@@ -74,7 +74,7 @@ END IF;
 
 -- TODO that will be a input from the user
 -- How to handle lines that crosses municipality
-res.opphav :=  (felles)."felles_egenskaper.opphav";
+res.opphav :=  (felles)."fellesegenskaper.opphav";
 
 --res.prosess_historie
 
@@ -107,14 +107,14 @@ BEGIN
 
 	
 -- if we have a value for felles_egenskaper.verifiseringsdato or else use current date
-res.verifiseringsdato :=  (felles)."felles_egenskaper.verifiseringsdato";
+res.verifiseringsdato :=  (felles)."fellesegenskaper.verifiseringsdato";
 IF res.verifiseringsdato is null THEN
 	res.verifiseringsdato :=  current_date;
 END IF;
 
 res.oppdateringsdato :=  current_date;
 
-res.opphav :=  (felles)."felles_egenskaper.opphav";
+res.opphav :=  (felles)."fellesegenskaper.opphav";
 
 
 return res;
@@ -122,25 +122,6 @@ return res;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE ;
 
-
--- test the function with goven structure
--- (2015-01-01,,"(,,)",2015-11-04,Reindriftsforvaltningen,2015-01-01,,"(,)")
--- select * from json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,'{"reinbeitebruker_id":"XI","felles_egenskaper.forstedatafangsdato":null,"felles_egenskaper.verifiseringsdato":"2015-01-01","felles_egenskaper.oppdateringsdato":null,"felles_egenskaper.opphav":"Reindriftsforvaltningen"}');
---DO $$
---DECLARE 
---fe2 topo_rein.sosi_felles_egenskaper;
---fe topo_rein.simple_sosi_felles_egenskaper;
---BEGIN
---	SELECT * INTO fe FROM json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,
---	(select properties from topo_rein.ttt_new_attributes_values) 
---	);
---	
---	fe2 := topo_rein.get_rein_felles_egenskaper(fe);
---	RAISE NOTICE 'topo_rein.get_rein_felles_egenskapers %',  fe2;
---	RAISE NOTICE 'forstedatafangstdato %',  (fe2).forstedatafangstdato;
---	RAISE NOTICE 'verifiseringsdato %',  (fe2).verifiseringsdato;
---	RAISE NOTICE 'oppdateringsdato %',  (fe2).oppdateringsdato;
---END $$;
 
 
 
