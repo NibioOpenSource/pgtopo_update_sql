@@ -1015,10 +1015,10 @@ END IF;
 -- The only time will have values for oppdateringsdato is when we transfer data from simple feature.
 -- From the client this should always be null
 -- TODO Or should er here always use current_date
-res.oppdateringsdato :=  (felles)."fellesegenskaper.oppdateringsdato";
-IF res.oppdateringsdato is null THEN
+--res.oppdateringsdato :=  (felles)."fellesegenskaper.oppdateringsdato";
+--IF res.oppdateringsdato is null THEN
 	res.oppdateringsdato :=  current_date;
-END IF;
+--END IF;
 
 -- TODO verufy that we always should reset oppdaterings dato
 -- If this is the case we may remove oppdateringsdato
@@ -2302,10 +2302,10 @@ BEGIN
 	
 
 	-- get the rows from json_feature into a table
-	DROP TABLE IF EXISTS topo_rein.ttt2_new_attributes_values;
-	CREATE TABLE topo_rein.ttt2_new_attributes_values(geom geometry,properties json);
+	DROP TABLE IF EXISTS ttt2_new_attributes_values;
+	CREATE TEMP TABLE ttt2_new_attributes_values(geom geometry,properties json);
 	-- get json data with out geometry properties
-	INSERT INTO topo_rein.ttt2_new_attributes_values(properties)
+	INSERT INTO ttt2_new_attributes_values(properties)
 	SELECT 
 -- 		topo_rein.get_geom_from_json(feat,4258) as geom, there is now gemeyry
 		to_json(feat->'properties')::json  as properties
@@ -2313,14 +2313,14 @@ BEGIN
 	  	SELECT json_feature::json AS feat
 	) AS f;
 
-	--  update the variable simple_sosi_felles_egenskaper_linje  with a value from topo_rein.ttt2_new_attributes_values
-	IF (SELECT count(*) FROM topo_rein.ttt2_new_attributes_values) != 1 THEN
+	--  update the variable simple_sosi_felles_egenskaper_linje  with a value from ttt2_new_attributes_values
+	IF (SELECT count(*) FROM ttt2_new_attributes_values) != 1 THEN
 		RAISE EXCEPTION 'Not valid json_feature %', json_feature;
 	ELSE 
 		-- TODO find another way to handle this
 		SELECT * INTO simple_sosi_felles_egenskaper_linje 
 		FROM json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,
-		(select properties from topo_rein.ttt2_new_attributes_values) );
+		(select properties from ttt2_new_attributes_values) );
 		
 	END IF;
 
@@ -2337,7 +2337,7 @@ BEGIN
   	-- Insert all matching column names into temp table ttt2_new_topo_rows_in_org_table 
 	INSERT INTO ttt2_new_topo_rows_in_org_table
 		SELECT r.* --, t2.geom 
-		FROM topo_rein.ttt2_new_attributes_values t2,
+		FROM ttt2_new_attributes_values t2,
          json_populate_record(
             null::ttt2_new_topo_rows_in_org_table,
             t2.properties) r;
