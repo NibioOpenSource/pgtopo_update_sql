@@ -55,6 +55,10 @@ felles_egenskaper_linje topo_rein.sosi_felles_egenskaper;
 felles_egenskaper_flate topo_rein.sosi_felles_egenskaper;
 simple_sosi_felles_egenskaper_linje topo_rein.simple_sosi_felles_egenskaper;
 
+-- array of quoted field identifiers
+-- for attribute fields passed in by user and known (by name)
+-- in the target table
+not_null_fields text[];
 
 BEGIN
 	
@@ -64,11 +68,11 @@ BEGIN
 	surface_topo_info := topo_update.make_input_meta_info(layer_schema, surface_layer_table , surface_layer_column );
 	
 	
-	CREATE TEMP TABLE IF NOT EXISTS ttt_new_attributes_values(geom geometry,properties json, felles_egenskaper topo_rein.sosi_felles_egenskaper);
-	TRUNCATE TABLE ttt_new_attributes_values;
+	CREATE TEMP TABLE IF NOT EXISTS ttt2_new_attributes_values(geom geometry,properties json, felles_egenskaper topo_rein.sosi_felles_egenskaper);
+	TRUNCATE TABLE ttt2_new_attributes_values;
 	
 	-- parse the json data
-	INSERT INTO ttt_new_attributes_values(geom,properties)
+	INSERT INTO ttt2_new_attributes_values(geom,properties)
 	SELECT 
 	geom,
 	properties
@@ -84,15 +88,15 @@ BEGIN
 	-- check that it is only one row put that value into 
 	-- TODO rewrite this to not use table in
 	
-	IF (SELECT count(*) FROM ttt_new_attributes_values) != 1 THEN
+	IF (SELECT count(*) FROM ttt2_new_attributes_values) != 1 THEN
 		RAISE EXCEPTION 'Not valid json_feature %', json_feature;
 	ELSE 
-		SELECT geom FROM ttt_new_attributes_values INTO geo_in;
+		SELECT geom FROM ttt2_new_attributes_values INTO geo_in;
 
 		-- TODO find another way to handle this
 		SELECT * INTO simple_sosi_felles_egenskaper_linje 
 		FROM json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,
-		(select properties from ttt_new_attributes_values) );
+		(select properties from ttt2_new_attributes_values) );
 
 		felles_egenskaper_linje := topo_rein.get_rein_felles_egenskaper(simple_sosi_felles_egenskaper_linje);
 		felles_egenskaper_flate := topo_rein.get_rein_felles_egenskaper_flate(simple_sosi_felles_egenskaper_linje);
@@ -158,26 +162,73 @@ BEGIN
 	IF geo_in IS NULL THEN
 		RAISE EXCEPTION 'The geo generated from geo_in is null %', org_geo_in;
 	END IF;
-	
 
 	-- create the new topo object for the egde layer
-	new_border_data := topo_update.create_surface_edge(geo_in);
+	new_border_data := topo_update.create_surface_edge(geo_in,border_topo_info);
 	RAISE NOTICE 'The new topo object created for based on the input geo  %',  new_border_data;
-
 	
-	-- perpare result 
+	-- perpare table for rows to be returned to the caller 
 	DROP TABLE IF EXISTS create_surface_edge_domain_obj_r1_r; 
 	CREATE TEMP TABLE create_surface_edge_domain_obj_r1_r(id int, id_type text) ;
 	
-	-- TODO insert some correct value for attributes
-	WITH inserted AS (
-		INSERT INTO topo_rein.arstidsbeite_var_grense(grense, felles_egenskaper)
-		SELECT new_border_data, felles_egenskaper_linje
-		RETURNING *
+	
+	RAISE NOTICE 'Step::::::::::::::::: 2';
 
-	)
+	-- Create temporary table to receive the new record
+	command_string := topo_update.create_temp_tbl_as(
+	  'ttt2_new_topo_rows_in_org_table',
+	  format('SELECT * FROM %I.%I LIMIT 0',
+	         border_topo_info.layer_schema_name,
+	         border_topo_info.layer_table_name));
+	EXECUTE command_string;
+
+  -- Insert all matching column names into temp table
+	INSERT INTO ttt2_new_topo_rows_in_org_table
+		SELECT r.* --, t2.geom
+		FROM ttt2_new_attributes_values t2,
+         json_populate_record(
+            null::ttt2_new_topo_rows_in_org_table,
+            t2.properties) r;
+
+  RAISE NOTICE 'Added all attributes to ttt2_new_topo_rows_in_org_table';
+
+  -- Convert geometry to TopoGeometry, write it in the temp table
+  command_string := format('UPDATE ttt2_new_topo_rows_in_org_table
+    SET %I = %L,
+	 felles_egenskaper = %L',
+  border_topo_info.layer_feature_column, new_border_data,felles_egenskaper_linje);
+    
+  EXECUTE command_string;
+
+  RAISE NOTICE 'Set felles_egenskaper field';
+
+  -- Extract name of fields with not-null values:
+  SELECT array_agg(quote_ident(key))
+    FROM ttt2_new_topo_rows_in_org_table t, json_each_text(to_json((t)))
+   WHERE value IS NOT NULL
+    INTO not_null_fields;
+
+  RAISE NOTICE 'Extract name of not-null fields: %', not_null_fields;
+
+  -- Copy full record from temp table to actual table and
+  -- update temp table with actual table values
+  command_string := format(
+    'WITH inserted AS ( INSERT INTO %I.%I (%s) SELECT %s FROM
+ttt2_new_topo_rows_in_org_table RETURNING * ), deleted AS ( DELETE
+FROM ttt2_new_topo_rows_in_org_table ) INSERT INTO
+ttt2_new_topo_rows_in_org_table SELECT * FROM inserted ',
+    border_topo_info.layer_schema_name,
+    border_topo_info.layer_table_name,
+    array_to_string(not_null_fields, ','),
+    array_to_string(not_null_fields, ',')
+    );
+	EXECUTE command_string;
+
+	RAISE NOTICE 'Step::::::::::::::::: 3';
+	
+	
 	INSERT INTO create_surface_edge_domain_obj_r1_r(id,id_type)
-	SELECT id, 'L' as id_type FROM inserted;
+	SELECT id, 'L' as id_type FROM ttt2_new_topo_rows_in_org_table;
 
 	
 	-- create the new topo object for the surfaces
