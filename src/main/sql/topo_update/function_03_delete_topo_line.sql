@@ -31,9 +31,9 @@ BEGIN
 		%1$I.edge_data ed
 		WHERE 
 		al.id = %4$L AND
-		(al.linje).id = re.topogeo_id AND
-		re.layer_id =  %5$L AND 
-		re.element_type = %6$L AND  
+		(al.%5$I).id = re.topogeo_id AND
+		re.layer_id =  %6$L AND 
+		re.element_type = %7$L AND  
 		ed.edge_id = re.element_id AND
 		NOT EXISTS ( SELECT 1 FROM %1$I.relation re2 WHERE  ed.edge_id = re2.element_id AND re2.topogeo_id != re.topogeo_id) 
     )',
@@ -41,6 +41,7 @@ BEGIN
     border_topo_info.layer_schema_name,
 	border_topo_info.layer_table_name,
 	id_in,
+	border_topo_info.layer_feature_column,
 	border_topo_info.border_layer_id,
 	border_topo_info.element_type
 	);
