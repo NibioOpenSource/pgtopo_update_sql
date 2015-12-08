@@ -12,22 +12,17 @@
 -- DROP FUNCTION IF EXISTS topo_update.create_surface_edge_domain_obj(json_feature text) cascade;
 
 
-CREATE OR REPLACE FUNCTION topo_update.create_surface_edge_domain_obj(json_feature text) 
+CREATE OR REPLACE FUNCTION topo_update.create_surface_edge_domain_obj(json_feature text,
+  layer_schema text, 
+  surface_layer_table text, surface_layer_column text,
+  border_layer_table text, border_layer_column text,
+  snap_tolerance float8) 
 RETURNS TABLE(result text) AS $$
 DECLARE
 
 json_result text;
 
 new_border_data topogeometry;
-
--- this border layer id will picked up by input parameters
-border_layer_id int;
-
--- this surface layer id will picked up by input parameters
-surface_layer_id int;
-
--- this is the tolerance used for snap to 
-snap_tolerance float8 = 0.0000000001;
 
 -- TODO use as parameter put for testing we just have here for now
 border_topo_info topo_update.input_meta_info ;
@@ -63,22 +58,11 @@ simple_sosi_felles_egenskaper_linje topo_rein.simple_sosi_felles_egenskaper;
 
 BEGIN
 	
-	
-	-- TODO to be moved is justed for testing now
-	border_topo_info.topology_name := 'topo_rein_sysdata';
-	border_topo_info.layer_schema_name := 'topo_rein';
-	border_topo_info.layer_table_name := 'arstidsbeite_var_grense';
-	border_topo_info.layer_feature_column := 'grense';
-	border_topo_info.snap_tolerance := 0.0000000001;
-	border_topo_info.element_type = 2;
-	
-	
-	surface_topo_info.topology_name := 'topo_rein_sysdata';
-	surface_topo_info.layer_schema_name := 'topo_rein';
-	surface_topo_info.layer_table_name := 'arstidsbeite_var_flate';
-	surface_topo_info.layer_feature_column := 'omrade';
-	surface_topo_info.snap_tolerance := 0.0000000001;
+	-- get meta data
+	border_topo_info := topo_update.make_input_meta_info(layer_schema, border_layer_table , border_layer_column );
 
+	surface_topo_info := topo_update.make_input_meta_info(layer_schema, surface_layer_table , surface_layer_column );
+	
 	
 	CREATE TEMP TABLE IF NOT EXISTS ttt_new_attributes_values(geom geometry,properties json, felles_egenskaper topo_rein.sosi_felles_egenskaper);
 	TRUNCATE TABLE ttt_new_attributes_values;
@@ -112,7 +96,6 @@ BEGIN
 
 		felles_egenskaper_linje := topo_rein.get_rein_felles_egenskaper(simple_sosi_felles_egenskaper_linje);
 		felles_egenskaper_flate := topo_rein.get_rein_felles_egenskaper_flate(simple_sosi_felles_egenskaper_linje);
-
 
 	END IF;
 
@@ -197,9 +180,6 @@ BEGIN
 	SELECT id, 'L' as id_type FROM inserted;
 
 	
-	
-
-	
 	-- create the new topo object for the surfaces
 	DROP TABLE IF EXISTS new_surface_data_for_edge; 
 	-- find out if any old topo objects overlaps with this new objects using the relation table
@@ -259,3 +239,15 @@ BEGIN
     
 END;
 $$ LANGUAGE plpgsql;
+
+
+
+--{ kept for backward compatility
+CREATE OR REPLACE FUNCTION topo_update.create_surface_edge_domain_obj(json_feature text) 
+RETURNS TABLE(result text) AS $$
+  SELECT topo_update.create_surface_edge_domain_obj($1, 'topo_rein', 
+  'arstidsbeite_var_flate', 'omrade',
+  'arstidsbeite_var_grense','grense',
+  1e-10);
+$$ LANGUAGE 'sql';
+--}
