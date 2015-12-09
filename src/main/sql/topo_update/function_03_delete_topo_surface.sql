@@ -1,16 +1,13 @@
 -- delete surface that intersects with given point
 
-CREATE OR REPLACE FUNCTION topo_update.delete_topo_surface(id_in int) 
+CREATE OR REPLACE FUNCTION topo_update.delete_topo_surface(id_in int,  layer_schema text, 
+  surface_layer_table text, surface_layer_column text,
+  border_layer_table text, border_layer_column text
+) 
 RETURNS int AS $$DECLARE
 
 num_rows int;
 
-
--- this border layer id will picked up by input parameters
-border_layer_id int;
-
--- this surface layer id will picked up by input parameters
-surface_layer_id int;
 
 -- TODO use as parameter put for testing we just have here for now
 border_topo_info topo_update.input_meta_info ;
@@ -34,26 +31,10 @@ delete_surface geometry;
 
 BEGIN
 	
-	-- TODO to be moved is justed for testing now
-	border_topo_info.topology_name := 'topo_rein_sysdata';
-	border_topo_info.layer_schema_name := 'topo_rein';
-	border_topo_info.layer_table_name := 'arstidsbeite_var_grense';
-	border_topo_info.layer_feature_column := 'grense';
-	border_topo_info.snap_tolerance := 0.0000000001;
-	border_topo_info.element_type = 2;
-	
-	
-	surface_topo_info.topology_name := 'topo_rein_sysdata';
-	surface_topo_info.layer_schema_name := 'topo_rein';
-	surface_topo_info.layer_table_name := 'arstidsbeite_var_flate';
-	surface_topo_info.layer_feature_column := 'omrade';
-	surface_topo_info.snap_tolerance := 0.0000000001;
-	
-	-- find border layer id
-	border_layer_id := topo_update.get_topo_layer_id(border_topo_info);
-	
-	-- find surface layer id
-	surface_layer_id := topo_update.get_topo_layer_id(surface_topo_info);
+	-- get meta data
+	border_topo_info := topo_update.make_input_meta_info(layer_schema, border_layer_table , border_layer_column );
+
+	surface_topo_info := topo_update.make_input_meta_info(layer_schema, surface_layer_table , surface_layer_column );
 
 	SELECT omrade::geometry FROM topo_rein.arstidsbeite_var_flate r WHERE id = id_in INTO delete_surface;
         
@@ -73,68 +54,86 @@ BEGIN
     DROP TABLE IF EXISTS ttt_unused_edge_ids;
     CREATE TEMP TABLE ttt_unused_edge_ids AS 
     (
-		SELECT topo_rein.get_edges_within_faces(array_agg(x),border_layer_id) AS id from  topo_rein.get_unused_faces(surface_layer_id) x
+		SELECT topo_rein.get_edges_within_faces(array_agg(x),border_topo_info.border_layer_id) AS id from  topo_rein.get_unused_faces(surface_topo_info.border_layer_id) x
     );
     
-    -- Used for debug
-    DROP TABLE IF EXISTS ttt_unused_edge_geos;
-    CREATE TEMP TABLE ttt_unused_edge_geos AS 
-    (
-		SELECT ed.geom, ed.edge_id FROM
-		topo_rein_sysdata.edge_data ed,
-		ttt_unused_edge_ids ued
-		WHERE ed.edge_id = ANY(ued.id)
-    );
-
-
     -- Find linear objects related to his edges 
     DROP TABLE IF EXISTS ttt_affected_border_objects;
-    CREATE TEMP TABLE ttt_affected_border_objects AS 
+    command_string := FORMAT('CREATE TEMP TABLE ttt_affected_border_objects AS 
     (
 		select distinct ud.id
 	    FROM 
-		topo_rein_sysdata.relation re,
-		topo_rein.arstidsbeite_var_grense ud, 
-		topo_rein_sysdata.edge_data ed,
+		%I.relation re,
+		%I.%I ud, 
+		%I.edge_data ed,
 		ttt_unused_edge_ids ued
 		WHERE 
-		(ud.grense).id = re.topogeo_id AND
-		re.layer_id =  border_layer_id AND 
-		re.element_type = 2 AND  -- TODO use variable element_type_edge=2
+		(ud.%I).id = re.topogeo_id AND
+		re.layer_id =  %L AND 
+		re.element_type = %L AND
 		ed.edge_id = re.element_id AND
 		ed.edge_id = ANY(ued.id)
-    );
+    )',
+    border_topo_info.topology_name,
+    border_topo_info.layer_schema_name,
+	border_topo_info.layer_table_name,
+    border_topo_info.topology_name,
+   	border_topo_info.layer_feature_column,
+   	border_topo_info.border_layer_id,
+    border_topo_info.element_type
+	);
+	-- RAISE NOTICE '%', command_string;
+    EXECUTE command_string;
     
     -- Create geoms for for linal objects with out edges that will be deleted
     DROP TABLE IF EXISTS ttt_new_border_objects;
-    CREATE TEMP TABLE ttt_new_border_objects AS 
+    command_string := FORMAT('CREATE TEMP TABLE ttt_new_border_objects AS 
     (
 		SELECT ud.id, ST_Union(ed.geom) AS geom 
 	    FROM 
-		topo_rein_sysdata.relation re,
-		topo_rein.arstidsbeite_var_grense ud, 
-		topo_rein_sysdata.edge_data ed,
+		%I.relation re,
+		%I.%I ud, 
+		%I.edge_data ed,
 		ttt_unused_edge_ids ued,
 		ttt_affected_border_objects ab
 		WHERE 
 		ab.id = ud.id AND
-		(ud.grense).id = re.topogeo_id AND
-		re.layer_id =  border_layer_id AND 
-		re.element_type = 2 AND  -- TODO use variable element_type_edge=2
+		(ud.%I).id = re.topogeo_id AND
+		re.layer_id =  %L AND 
+		re.element_type = %L AND
 		ed.edge_id = re.element_id AND
 		NOT (ed.edge_id = ANY(ued.id))
 		GROUP BY ud.id
-    );
+    )',
+    border_topo_info.topology_name,
+    border_topo_info.layer_schema_name,
+	border_topo_info.layer_table_name,
+    border_topo_info.topology_name,
+    border_topo_info.layer_feature_column,
+    border_topo_info.border_layer_id,
+    border_topo_info.element_type
+    
+	);
+	-- RAISE NOTICE '%', command_string;
+    EXECUTE command_string;
+
 	
     -- Delete border topo objects
-    PERFORM topology.clearTopoGeom(a.grense) 
-    FROM topo_rein.arstidsbeite_var_grense a,
+    command_string := FORMAT('SELECT topology.clearTopoGeom(a.%I) 
+	FROM %I.%I  a,
     ttt_affected_border_objects b
-	WHERE a.id = b.id;
+	WHERE a.id = b.id', 
+	border_topo_info.layer_feature_column,
+  border_topo_info.layer_schema_name,
+  border_topo_info.layer_table_name
+	);
+	-- RAISE NOTICE '%', command_string;
+    EXECUTE command_string;
+
 	
 	
  	-- Remove edges not used from the edge table
- 		command_string := FORMAT('
+ 	command_string := FORMAT('
 		SELECT ST_RemEdgeModFace(%1$L, ed.edge_id)
 		FROM 
 		ttt_unused_edge_ids ued,
@@ -145,22 +144,38 @@ BEGIN
 		border_topo_info.topology_name,
 		border_topo_info.topology_name || '.edge_data'
 	);
-	
 	-- RAISE NOTICE '%', command_string;
-
     EXECUTE command_string;
 	
 	-- Delete those rows don't have any geoms left
-	DELETE FROM topo_rein.arstidsbeite_var_grense a
+	command_string := FORMAT('DELETE FROM %I.%I  a
 	USING ttt_new_border_objects b
-	WHERE a.id = b.id AND b.geom IS NULL;
+	WHERE a.id = b.id AND b.geom IS NULL',
+  border_topo_info.layer_schema_name,
+  border_topo_info.layer_table_name
+	);
+	-- RAISE NOTICE '%', command_string;
+    EXECUTE command_string;
+
 	
 
-    -- update new topo objects topo values
-	UPDATE topo_rein.arstidsbeite_var_grense AS a
-	SET grense =  topology.toTopoGeom(b.geom, border_topo_info.topology_name, border_layer_id, border_topo_info.snap_tolerance)
+	
+		command_string := format('UPDATE %I.%I AS a
+	SET %I = topology.toTopoGeom(b.geom, %L, %L, %L)
 	FROM ttt_new_border_objects b
-	WHERE a.id = b.id AND b.geom IS NOT NULL;
+	WHERE a.id = b.id AND b.geom IS NOT NULL',
+  	border_topo_info.layer_schema_name,
+  	border_topo_info.layer_table_name,
+	border_topo_info.layer_feature_column,
+	border_topo_info.topology_name, 
+	border_topo_info.border_layer_id, 
+	border_topo_info.snap_tolerance
+  );
+
+	-- RAISE NOTICE '%', command_string;
+    EXECUTE command_string;
+
+    
 	
 	
     RETURN num_rows_affected;
@@ -169,13 +184,9 @@ END;
 $$ LANGUAGE plpgsql;
 
 
---UPDATE topo_rein.arstidsbeite_var_flate r
---SET reindrift_sesongomrade_kode = null;
-
--- select * from topo_update.delete_topo_surface('{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-39993,6527853],[-39980,6527867],[-39955,6527864],[-39973,6527837],[-40005,6527840],[-39993,6527853]]],"crs":{"type":"name","properties":{"name":"EPSG:32632"}}},"properties":{"reinbeitebruker_id":null,"reindrift_sesongomrade_kode":2}}');
-
---select * from topo_update.delete_topo_surface('{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-40034,6527765],[-39904,6527747],[-39938,6527591],[-40046,6527603],[-40034,6527765]]]},"properties":{"reinbeitebruker_id":null,"reindrift_sesongomrade_kode":null}}');
-
-
--- SELECT * FROM topo_rein.arstidsbeite_var_flate;
-
+--{ kept for backward compatility
+CREATE OR REPLACE FUNCTION topo_update.delete_topo_surface(id_in int) 
+RETURNS int AS $$
+ SELECT topo_update.delete_topo_surface($1, 'topo_rein', 'arstidsbeite_var_flate', 'omrade', 'arstidsbeite_var_grense','grense');
+$$ LANGUAGE 'sql';
+--}
