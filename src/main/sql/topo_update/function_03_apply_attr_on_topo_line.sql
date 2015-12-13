@@ -91,18 +91,24 @@ BEGIN
   RAISE NOTICE 'Set felles_egenskaper field';
 
   -- Extract name of fields with not-null values:
-  SELECT array_agg(quote_ident(key))
-    FROM ttt2_new_topo_rows_in_org_table t, json_each_text(to_json((t)))
-   WHERE key != 'id'
-    INTO update_fields;
-  RAISE NOTICE 'Extract name of not-null fields: %', update_fields;
-  
   -- Extract name of fields with not-null values and append the table prefix n.:
-  SELECT array_agg('n.'||quote_ident(key))
-    FROM ttt2_new_topo_rows_in_org_table t, json_each_text(to_json((t)))
-   WHERE key != 'id'
-    INTO update_fields_t;
+  -- Only update json value that exits 
+  SELECT
+  	array_agg(quote_ident(update_column)) AS update_fields,
+  	array_agg('n.'||quote_ident(update_column)) as update_fields_t
+  INTO
+  	update_fields,
+  	update_fields_t
+  FROM (
+   SELECT distinct(key) AS update_column
+   FROM ttt2_new_topo_rows_in_org_table t, json_each_text(to_json((t)))  ,
+   (SELECT json_object_keys(t2.properties) as res FROM ttt2_new_attributes_values t2 ) as key_list
+   WHERE key != 'id' AND 
+   key = key_list.res 
+  ) AS keys;
+  
   RAISE NOTICE 'Extract name of not-null fields: %', update_fields_t;
+  RAISE NOTICE 'Extract name of not-null fields: %', update_fields;
   
   -- update the org table with not null values
   command_string := format(

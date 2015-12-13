@@ -17,3 +17,6 @@ SELECT '15', t.id,  ST_length(t.linje) l1, ST_Length(v.geo), ST_Srid(v.geo) from
 SELECT '16', topo_update.create_line_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[5.70182,58.55131],[5.70368,58.55134],[5.70403,58.553751],[5.705207,58.552386]]}}','topo_rein', 'reindrift_anlegg_linje', 'linje', 1e-10);;
 SELECT '17', topo_update.create_line_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[5.70513,58.55249],[5.70638,58.54978]]}}','topo_rein', 'reindrift_anlegg_linje', 'linje', 1e-10);
 SELECT '18', t.id,  ST_length(t.linje) l1, ST_Length(v.geo), ST_Srid(v.geo) from topo_rein.reindrift_anlegg_linje t, topo_rein.reindrift_anlegg_linje_v v WHERE v.id = t.id order by v.id;
+SELECT '19', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade  from topo_rein.arstidsbeite_var_flate;
+SELECT '20', topo_update.apply_attr_on_topo_line('{"properties":{"id":1,"reinbeitebruker_id":"ZH"}}','topo_rein', 'arstidsbeite_var_flate', 'omrade');
+SELECT '21', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade  from topo_rein.arstidsbeite_var_flate;
