@@ -9,15 +9,14 @@
 -- DROP FUNCTION FUNCTION topo_update.create_point_point_domain_obj(geo_in geometry) cascade;
 
 
-CREATE OR REPLACE FUNCTION topo_update.create_point_point_domain_obj(json_feature text) 
+CREATE OR REPLACE FUNCTION topo_update.create_point_point_domain_obj(json_feature text,
+  layer_schema text, layer_table text, layer_column text,
+  snap_tolerance float8) 
 RETURNS TABLE(id integer) AS $$
 DECLARE
 
 json_result text;
 
-
--- this border layer id will picked up by input parameters
-point_layer_id int;
 
 -- this is the tolerance used for snap to 
 snap_tolerance float8 = 0.0000000001;
@@ -37,17 +36,9 @@ simple_sosi_felles_egenskaper_linje topo_rein.simple_sosi_felles_egenskaper;
 
 BEGIN
 	
-	
-	-- TODO to be moved is justed for testing now
-	point_topo_info.topology_name := 'topo_rein_sysdata';
-	point_topo_info.layer_schema_name := 'topo_rein';
-	point_topo_info.layer_table_name := 'reindrift_anlegg_punkt';
-	point_topo_info.layer_feature_column := 'punkt';
-	point_topo_info.snap_tolerance := 0.0000000001;
-	point_topo_info.element_type = 1;
-	
-		-- find point layer id
-	point_layer_id := topo_update.get_topo_layer_id(point_topo_info);
+	-- get meta data
+	point_topo_info := topo_update.make_input_meta_info(layer_schema, layer_table , layer_column );
+
 
 	DROP TABLE IF EXISTS ttt_new_attributes_values;
 
@@ -82,7 +73,7 @@ BEGIN
 	WITH inserted AS (
 		INSERT INTO topo_rein.reindrift_anlegg_punkt(punkt, felles_egenskaper, reindriftsanleggstype,reinbeitebruker_id)
 		SELECT  
-			topology.toTopoGeom(t2.geom, point_topo_info.topology_name, point_layer_id, point_topo_info.snap_tolerance) AS punkt,
+			topology.toTopoGeom(t2.geom, point_topo_info.topology_name, point_topo_info.border_layer_id, point_topo_info.snap_tolerance) AS punkt,
 			felles_egenskaper_linje AS felles_egenskaper,
 			(t2.properties->>'reindriftsanleggstype')::int AS reindriftsanleggstype,
 			(t2.properties->>'reinbeitebruker_id')::text AS reinbeitebruker_id
@@ -104,5 +95,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
---select topo_update.create_point_point_domain_obj('{"type": "Feature","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"geometry":{"type":"Point","coordinates":[17.4122416312598,68.6013397740665]},"properties":{"reinbeitebruker_id":"XG","reindriftsanleggstype":18}}');
+--{ kept for backward compatility
+CREATE OR REPLACE FUNCTION topo_update.create_point_point_domain_obj(json_feature text) 
+RETURNS TABLE(id integer) AS $$
+  SELECT topo_update.create_point_point_domain_obj($1, 'topo_rein', 'reindrift_anlegg_punkt', 'punkt', 1e-10);
+$$ LANGUAGE 'sql';
+--}
 
