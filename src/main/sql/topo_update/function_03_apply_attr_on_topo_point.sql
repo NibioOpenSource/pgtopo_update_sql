@@ -1,7 +1,8 @@
 
 
 -- update attribute values for given topo object
-CREATE OR REPLACE FUNCTION topo_update.apply_attr_on_topo_point(json_feature text) 
+CREATE OR REPLACE FUNCTION topo_update.apply_attr_on_topo_point(json_feature text,
+  layer_schema text, layer_table text, layer_column text, snap_tolerance float8) 
 RETURNS int AS $$DECLARE
 
 num_rows int;
@@ -29,6 +30,8 @@ simple_sosi_felles_egenskaper_linje topo_rein.simple_sosi_felles_egenskaper;
 
 geo_point geometry;
 
+row_id int;
+
 
 
 BEGIN
@@ -47,7 +50,12 @@ BEGIN
 
 	CREATE TEMP TABLE ttt_new_attributes_values(geom geometry,properties json);
 	
-	-- get json data
+	-- update attributtes by common proc
+	num_rows_affected := topo_update.apply_attr_on_topo_line(json_feature,
+ 	point_topo_info.layer_schema_name, point_topo_info.layer_table_name, point_topo_info.layer_feature_column) ;
+
+	
+	-- get json data because we should also update the geometry
 	INSERT INTO ttt_new_attributes_values(geom,properties)
 	SELECT 
 		topo_rein.get_geom_from_json(feat,4258) as geom,
@@ -56,46 +64,47 @@ BEGIN
 	  	SELECT json_feature::json AS feat
 	) AS f;
 
-			-- check that it is only one row put that value into 
+	-- check that it is only one row put that value into 
 	-- TODO rewrite this to not use table in
 	
 	IF (SELECT count(*) FROM ttt_new_attributes_values) != 1 THEN
 		RAISE EXCEPTION 'Not valid json_feature %', json_feature;
 	ELSE 
-
 		SELECT geom FROM ttt_new_attributes_values INTO geo_point;
-		
-		-- TODO find another way to handle this
-		SELECT * INTO simple_sosi_felles_egenskaper_linje 
-		FROM json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,
-		(select properties from ttt_new_attributes_values) );
-
+		SELECT (properties->>'id')::int FROM ttt_new_attributes_values INTO row_id;
 	END IF;
 
-	--  
 	
-	-- We now know which rows we can reuse clear out old data rom the realation table
-	UPDATE topo_rein.reindrift_anlegg_punkt r
-	SET 
-		reindriftsanleggstype = (t2.properties->>'reindriftsanleggstype')::int,
-		reinbeitebruker_id = (t2.properties->>'reinbeitebruker_id')::text,
-		felles_egenskaper = topo_rein.get_rein_felles_egenskaper_update(felles_egenskaper, simple_sosi_felles_egenskaper_linje)
-	FROM ttt_new_attributes_values t2
-	WHERE id = (t2.properties->>'id')::int;
-	
-
 	-- if move point
 	IF geo_point is not NULL THEN
-		PERFORM topology.clearTopoGeom(punkt) 
-		FROM topo_rein.reindrift_anlegg_punkt r, 
-		ttt_new_attributes_values t2
-		WHERE id = (t2.properties->>'id')::int;
+	
+	
+		command_string := format('SELECT topology.clearTopoGeom(%s) FROM  %I.%I r WHERE id = %s',
+		point_topo_info.layer_feature_column,
+	    point_topo_info.layer_schema_name,
+	    point_topo_info.layer_table_name,
+	    row_id
+		);
 
-		UPDATE topo_rein.reindrift_anlegg_punkt r
-		SET 
-			punkt = topology.toTopoGeom(geo_point, point_topo_info.topology_name, point_layer_id, point_topo_info.snap_tolerance)
-		FROM ttt_new_attributes_values t2
-		WHERE id = (t2.properties->>'id')::int;
+		RAISE NOTICE 'command_string %', command_string;
+		EXECUTE command_string;
+
+		command_string := format('UPDATE  %I.%I r
+		SET %s = topology.toTopoGeom(%L, %L, %L, %L)
+		WHERE id = %s',
+	    point_topo_info.layer_schema_name,
+	    point_topo_info.layer_table_name,
+		point_topo_info.layer_feature_column,
+		geo_point,
+    	point_topo_info.topology_name, 
+    	point_layer_id,
+    	point_topo_info.snap_tolerance,
+	    row_id
+		);
+
+		RAISE NOTICE 'command_string %', command_string;
+		EXECUTE command_string;
+
 	
 	END IF;
 	
@@ -114,3 +123,9 @@ $$ LANGUAGE plpgsql;
 
 
 
+--{ kept for backward compatility
+CREATE OR REPLACE FUNCTION  topo_update.apply_attr_on_topo_point(json_feature text) 
+RETURNS int AS $$
+  SELECT topo_update.apply_attr_on_topo_point($1, 'topo_rein', 'reindrift_anlegg_punkt', 'punkt',  1e-10);
+$$ LANGUAGE 'sql';
+--}
