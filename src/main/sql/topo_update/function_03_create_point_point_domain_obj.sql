@@ -148,7 +148,7 @@ ttt2_new_topo_rows_in_org_table SELECT * FROM inserted ',
 	RAISE NOTICE 'Number num_rows_affected  %',  num_rows_affected;
 	
 	-- TODO should we also return lines that are close to or intersects and split them so it's possible to ??? 
-	command_string := ' SELECT tg.id AS id FROM  new_rows_added_in_org_table tg';
+	command_string := ' SELECT tg.id AS id FROM  ttt2_new_topo_rows_in_org_table tg';
 	-- command_string := 'SELECT tg.id AS id FROM ' || border_topo_info.layer_schema_name || '.' || border_topo_info.layer_table_name || ' tg, new_rows_added_in_org_table new WHERE new.punkt::geometry && tg.punkt::geometry';
 	RAISE NOTICE '%', command_string;
     RETURN QUERY EXECUTE command_string;
