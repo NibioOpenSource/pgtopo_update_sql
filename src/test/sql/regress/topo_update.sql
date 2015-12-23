@@ -22,3 +22,5 @@ SELECT '20', topo_update.apply_attr_on_topo_line('{"properties":{"id":1,"reinbei
 SELECT '21', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade  from topo_rein.arstidsbeite_var_flate;
 SELECT '22', topo_update.create_point_point_domain_obj('{"type": "Feature","geometry":{"type":"Point","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[5.70182,58.55131]}}','topo_rein', 'reindrift_anlegg_punkt', 'punkt', 1e-10);;
 SELECT '23', id, reinbeitebruker_id, punkt  from topo_rein.reindrift_anlegg_punkt;
+SELECT '24', topo_update.delete_topo_point(1,'topo_rein', 'reindrift_anlegg_punkt', 'punkt');
+SELECT '25', id, reinbeitebruker_id, punkt  from topo_rein.reindrift_anlegg_punkt;
