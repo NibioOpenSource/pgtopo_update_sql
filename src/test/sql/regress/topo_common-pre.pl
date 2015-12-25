@@ -23,7 +23,7 @@ if ( -e '/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/schema_topo_rein
 	}
 
 	copy_file_into('/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/tables_01_kode_topo_rein.sql',$fh_out);
-	copy_file_into('/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_arstidsbeite_var.sql',$fh_out);
+	copy_file_into('/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_arstidsbeite_var_flate.sql',$fh_out);
 	copy_file_into('/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_reindrift_anlegg_linje.sql',$fh_out);
 	copy_file_into('/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_reindrift_anlegg_punkt.sql',$fh_out);
 	copy_file_into('/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_rein_trekklei_linje.sql',$fh_out);
