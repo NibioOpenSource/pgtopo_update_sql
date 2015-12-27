@@ -62,16 +62,16 @@ not_null_fields text[];
 
 BEGIN
 	
-	-- get meta data
+	-- get meta data the border line for the surface
 	border_topo_info := topo_update.make_input_meta_info(layer_schema, border_layer_table , border_layer_column );
 
+	-- get meta data the surface 
 	surface_topo_info := topo_update.make_input_meta_info(layer_schema, surface_layer_table , surface_layer_column );
-	
 	
 	CREATE TEMP TABLE IF NOT EXISTS ttt2_new_attributes_values(geom geometry,properties json, felles_egenskaper topo_rein.sosi_felles_egenskaper);
 	TRUNCATE TABLE ttt2_new_attributes_values;
 	
-	-- parse the json data
+	-- parse the json data to get properties and the new geometry
 	INSERT INTO ttt2_new_attributes_values(geom,properties)
 	SELECT 
 	geom,
@@ -87,27 +87,25 @@ BEGIN
 
 	-- check that it is only one row put that value into 
 	-- TODO rewrite this to not use table in
-	
 	IF (SELECT count(*) FROM ttt2_new_attributes_values) != 1 THEN
 		RAISE EXCEPTION 'Not valid json_feature %', json_feature;
 	ELSE 
+		-- get input geometry
 		SELECT geom FROM ttt2_new_attributes_values INTO geo_in;
 
-		-- TODO find another way to handle this
+		-- get the felles egenskaper
 		SELECT * INTO simple_sosi_felles_egenskaper_linje 
 		FROM json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,
 		(select properties from ttt2_new_attributes_values) );
 
+		-- get felles_egenskaper both for sufcae and line
 		felles_egenskaper_linje := topo_rein.get_rein_felles_egenskaper(simple_sosi_felles_egenskaper_linje);
 		felles_egenskaper_flate := topo_rein.get_rein_felles_egenskaper_flate(simple_sosi_felles_egenskaper_linje);
 
 	END IF;
 
-
+	-- save a copy of the input geometry
 	org_geo_in := geo_in;
-	
-
-	
 	RAISE NOTICE 'The input as it used before check/fixed %',  ST_AsText(geo_in);
 
 		-- Only used for debug
@@ -118,6 +116,7 @@ BEGIN
 		INSERT INTO topo_rein.create_surface_edge_domain_obj_t0(geo_in,IsSimple,IsClosed) VALUES(geo_in,St_IsSimple(geo_in),St_IsSimple(geo_in));
 	END IF;
 	
+	-- modify the input if needed
 	IF NOT ST_IsSimple(geo_in) THEN
 		-- This is probably a crossing line so we try to build a surface
 		BEGIN
@@ -163,9 +162,11 @@ BEGIN
 		RAISE EXCEPTION 'The geo generated from geo_in is null %', org_geo_in;
 	END IF;
 
-	-- create the new topo object for the egde layer
+	-- The geo_in is now modified and we can use it
+	
+	-- create the new topo object for the egde layer, this edges will be used by the new surface objects later
 	new_border_data := topo_update.create_surface_edge(geo_in,border_topo_info);
-	RAISE NOTICE 'The new topo object created for based on the input geo  %',  new_border_data;
+	RAISE NOTICE 'The new topo object created for based on the input geo % in table %.%',  new_border_data, border_topo_info.layer_schema_name,border_topo_info.layer_table_name;
 	
 	-- perpare table for rows to be returned to the caller 
 	DROP TABLE IF EXISTS create_surface_edge_domain_obj_r1_r; 
@@ -236,14 +237,14 @@ ttt2_new_topo_rows_in_org_table SELECT * FROM inserted ',
 	-- find out if any old topo objects overlaps with this new objects using the relation table
 	-- by using the surface objects owned by the both the new objects and the exting one
 	CREATE TEMP TABLE new_surface_data_for_edge AS 
-	(SELECT topo::topogeometry AS surface_topo, felles_egenskaper_flate FROM topo_update.create_edge_surfaces(new_border_data,geo_in,felles_egenskaper_flate));
+	(SELECT topo::topogeometry AS surface_topo, felles_egenskaper_flate FROM topo_update.create_edge_surfaces(surface_topo_info,border_topo_info,new_border_data,geo_in,felles_egenskaper_flate));
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 	RAISE NOTICE 'Number of topo surfaces added to table new_surface_data_for_edge   %',  num_rows_affected;
 	
 	-- clean up old surface and return a list of the objects
 	DROP TABLE IF EXISTS res_from_update_domain_surface_layer; 
 	CREATE TEMP TABLE res_from_update_domain_surface_layer AS 
-	(SELECT topo::topogeometry AS surface_topo FROM topo_update.update_domain_surface_layer('new_surface_data_for_edge'));
+	(SELECT topo::topogeometry AS surface_topo FROM topo_update.update_domain_surface_layer(surface_topo_info,border_topo_info,'new_surface_data_for_edge'));
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 	RAISE NOTICE 'Number_of_rows removed from topo_update.update_domain_surface_layer   %',  num_rows_affected;
 

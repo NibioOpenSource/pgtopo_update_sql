@@ -1,9 +1,9 @@
 -- Create new new surface object after after the new valid intersect line is dranw
 
--- DROP FUNCTION topo_update.create_edge_surfaces(topo topogeometry) cascade;
+--DROP FUNCTION topo_update.create_edge_surfaces(surface_topo_info topo_update.input_meta_info, border_topo_info topo_update.input_meta_info , new_border_data topogeometry, valid_user_geometry geometry, felles_egenskaper_flate topo_rein.sosi_felles_egenskaper) cascade;
 
 
-CREATE OR REPLACE FUNCTION topo_update.create_edge_surfaces(new_border_data topogeometry, valid_user_geometry geometry, felles_egenskaper_flate topo_rein.sosi_felles_egenskaper) 
+CREATE OR REPLACE FUNCTION topo_update.create_edge_surfaces(surface_topo_info topo_update.input_meta_info, border_topo_info topo_update.input_meta_info , new_border_data topogeometry, valid_user_geometry geometry, felles_egenskaper_flate topo_rein.sosi_felles_egenskaper) 
 RETURNS SETOF topo_update.topogeometry_def AS $$
 DECLARE
 
@@ -15,10 +15,6 @@ surface_layer_id int;
 
 -- this is the tolerance used for snap to 
 snap_tolerance float8 = 0.0000000001;
-
--- TODO use as parameter put for testing we just have here for now
-border_topo_info topo_update.input_meta_info ;
-surface_topo_info topo_update.input_meta_info ;
 
 -- hold striped gei
 edge_with_out_loose_ends geometry = null;
@@ -43,27 +39,12 @@ new_surface_topo topogeometry;
 
 BEGIN
 	
-	-- TODO to be moved is justed for testing now
-	border_topo_info.topology_name := 'topo_rein_sysdata';
-	border_topo_info.layer_schema_name := 'topo_rein';
-	border_topo_info.layer_table_name := 'arstidsbeite_var_grense';
-	border_topo_info.layer_feature_column := 'grense';
-	border_topo_info.snap_tolerance := 0.0000000001;
-	border_topo_info.element_type = 2;
-	
-	
-	surface_topo_info.topology_name := 'topo_rein_sysdata';
-	surface_topo_info.layer_schema_name := 'topo_rein';
-	surface_topo_info.layer_table_name := 'arstidsbeite_var_flate';
-	surface_topo_info.layer_feature_column := 'omrade';
-	surface_topo_info.snap_tolerance := 0.0000000001;
-	
 	-- find border layer id
-	border_layer_id := topo_update.get_topo_layer_id(border_topo_info);
+	border_layer_id := border_topo_info.border_layer_id;
 	RAISE NOTICE 'border_layer_id   %',  border_layer_id ;
 	
 	-- find surface layer id
-	surface_layer_id := topo_update.get_topo_layer_id(surface_topo_info);
+	surface_layer_id := surface_topo_info.border_layer_id;
 	RAISE NOTICE 'surface_layer_id   %',  surface_layer_id ;
 
 	RAISE NOTICE 'The topo objected added  %',  new_border_data;
