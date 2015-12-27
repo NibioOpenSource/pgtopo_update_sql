@@ -43,4 +43,4 @@ BEGIN
 
     return topo_info;
 END;
-$$ LANGUAGE plpgsql STABLE;;
+$$ LANGUAGE plpgsql STABLE;
