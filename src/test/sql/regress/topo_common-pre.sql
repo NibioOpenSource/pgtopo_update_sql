@@ -336,6 +336,11 @@ CREATE INDEX topo_rein_arstidsbeite_var_flate_geo_relation_id_idx ON topo_rein.a
 COMMENT ON INDEX topo_rein.topo_rein_arstidsbeite_var_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
 
+-- create index on topo_rein_sysdata.edge
+CREATE INDEX topo_rein_sysdata_edge_simple_geo_idx ON topo_rein.arstidsbeite_var_flate USING GIST (simple_geo); 
+
+
+--COMMENT ON INDEX topo_rein.topo_rein_sysdata_edge_simple_geo_idx IS 'A index created to avoid building topo when the data is used for wms like mapserver which do no use the topo geometry';
 
 -- Should we have one table for all årstidsbeite thems or 5 different tables as today ?
 -- We go for the solution with 5 tables now because then it's probably more easy to handle non overlap rules
@@ -417,7 +422,7 @@ reinbeitebruker_id varchar(3) CHECK (reinbeitebruker_id IN ('XI','ZA','ZB','ZC',
 -- CONSTRAINT fk_arstidsbeite_sommer_flate_reindrift_sesongomrade_id REFERENCES topo_rein.rein_kode_sesomr(kode) ,
 
 -- it's better to use a code here, because that is what is descrbeied in the spec
-reindrift_sesongomrade_kode int CHECK ( reindrift_sesongomrade_kode > 0 AND reindrift_sesongomrade_kode < 3), 
+reindrift_sesongomrade_kode int CHECK ( reindrift_sesongomrade_kode > 2 AND reindrift_sesongomrade_kode < 5), 
 
 -- contains felles egenskaper for rein
 -- should this be moved to the border, because the is just a result drawing border lines ??
@@ -618,7 +623,40 @@ SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata', 'topo_rein', 'rein_tr
 
 -- create function basded index to get performance
 CREATE INDEX topo_rein_rein_trekklei_linje_geo_relation_id_idx ON topo_rein.rein_trekklei_linje(topo_rein.get_relation_id(linje));	
--- DROP VIEW topo_rein.arstidsbeite_var_flate_v cascade ;
+-- DROP VIEW topo_rein.arstidsbeite_sommer_flate_v cascade ;
+
+
+CREATE OR REPLACE VIEW topo_rein.arstidsbeite_sommer_flate_v 
+AS
+select 
+id,
+--((al.felles_egenskaper).kvalitet).maalemetode,
+--((al.felles_egenskaper).kvalitet).noyaktighet,
+--((al.felles_egenskaper).kvalitet).synbarhet,
+--(al.felles_egenskaper).verifiseringsdato, 
+--(al.felles_egenskaper).opphav, 
+--(al.felles_egenskaper).informasjon::varchar as informasjon, 
+reindrift_sesongomrade_kode,
+omrade::geometry(MultiPolygon,4258) as geo 
+from topo_rein.arstidsbeite_sommer_flate al;
+
+-- DROP VIEW IF EXISTS topo_rein.arstidsbeite_sommer_topojson_flate_v cascade ;
+
+
+CREATE OR REPLACE VIEW topo_rein.arstidsbeite_sommer_topojson_flate_v 
+AS
+select 
+id,
+reindrift_sesongomrade_kode,
+reinbeitebruker_id,
+(al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forstedatafangstdato", 
+(al.felles_egenskaper).verifiseringsdato AS "fellesegenskaper.verifiseringsdato",
+(al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
+(al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
+omrade 
+from topo_rein.arstidsbeite_sommer_flate al;
+
+--select * from topo_rein.arstidsbeite_sommer_topojson_flate_v-- DROP VIEW topo_rein.arstidsbeite_var_flate_v cascade ;
 
 
 CREATE OR REPLACE VIEW topo_rein.arstidsbeite_var_flate_v 
