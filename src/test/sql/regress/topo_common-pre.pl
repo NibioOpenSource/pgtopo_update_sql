@@ -31,8 +31,7 @@ if ( -e '/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/schema_topo_rein
 	copy_file_into('/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_reindrift_anlegg_linje.sql',$fh_out);
 	copy_file_into('/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_reindrift_anlegg_punkt.sql',$fh_out);
 	copy_file_into('/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_trekklei_linje.sql',$fh_out);
-
-
+	copy_file_into('/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_beitehage_flate.sql',$fh_out);
 	# This tables are not in any public repo so we only generate when they are available 
 	for my $file (glob '/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/view_*.sql') {
 		copy_file_into($file,$fh_out);
