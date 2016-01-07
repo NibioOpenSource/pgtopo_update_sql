@@ -50,7 +50,13 @@ simple_sosi_felles_egenskaper_linje topo_rein.simple_sosi_felles_egenskaper;
 -- array of quoted field identifiers
 -- for attribute fields passed in by user and known (by name)
 -- in the target table
-not_null_fields text[];
+update_fields text[];
+
+-- array of quoted field identifiers
+-- for attribute fields passed in by user and known (by name)
+-- in the temp table
+update_fields_t text[];
+
 
 BEGIN
 	
@@ -91,20 +97,35 @@ BEGIN
 
 	END IF;
 
-	-- create the new topo object for the surfaces
-	DROP TABLE IF EXISTS new_surface_data_for_edge; 
-	CREATE TEMP TABLE new_surface_data_for_edge AS 
-	(SELECT topo::topogeometry AS omrade, felles_egenskaper_flate AS felles_egenskape FROM topology.CreateTopoGeom( surface_topo_info.topology_name,surface_topo_info.element_type,surface_topo_info.border_layer_id,topoelementarray_data) as topo);
-
-	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-	RAISE NOTICE 'Number of topo surfaces added to table new_surface_data_for_edge   %',  num_rows_affected;
-
-
-INSERT INTO topo_rein.arstidsbeite_var_flate (omrade,felles_egenskaper)
-SELECT * FROM new_surface_data_for_edge;
+	-- Create a temp table
+	command_string := topo_update.create_temp_tbl_as(
+	  'ttt2_new_topo_rows_in_org_table',
+	  format('SELECT * FROM %I.%I LIMIT 0',
+	         surface_topo_info.layer_schema_name,
+	         surface_topo_info.layer_table_name));
+	EXECUTE command_string;
 
 
-	command_string := 'SELECT json_agg(row_to_json(t.*))::text FROM new_surface_data_for_edge AS t';
+	
+  	-- Insert all matching column names into temp table ttt2_new_topo_rows_in_org_table 
+	INSERT INTO ttt2_new_topo_rows_in_org_table(reinbeitebruker_id,reindrift_sesongomrade_kode,felles_egenskaper,omrade)
+		SELECT 
+		reinbeitebruker_id,
+		reindrift_sesongomrade_kode,
+		felles_egenskaper_flate as felles_egenskaper,
+		topology.CreateTopoGeom( surface_topo_info.topology_name,surface_topo_info.element_type,surface_topo_info.border_layer_id,topoelementarray_data) AS omrade
+		FROM ttt2_new_attributes_values t2,
+         json_populate_record(
+            null::ttt2_new_topo_rows_in_org_table,
+            t2.properties) r;
+	RAISE NOTICE 'Added all attributes to ttt2_new_topo_rows_in_org_table';
+
+
+	INSERT INTO topo_rein.arstidsbeite_var_flate(reinbeitebruker_id,reindrift_sesongomrade_kode,felles_egenskaper,omrade)
+	SELECT reinbeitebruker_id,reindrift_sesongomrade_kode,felles_egenskaper,omrade FROM ttt2_new_topo_rows_in_org_table;
+
+
+	command_string := 'SELECT json_agg(row_to_json(t.*))::text FROM ttt2_new_topo_rows_in_org_table AS t';
 
     RETURN QUERY EXECUTE command_string;
     
