@@ -83,14 +83,14 @@ BEGIN
 	
 	-- Create a temp table tha will hodl the row will be inserted at the end
 	command_string := topo_update.create_temp_tbl_as(
-	  'ttt2_new_topo_rows_in_org_table',
+	  'bsdo_ttt2_new_topo_rows_in_org_table',
 	  format('SELECT * FROM %I.%I LIMIT 0',
 	  surface_topo_info.layer_schema_name,
 	         surface_topo_info.layer_table_name));
 	EXECUTE command_string;
 
 	 -- insert one row to be able create update field
-	insert into ttt2_new_topo_rows_in_org_table(id) values(1); 
+	insert into bsdo_ttt2_new_topo_rows_in_org_table(id) values(1); 
 	
 -- Extract name of fields with not-null values:
   -- Extract name of fields with not-null values and append the table prefix n.:
@@ -103,7 +103,7 @@ BEGIN
   	update_fields_t
   FROM (
    SELECT distinct(key) AS update_column
-   FROM ttt2_new_topo_rows_in_org_table t, json_each_text(to_json((t)))  ,
+   FROM bsdo_ttt2_new_topo_rows_in_org_table t, json_each_text(to_json((t)))  ,
    (SELECT json_object_keys(t2.properties) as res FROM ttt2_new_attributes_values t2 ) as key_list
    WHERE key != 'id' AND 
    key = key_list.res 
@@ -114,7 +114,7 @@ BEGIN
   RAISE NOTICE 'Extract name of not-null fields: %', update_fields;
 
   -- we have got the update filds so we don'n need this row any more
-  truncate ttt2_new_topo_rows_in_org_table;
+  truncate bsdo_ttt2_new_topo_rows_in_org_table;
   
 	-- get the felles egeskaper flate object
 	felles_egenskaper_flate := topo_rein.get_rein_felles_egenskaper_flate(simple_sosi_felles_egenskaper_flate);
@@ -122,15 +122,15 @@ BEGIN
 	-- create the topo object 
 	surface_topogeometry := topology.CreateTopoGeom( surface_topo_info.topology_name,surface_topo_info.element_type,surface_topo_info.border_layer_id,topoelementarray_data); 
 
-  	-- Insert all matching column names into temp table ttt2_new_topo_rows_in_org_table 
-  	command_string := format('INSERT INTO ttt2_new_topo_rows_in_org_table(%s,felles_egenskaper,%s)
+  	-- Insert all matching column names into temp table bsdo_ttt2_new_topo_rows_in_org_table 
+  	command_string := format('INSERT INTO bsdo_ttt2_new_topo_rows_in_org_table(%s,felles_egenskaper,%s)
 		SELECT 
 		%s,
 		$1 as felles_egenskaper,
 		$2 AS %s
 		FROM ttt2_new_attributes_values t2,
          json_populate_record(
-            null::ttt2_new_topo_rows_in_org_table,
+            null::bsdo_ttt2_new_topo_rows_in_org_table,
             t2.properties) r',
     array_to_string(update_fields, ','),
     surface_topo_info.layer_feature_column,
@@ -146,9 +146,9 @@ BEGIN
 	command_string := format('
 	WITH inserted AS ( 
 	INSERT INTO %I.%I(%s,felles_egenskaper,%s)
-	SELECT %s,felles_egenskaper,%s FROM ttt2_new_topo_rows_in_org_table RETURNING * ), 
-	deleted AS ( DELETE FROM ttt2_new_topo_rows_in_org_table ) 
-	INSERT INTO ttt2_new_topo_rows_in_org_table SELECT * FROM inserted ',
+	SELECT %s,felles_egenskaper,%s FROM bsdo_ttt2_new_topo_rows_in_org_table RETURNING * ), 
+	deleted AS ( DELETE FROM bsdo_ttt2_new_topo_rows_in_org_table ) 
+	INSERT INTO bsdo_ttt2_new_topo_rows_in_org_table SELECT * FROM inserted ',
 	surface_topo_info.layer_schema_name,
 	surface_topo_info.layer_table_name,
     array_to_string(update_fields, ','),
@@ -161,7 +161,7 @@ BEGIN
 	EXECUTE command_string USING felles_egenskaper_flate, surface_topogeometry;
 
 
-	command_string := 'SELECT t.id FROM ttt2_new_topo_rows_in_org_table t';
+	command_string := 'SELECT t.id FROM bsdo_ttt2_new_topo_rows_in_org_table t';
 
     RETURN QUERY EXECUTE command_string;
     
