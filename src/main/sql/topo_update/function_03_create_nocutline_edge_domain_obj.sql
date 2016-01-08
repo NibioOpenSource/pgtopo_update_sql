@@ -76,13 +76,13 @@ BEGIN
 
 
 	-- get the json values
-	command_string := topo_update.create_temp_tbl_def('ttt2_new_attributes_values','(geom geometry,properties json)');
+	command_string := topo_update.create_temp_tbl_def('credo_ttt2_new_attributes_values','(geom geometry,properties json)');
 	RAISE NOTICE 'command_string %', command_string;
 
 	EXECUTE command_string;
 
-	-- TRUNCATE TABLE ttt2_new_attributes_values;
-	INSERT INTO ttt2_new_attributes_values(geom,properties)
+	-- TRUNCATE TABLE credo_ttt2_new_attributes_values;
+	INSERT INTO credo_ttt2_new_attributes_values(geom,properties)
 	SELECT 
 		topo_rein.get_geom_from_json(feat,4258) as geom,
 		to_json(feat->'properties')  as properties
@@ -95,18 +95,18 @@ BEGIN
 	
 	RAISE NOTICE 'Step::::::::::::::::: 1';
 
-	IF (SELECT count(*) FROM ttt2_new_attributes_values) != 1 THEN
+	IF (SELECT count(*) FROM credo_ttt2_new_attributes_values) != 1 THEN
 		RAISE EXCEPTION 'Not valid json_feature %', json_feature;
 	END IF;
 
 	-- TODO find another way to handle this
 	SELECT * INTO simple_sosi_felles_egenskaper_linje
 	FROM json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,
-	(select properties from ttt2_new_attributes_values) );
+	(select properties from credo_ttt2_new_attributes_values) );
 
 	felles_egenskaper_linje := topo_rein.get_rein_felles_egenskaper(simple_sosi_felles_egenskaper_linje);
 
-	SELECT geom INTO input_geo FROM ttt2_new_attributes_values;
+	SELECT geom INTO input_geo FROM credo_ttt2_new_attributes_values;
 	
 
 	RAISE NOTICE 'Step::::::::::::::::: 2';
@@ -122,7 +122,7 @@ BEGIN
   -- Insert all matching column names into temp table
 	INSERT INTO ttt2_new_topo_rows_in_org_table
 		SELECT r.* --, t2.geom
-		FROM ttt2_new_attributes_values t2,
+		FROM credo_ttt2_new_attributes_values t2,
          json_populate_record(
             null::ttt2_new_topo_rows_in_org_table,
             t2.properties) r;
@@ -182,7 +182,7 @@ topo_update.create_temp_tbl_as('ttt2_intersection_id','SELECT * FROM ttt2_new_to
 	SELECT distinct a.*  
 	FROM 
 	%I.%I a, 
-	ttt2_new_attributes_values a2,
+	credo_ttt2_new_attributes_values a2,
 	%I.relation re, 
 	topology.layer tl,
 	%I.edge_data  ed
