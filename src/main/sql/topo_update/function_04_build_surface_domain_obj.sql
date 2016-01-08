@@ -1,12 +1,8 @@
 -- This is a function that is used to build surface based on the border objects that alreday exits
 -- topoelementarray_data is reffrerance to the egdes in this layer
 
-DROP FUNCTION IF EXISTS topo_update.build_surface_domain_obj(
-json_feature text,
-topoelementarray_data topoelementarray, 
-  layer_schema text, 
-  surface_layer_table text, surface_layer_column text,
-  snap_tolerance float8) cascade;
+--DROP FUNCTION IF EXISTS topo_update.build_surface_domain_obj(json_feature text,topoelementarray_data topoelementarray, 
+--  layer_schema text, surface_layer_table text, surface_layer_column text,snap_tolerance float8) cascade;
 
 
 CREATE OR REPLACE FUNCTION topo_update.build_surface_domain_obj(
