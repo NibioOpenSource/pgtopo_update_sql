@@ -2,17 +2,6 @@
 
 -- Return 1 if this line has no loose ends or the lines are not part of any surface
 -- test the function with goven structure
--- DO $$
--- DECLARE 
--- topo_info topo_update.input_meta_info;
--- BEGIN
--- 	topo_info.topology_name := 'topo_rein_sysdata';
--- 	topo_info.layer_schema_name := 'topo_rein';
--- 	topo_info.layer_table_name := 'arstidsbeite_var_grense';
--- 	topo_info.layer_feature_column := 'grense';
--- 	topo_info.element_type := 2;
--- 	RAISE NOTICE 'topo_update.has_linestring_loose_ends returns %',  topo_update.has_linestring_loose_ends(topo_info, 'topo_rein.arstidsbeite_var_grense');
--- END $$;
 
 
 CREATE OR REPLACE FUNCTION topo_update.has_linestring_loose_ends(topo_info topo_update.input_meta_info, topo topogeometry) 
@@ -58,17 +47,4 @@ $$ LANGUAGE plpgsql STABLE;
 
 COMMENT ON FUNCTION  topo_update.has_linestring_loose_ends(topo_info topo_update.input_meta_info, topo topogeometry)  IS 'Return 1 if thIs line has loose ends';
 
--- test the function with goven structure
---DO $$
--- DECLARE 
--- topo_info topo_update.input_meta_info;
--- BEGIN
--- 	topo_info.topology_name := 'topo_rein_sysdata';
--- 	topo_info.layer_schema_name := 'topo_rein';
--- 	topo_info.layer_table_name := 'arstidsbeite_var_grense';
--- 	topo_info.layer_feature_column := 'grense';
--- 	topo_info.element_type := 2;
--- 	RAISE NOTICE 'topo_update.has_linestring_loose_ends returns %',  topo_update.has_linestring_loose_ends(topo_info, 
--- 	(SELECT grense FROM topo_rein.arstidsbeite_var_grense limit 1 )::topogeometry);
--- END $$;
 

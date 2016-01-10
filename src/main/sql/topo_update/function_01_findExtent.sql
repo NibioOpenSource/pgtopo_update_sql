@@ -3,11 +3,25 @@ CREATE OR REPLACE FUNCTION topo_rein.findExtent(schema_name text, table_name tex
 RETURNS geometry AS $$
 DECLARE
 bb geometry = null;
+
+-- holds dynamic sql to be able to use the same code for different
 command_string text;
+
+command_result text;
+
 BEGIN
-	IF (EXISTS 
-			( SELECT * FROM topo_rein_sysdata.edge_data  limit 1)
-	) THEN
+
+	RAISE NOTICE 'schema_name is %',  schema_name;
+
+	command_string := FORMAT('SELECT 1 FROM %I.edge_data limit 1',
+                        schema_name);
+
+    RAISE NOTICE 'command_string eeee is %',  command_string;
+
+    EXECUTE command_string into command_result;
+		
+        
+	IF command_result IS NOT NULL THEN
 		BEGIN
 			SELECT ST_EstimatedExtent(schema_name,table_name, geocolumn_name)::geometry into bb;
         EXCEPTION WHEN internal_error THEN

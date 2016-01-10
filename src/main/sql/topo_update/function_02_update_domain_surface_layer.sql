@@ -46,6 +46,9 @@ update_fields text[];
 -- in the temp table
 update_fields_t text[];
 
+-- String surface layer name
+surface_layer_name text;
+
 BEGIN
 	
 	-- find border layer id
@@ -56,6 +59,8 @@ BEGIN
 	surface_layer_id := surface_topo_info.border_layer_id;
 	RAISE NOTICE 'surface_layer_id   %',  surface_layer_id ;
 
+	surface_layer_name := surface_topo_info.layer_schema_name || '.' || surface_topo_info.layer_table_name;
+    
 	-- get the data into a new tmp table
 	DROP TABLE IF EXISTS new_surface_data; 
 
@@ -308,7 +313,9 @@ BEGIN
 	   	-- update the newly inserted rows with attribute values based from old_rows_table
     -- find the rows toubching
   DROP TABLE IF EXISTS touching_surface;
-  CREATE TEMP TABLE touching_surface AS (SELECT topo_update.touches('topo_rein.arstidsbeite_var_flate',a.id) as id FROM new_rows_added_in_org_table a);
+  CREATE TEMP TABLE touching_surface AS 
+  (SELECT topo_update.touches(surface_layer_name,a.id,surface_topo_info) as id 
+  FROM new_rows_added_in_org_table a);
 
 
  IF (SELECT count(*) FROM touching_surface)::int > 0 THEN
@@ -331,7 +338,9 @@ BEGIN
    	-- update the newly inserted rows with attribute values based from old_rows_table
     -- find the rows toubching
   	DROP TABLE IF EXISTS touching_surface;
-	CREATE TEMP TABLE touching_surface AS (SELECT topo_update.touches('topo_rein.arstidsbeite_var_flate',a.id) as id FROM new_rows_added_in_org_table a);
+	CREATE TEMP TABLE touching_surface AS 
+	(SELECT topo_update.touches(surface_layer_name,a.id,surface_topo_info) as id 
+	FROM new_rows_added_in_org_table a);
 
 --	UPDATE topo_rein.arstidsbeite_var_flate a
 --	SET reinbeitebruker_id  = d.reinbeitebruker_id, 

@@ -50,17 +50,4 @@ $$ LANGUAGE plpgsql;
 
 COMMENT ON FUNCTION topo_update.get_linestring_no_loose_ends(topo_info topo_update.input_meta_info, topo topogeometry)  IS 'Get the new line string with no loose ends';
 
--- test the function with goven structure
---DO $$
---DECLARE 
---topo_info topo_update.input_meta_info;
---BEGIN
---	topo_info.topology_name := 'topo_rein_sysdata';
---	topo_info.layer_schema_name := 'topo_rein';
---	topo_info.layer_table_name := 'arstidsbeite_var_grense';
---	topo_info.layer_feature_column := 'grense';
---	topo_info.element_type := 2;
---	RAISE NOTICE 'topo_update.get_linestring_no_loose_ends returns %',  topo_update.get_linestring_no_loose_ends(topo_info, 
--- 	(SELECT grense FROM topo_rein.arstidsbeite_var_grense limit 1 )::topogeometry);
---END $$;
 

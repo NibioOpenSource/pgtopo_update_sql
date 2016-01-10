@@ -8,16 +8,26 @@ CREATE OR REPLACE FUNCTION topo_update.get_topo_layer_id(topo_info topo_update.i
 RETURNS int AS $$DECLARE
 DECLARE 
 layer_id_res int;
+
+-- holds dynamic sql to be able to use the same code for different
+command_string text;
+
 BEGIN
 
-	SELECT layer_id 
+	command_string := FORMAT('SELECT layer_id 
 	FROM topology.layer l, topology.topology t 
-	WHERE t.name = topo_info.topology_name AND
+	WHERE t.name = %L AND
 	t.id = l.topology_id AND
-	l.schema_name = topo_info.layer_schema_name AND
-	l.table_name = topo_info.layer_table_name AND
-	l.feature_column = topo_info.layer_feature_column
-	INTO layer_id_res;
+	l.schema_name = %L AND
+	l.table_name = %L AND
+	l.feature_column = %L',
+    topo_info.topology_name,
+    topo_info.layer_schema_name,
+    topo_info.layer_table_name,
+    topo_info.layer_feature_column
+    );
+
+	EXECUTE command_string INTO layer_id_res;
 	
 	return layer_id_res;
 
@@ -25,16 +35,3 @@ END;
 $$ LANGUAGE plpgsql STABLE;
 
 COMMENT ON FUNCTION topo_update.get_topo_layer_id(topo_info topo_update.input_meta_info)  IS ' Find topology layer_id info for the structure topo_update.input_meta_info';
-
--- test the function with goven structure
--- DO $$
--- DECLARE 
--- topo_info topo_update.input_meta_info;
--- BEGIN
--- 	topo_info.topology_name := 'topo_rein_sysdata';
--- 	topo_info.layer_schema_name := 'topo_rein';
--- 	topo_info.layer_table_name := 'arstidsbeite_var_grense';
--- 	topo_info.layer_feature_column := 'grense';
--- 	RAISE NOTICE 'topo_update.get_topo_layer_id returns %',  topo_update.get_topo_layer_id(topo_info);
--- END $$;
-

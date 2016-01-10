@@ -4,7 +4,7 @@
 
 -- DROP FUNCTION IF EXISTS topo_update.touches(_new_topo_objects regclass,id_to_check int) ;
 
-CREATE OR REPLACE FUNCTION topo_update.touches(_new_topo_objects regclass, id_to_check int) 
+CREATE OR REPLACE FUNCTION topo_update.touches(_new_topo_objects regclass, id_to_check int,surface_topo_info topo_update.input_meta_info) 
 RETURNS int AS $$DECLARE
 DECLARE 
 command_string text;
@@ -31,8 +31,8 @@ SELECT id_list as id_t FROM
 	  FROM (
 	  WITH
 	  faces AS (
-	    SELECT (GetTopoGeomElements(omrade))[1] face_id, id AS object_id FROM (
-	      SELECT omrade, id from  %1$s 
+	    SELECT (GetTopoGeomElements(%s))[1] face_id, id AS object_id FROM (
+	      SELECT %s, id from  %s 
 	    ) foo
 	  ),
 	  ary AS ( 
@@ -40,7 +40,7 @@ SELECT id_list as id_t FROM
 	    GROUP BY face_id, object_id
 	  )
 	  SELECT object_id, face_id, e.edge_id 
-	  FROM topo_rein_sysdata.edge e, ary f
+	  FROM %I.edge e, ary f
 	  WHERE ( left_face = any (f.ids) and not right_face = any (f.ids) )
 	     OR ( right_face = any (f.ids) and not left_face = any (f.ids) )
 	  ) AS t
@@ -48,8 +48,14 @@ SELECT id_list as id_t FROM
   	) AS r
 WHERE antall > 1
 AND id_list[1] != id_list[2]
-AND (id_list[1] = %2$L OR id_list[2] = %2$L)
-ORDER BY id_t', _new_topo_objects, id_to_check);
+AND (id_list[1] = %L OR id_list[2] = %L)
+ORDER BY id_t',
+surface_topo_info.layer_feature_column,
+surface_topo_info.layer_feature_column,
+_new_topo_objects,
+surface_topo_info.topology_name,
+id_to_check, 
+id_to_check);
 
 RAISE NOTICE 'command_string %',  command_string;
 
