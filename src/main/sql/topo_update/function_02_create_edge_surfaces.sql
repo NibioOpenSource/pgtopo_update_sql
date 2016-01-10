@@ -58,36 +58,61 @@ BEGIN
 	CREATE TEMP TABLE new_faces(face_id int);
 
 	-- find left faces
-	INSERT INTO new_faces(face_id) 
+	command_string := FORMAT('INSERT INTO new_faces(face_id) 
 	SELECT DISTINCT(fa.face_id) as face_id
 	FROM 
-	topo_rein_sysdata.relation re,
-	topo_rein_sysdata.edge_data ed,
-	topo_rein_sysdata.face fa
+	%I.relation re,
+	%I.edge_data ed,
+	%I.face fa
 	WHERE 
-	(new_border_data).id = re.topogeo_id AND
-    re.layer_id =  border_layer_id AND 
+	%L = re.topogeo_id AND
+    re.layer_id =  %L AND 
     re.element_type = 2 AND  -- TODO use variable element_type_edge=2
     ed.edge_id = re.element_id AND
     fa.face_id=ed.left_face AND -- How do I know if a should use left or right ?? 
-    fa.mbr IS NOT NULL;
+    fa.mbr IS NOT NULL',
+    border_topo_info.topology_name,
+    border_topo_info.topology_name,
+    border_topo_info.topology_name,
+    new_border_data.id,
+    border_layer_id);
+    
+	-- display the string
+    -- RAISE NOTICE '%', command_string;
+	-- execute the string
+    EXECUTE command_string;
+
+    
     GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 	RAISE NOTICE 'Number of face objects found on the left side  % ',  num_rows_affected;
 
     -- find right faces
-	INSERT INTO new_faces(face_id) 
+	command_string := FORMAT('INSERT INTO new_faces(face_id) 
 	SELECT DISTINCT(fa.face_id) as face_id
 	FROM 
-	topo_rein_sysdata.relation re,
-	topo_rein_sysdata.edge_data ed,
-	topo_rein_sysdata.face fa
+	%I.relation re,
+	%I.edge_data ed,
+	%I.face fa
 	WHERE 
-	(new_border_data).id = re.topogeo_id AND
-    re.layer_id =  border_layer_id AND 
+	%L = re.topogeo_id AND
+    re.layer_id =  %L AND 
     re.element_type = 2 AND  -- TODO use variable element_type_edge=2
     ed.edge_id = re.element_id AND
     fa.face_id=ed.right_face AND -- How do I know if a should use left or right ?? 
-    fa.mbr IS NOT NULL;
+    fa.mbr IS NOT NULL',
+    border_topo_info.topology_name,
+    border_topo_info.topology_name,
+    border_topo_info.topology_name,
+    new_border_data.id,
+    border_layer_id);
+    
+	-- display the string
+    -- RAISE NOTICE '%', command_string;
+	-- execute the string
+    EXECUTE command_string;
+
+
+
     GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 	RAISE NOTICE 'Number of face objects found on the right side  % ',  num_rows_affected;
 
@@ -98,33 +123,13 @@ BEGIN
 
 	-- if input is a closed ring only geneate objects for faces
 
-	-- find faces used by exting topo objects to avoid duplicates
---	DROP TABLE IF EXISTS used_topo_faces; 
---	CREATE TEMP TABLE used_topo_faces AS (
---		SELECT used_faces.face_id 
---		FROM 
---		(SELECT (GetTopoGeomElements(v.omrade))[1] AS face_id 
---		FROM topo_rein.arstidsbeite_var_flate v) as used_faces,
---		topo_rein_sysdata.face f
---		WHERE f.face_id = used_faces.face_id AND
---		f.mbr && valid_user_geometry
---	);
-
-	-- dont't create objects faces 
---	DROP TABLE IF EXISTS valid_topo_faces; 
---	CREATE TEMP TABLE  valid_topo_faces AS (
---		SELECT f.face_id FROM
---		topo_rein_sysdata.face f
---		WHERE ST_Covers(ST_Envelope(ST_buffer(valid_user_geometry,0.0000002)),f.mbr)
---	);
-
 
 	FOR rec IN SELECT distinct face_id FROM new_faces
 	LOOP
 		--IF  NOT EXISTS(SELECT 1 FROM used_topo_faces WHERE face_id = rec.face_id) AND
 		--EXISTS(SELECT 1 FROM valid_topo_faces WHERE face_id = rec.face_id) THEN 
 		-- Test if this surface already used by another topo object
-			new_surface_topo := topology.CreateTopoGeom('topo_rein_sysdata',3,surface_layer_id,topology.TopoElementArray_Agg(ARRAY[rec.face_id,3])  );
+			new_surface_topo := topology.CreateTopoGeom(surface_topo_info.topology_name,surface_topo_info.element_type,surface_layer_id,topology.TopoElementArray_Agg(ARRAY[rec.face_id,3])  );
 			-- if not null
 			IF new_surface_topo IS NOT NULL THEN
 				-- check if this topo already exist
@@ -142,32 +147,6 @@ BEGIN
     END LOOP;
 
     
-	
-	-- Only used for debug
-	IF add_debug_tables = 1 THEN
-	
-		-- get new objects created from topo_update.create_edge_surfaces
-		DROP TABLE IF EXISTS topo_rein.create_edge_surfaces_t1; 
-		CREATE TABLE topo_rein.create_edge_surfaces_t1 AS 
-		(SELECT * FROM topo_rein_sysdata.relation where element_type = 2 and (new_border_data).id = topogeo_id);
-
-		DROP TABLE IF EXISTS topo_rein.create_edge_surfaces_t2; 
-		CREATE TABLE topo_rein.create_edge_surfaces_t2 AS 
-		(SELECT * FROM topo_rein_sysdata.edge_data);
-
-		DROP TABLE IF EXISTS topo_rein.create_edge_surfaces_t3; 
-		CREATE TABLE topo_rein.create_edge_surfaces_t3 AS 
-		(SELECT * FROM topo_rein_sysdata.face);
-		
-		DROP TABLE IF EXISTS topo_rein.create_edge_surfaces_t4; 
-		CREATE TABLE topo_rein.create_edge_surfaces_t4 AS 
-		(SELECT * FROM new_faces);
-
-			
-	END IF;
-
-	
-	
 	-- We now objects that are missing attribute values that should be inheretaded from mother object.
 
 		
