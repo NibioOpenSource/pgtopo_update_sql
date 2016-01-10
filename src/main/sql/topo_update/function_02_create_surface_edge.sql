@@ -17,6 +17,8 @@ edge_with_out_loose_ends geometry = null;
 -- holds dynamic sql to be able to use the same code for different
 command_string text;
 
+command_result text;
+
 
 BEGIN
 	
@@ -106,28 +108,40 @@ BEGIN
 		CREATE TEMP TABLE end_points  AS (SELECT ST_StartPoint(edge_with_out_loose_ends) as geom);
 		INSERT INTO end_points(geom) SELECT ST_EndPoint(edge_with_out_loose_ends) as geom;
 
-		IF (EXISTS 
-			(
-			SELECT 1  
-			FROM 
-			topo_rein_sysdata.relation re1,
-			topo_rein_sysdata.relation re2,
-			topo_rein_sysdata.edge_data ed1,
-			topo_rein_sysdata.edge_data ed2
-			WHERE 
-		    re1.layer_id =  border_topo_info.border_layer_id AND 
-		    re1.element_type = 2 AND  -- TODO use variable element_type_edge=2
-		    ed1.edge_id = re1.element_id AND
-		    ST_touches(ed1.geom,  ST_StartPoint(edge_with_out_loose_ends)) AND
-		    --ST_DWithin(ed1.geom,  ST_StartPoint(edge_with_out_loose_ends), border_topo_info.snap_tolerance) AND 
+		command_string := FORMAT('SELECT 1  
+                        FROM 
+                        %I.relation re1,
+                        %I.relation re2,
+                        %I.edge_data ed1,
+                        %I.edge_data ed2
+                        WHERE 
+                    re1.layer_id =  %L AND 
+                    re1.element_type = %L AND  
+                    ed1.edge_id = re1.element_id AND
+                    ST_touches(ed1.geom,  ST_StartPoint(%L)) AND
+                    re2.layer_id =  %L AND 
+                    re2.element_type = %L AND  -- TODO use variable element_type_edge=2
+                    ed2.edge_id = re2.element_id AND
+                    ST_touches(ed2.geom,  ST_EndPoint(%L))
+					limit 1',
+                        border_topo_info.topology_name,
+                        border_topo_info.topology_name,
+                        border_topo_info.topology_name,
+                        border_topo_info.topology_name,
+                        border_topo_info.border_layer_id,
+                        border_topo_info.element_type,
+                        edge_with_out_loose_ends,
+                        border_topo_info.border_layer_id,
+                        border_topo_info.element_type,
+                        edge_with_out_loose_ends
+                );
 
-		   	re2.layer_id =  border_topo_info.border_layer_id AND 
-		    re2.element_type = 2 AND  -- TODO use variable element_type_edge=2
-		    ed2.edge_id = re2.element_id AND
-		    ST_touches(ed2.geom,  ST_EndPoint(edge_with_out_loose_ends))
-		    --ST_DWithin(ed2.geom,  ST_EndPoint(edge_with_out_loose_ends), border_topo_info.snap_tolerance)		    
-		    )
-		 ) THEN
+       	RAISE NOTICE 'command_string is %',  command_string;
+
+        EXECUTE command_string into command_result;
+		
+        
+		IF command_result IS NOT NULL THEN
 
 	 	RAISE NOTICE 'Ok surface cutting line to add ----------------------';
 

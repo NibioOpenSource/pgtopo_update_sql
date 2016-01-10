@@ -137,11 +137,14 @@ BEGIN
 		-- TODO make more precice check that only used edges that in varbeite surface
 		-- TODO handle return of gemoerty collection
 		-- thic code fails need to make a test on this 
-		-- num_edge_intersects :=  (SELECT ST_NumGeometries(ST_Intersection(geo_in,e.geom)) FROM topo_rein_sysdata.edge_data e WHERE ST_Intersects(geo_in,e.geom))::int;
-		command_string := format('(select ST_Union(ST_Intersection(geo_in,e.geom)) FROM topo_rein_sysdata.edge_data e WHERE ST_Intersects(geo_in,e.geom))::geometry',
-  		border_topo_info.layer_schema_name);
-    
-  		EXECUTE command_string INTO line_intersection_result;
+		
+--		num_edge_intersects :=  (SELECT ST_NumGeometries(ST_Intersection(geo_in,e.geom)) FROM topo_rein_sysdata.edge_data e WHERE ST_Intersects(geo_in,e.geom))::int;
+		line_intersection_result := (select ST_Union(ST_Intersection(geo_in,e.geom)) FROM topo_rein_sysdata.edge_data e WHERE ST_Intersects(geo_in,e.geom))::geometry;
+		
+		command_string := format('select ST_Union(ST_Intersection(%L,e.geom)) FROM %I.edge_data e WHERE ST_Intersects(%L,e.geom)',
+  		geo_in,border_topo_info.topology_name,geo_in);
+  		RAISE NOTICE 'command_string %', command_string;
+  		--EXECUTE command_string INTO line_intersection_result;
 
 		RAISE NOTICE 'Line intersection result is %', ST_AsText(line_intersection_result);
 
