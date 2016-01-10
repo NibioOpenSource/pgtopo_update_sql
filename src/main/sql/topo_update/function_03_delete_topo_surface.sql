@@ -54,7 +54,7 @@ BEGIN
     DROP TABLE IF EXISTS ttt_unused_edge_ids;
     CREATE TEMP TABLE ttt_unused_edge_ids AS 
     (
-		SELECT topo_rein.get_edges_within_faces(array_agg(x),border_topo_info.border_layer_id) AS id from  topo_rein.get_unused_faces(surface_topo_info.border_layer_id) x
+		SELECT topo_rein.get_edges_within_faces(array_agg(x),border_topo_info) AS id from  topo_rein.get_unused_faces(surface_topo_info.border_layer_id) x
     );
     
     -- Find linear objects related to his edges 

@@ -1,14 +1,32 @@
 -- Return a set of identifiers for edges within
 -- the union of given faces
-CREATE OR REPLACE FUNCTION topo_rein.get_edges_within_faces(faces int[], layer_id_in int )
-RETURNS int[] AS
-$$
-  SELECT array_agg(e.edge_id)
-  FROM topo_rein_sysdata.edge_data e,
+CREATE OR REPLACE FUNCTION topo_rein.get_edges_within_faces(faces int[], border_topo_info topo_update.input_meta_info  )
+RETURNS int[]
+AS $$DECLARE
+
+-- holds dynamic sql to be able to use the same code for different
+command_string text;
+
+result int[];
+
+BEGIN
+
+command_string := FORMAT('SELECT array_agg(e.edge_id)
+  FROM %I.edge_data e,
   topo_rein_sysdata.relation re
-  WHERE e.left_face = ANY ( faces )
-    AND e.right_face = ANY ( faces )
+  WHERE e.left_face = ANY ( %L )
+    AND e.right_face = ANY ( %L )
     AND e.edge_id = re.element_id 
-    AND re.layer_id =  layer_id_in;
+    AND re.layer_id =  %L',
+   border_topo_info.topology_name,
+    faces,
+    faces,
+  	border_topo_info.border_layer_id
+	);
+	-- RAISE NOTICE '%', command_string;
+EXECUTE command_string INTO result;
+    
+RETURN result;
 		
-$$ LANGUAGE 'sql' VOLATILE;
+END;
+$$ LANGUAGE plpgsql;
