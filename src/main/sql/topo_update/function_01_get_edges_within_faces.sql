@@ -13,11 +13,12 @@ BEGIN
 
 command_string := FORMAT('SELECT array_agg(e.edge_id)
   FROM %I.edge_data e,
-  topo_rein_sysdata.relation re
+  %I.relation re
   WHERE e.left_face = ANY ( %L )
     AND e.right_face = ANY ( %L )
     AND e.edge_id = re.element_id 
     AND re.layer_id =  %L',
+   border_topo_info.topology_name,
    border_topo_info.topology_name,
     faces,
     faces,
