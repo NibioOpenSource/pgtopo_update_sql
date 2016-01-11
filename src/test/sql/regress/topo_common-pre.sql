@@ -1,3 +1,16 @@
+select CreateTopology('topo_rein_sysdata_ran',4258,0.0000000001);
+
+-- Workaround for PostGIS bug from Sandro, see
+-- http://trac.osgeo.org/postgis/ticket/3359
+-- Start edge_id from 2
+-- Start face_id from 3
+SELECT setval('topo_rein_sysdata_ran.edge_data_edge_id_seq', 2, false),
+       setval('topo_rein_sysdata_ran.face_face_id_seq', 3, false);
+
+-- give puclic access
+
+GRANT USAGE ON SCHEMA topo_rein_sysdata_ran TO public;
+
 -- create schema for topo_rein data, tables, .... 
 CREATE SCHEMA topo_rein;
 -- give puclic access
@@ -936,7 +949,7 @@ reindriftsanleggstype int CHECK ( (reindriftsanleggstype > 0 AND reindriftsanleg
 
 -- add a topogeometry column to get a ref to the borders
 -- should this be called grense or geo ?
-SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata', 'topo_rein', 'reindrift_anlegg_linje', 'linje', 'LINESTRING') As new_layer_id;
+SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata_ran', 'topo_rein', 'reindrift_anlegg_linje', 'linje', 'LINESTRING') As new_layer_id;
 
 
 -- create function basded index to get performance
@@ -990,11 +1003,23 @@ reindriftsanleggstype int CHECK (reindriftsanleggstype > 9 AND reindriftsanleggs
 
 -- add a topogeometry column to get a ref to the borders
 -- should this be called grense or geo ?
-SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata', 'topo_rein', 'reindrift_anlegg_punkt', 'punkt', 'POINT') As new_layer_id;
+SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata_ran', 'topo_rein', 'reindrift_anlegg_punkt', 'punkt', 'POINT') As new_layer_id;
 
 
 -- create function basded index to get performance
 CREATE INDEX topo_rein_reindrift_anlegg_punkt_geo_relation_id_idx ON topo_rein.reindrift_anlegg_punkt(topo_rein.get_relation_id(punkt));	
+select CreateTopology('topo_rein_sysdata_rtr',4258,0.0000000001);
+
+-- Workaround for PostGIS bug from Sandro, see
+-- http://trac.osgeo.org/postgis/ticket/3359
+-- Start edge_id from 2
+-- Start face_id from 3
+SELECT setval('topo_rein_sysdata_rtr.edge_data_edge_id_seq', 2, false),
+       setval('topo_rein_sysdata_rtr.face_face_id_seq', 3, false);
+
+-- give puclic access
+
+GRANT USAGE ON SCHEMA topo_rein_sysdata_rtr TO public;
 
 -- Should we have one table for all årstidsbeite thems or 5 different tables as today ?
 -- We go for the solution with 5 tables now because then it's probably more easy to handle non overlap rules
@@ -1041,11 +1066,23 @@ reinbeitebruker_id varchar(3) CHECK (reinbeitebruker_id IN ('XI','ZA','ZB','ZC',
 
 -- add a topogeometry column to get a ref to the borders
 -- should this be called grense or geo ?
-SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata', 'topo_rein', 'rein_trekklei_linje', 'linje', 'LINESTRING') As new_layer_id;
+SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata_rtr', 'topo_rein', 'rein_trekklei_linje', 'linje', 'LINESTRING') As new_layer_id;
 
 
 -- create function basded index to get performance
 CREATE INDEX topo_rein_rein_trekklei_linje_geo_relation_id_idx ON topo_rein.rein_trekklei_linje(topo_rein.get_relation_id(linje));	
+select CreateTopology('topo_rein_sysdata_rbh',4258,0.0000000001);
+
+-- Workaround for PostGIS bug from Sandro, see
+-- http://trac.osgeo.org/postgis/ticket/3359
+-- Start edge_id from 2
+-- Start face_id from 3
+SELECT setval('topo_rein_sysdata_rbh.edge_data_edge_id_seq', 2, false),
+       setval('topo_rein_sysdata_rbh.face_face_id_seq', 3, false);
+
+-- give puclic access
+
+GRANT USAGE ON SCHEMA topo_rein_sysdata_rbh TO public;
 
 -- Should we have one table for all årstidsbeite thems or 5 different tables as today ?
 -- We go for the solution with 5 tables now because then it's probably more easy to handle non overlap rules
@@ -1088,7 +1125,7 @@ felles_egenskaper topo_rein.sosi_felles_egenskaper NOT NULL
 
 -- add a topogeometry column to get a ref to the borders
 -- should this be called grense or geo ?
-SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata', 'topo_rein', 'beitehage_grense', 'grense', 'LINESTRING') As new_layer_id;
+SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata_rbh', 'topo_rein', 'beitehage_grense', 'grense', 'LINESTRING') As new_layer_id;
 
 -- What should with do with linestrings that are not used form any surface ?
 -- What should wihh linestrings that form a surface but are not reffered to by the topo_rein.beitehage_flate ?
@@ -1146,10 +1183,10 @@ simple_geo geometry(MultiPolygon,4258)
 
 -- add a topogeometry column that is a ref to polygpn surface
 -- should this be called område/omrade or geo ?
-SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata', 'topo_rein', 'beitehage_flate', 'omrade', 'POLYGON'
+SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata_rbh', 'topo_rein', 'beitehage_flate', 'omrade', 'POLYGON'
 	-- get parrentid
 	--,(SELECT layer_id FROM topology.layer l, topology.topology t 
-	--WHERE t.name = 'topo_rein_sysdata' AND t.id = l. topology_id AND l.schema_name = 'topo_rein' AND l.table_name = 'beitehage_grense' AND l.feature_column = 'grense')::int
+	--WHERE t.name = 'topo_rein_sysdata_rbh' AND t.id = l. topology_id AND l.schema_name = 'topo_rein' AND l.table_name = 'beitehage_grense' AND l.feature_column = 'grense')::int
 ) As new_layer_id;
 
 
@@ -1161,13 +1198,25 @@ COMMENT ON COLUMN topo_rein.beitehage_flate.id IS 'Unique identifier of a surfac
 
 COMMENT ON COLUMN topo_rein.beitehage_flate.felles_egenskaper IS 'Sosi common meta attribute part of kvaliet TODO create user defined type ?';
 
--- COMMENT ON COLUMN topo_rein.beitehage_flate.geo IS 'This holds the ref to topo_rein_sysdata.relation table, where we find pointers needed top build the the topo surface';
+-- COMMENT ON COLUMN topo_rein.beitehage_flate.geo IS 'This holds the ref to topo_rein_sysdata_rbh.relation table, where we find pointers needed top build the the topo surface';
 
 -- create function basded index to get performance
 CREATE INDEX topo_rein_beitehage_flate_geo_relation_id_idx ON topo_rein.beitehage_flate(topo_rein.get_relation_id(omrade));	
 
 COMMENT ON INDEX topo_rein.topo_rein_beitehage_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
+select CreateTopology('topo_rein_sysdata_rop',4258,0.0000000001);
+
+-- Workaround for PostGIS bug from Sandro, see
+-- http://trac.osgeo.org/postgis/ticket/3359
+-- Start edge_id from 2
+-- Start face_id from 3
+SELECT setval('topo_rein_sysdata_rop.edge_data_edge_id_seq', 2, false),
+       setval('topo_rein_sysdata_rop.face_face_id_seq', 3, false);
+
+-- give puclic access
+
+GRANT USAGE ON SCHEMA topo_rein_sysdata_rop TO public;
 
 -- Should we have one table for all årstidsbeite thems or 5 different tables as today ?
 -- We go for the solution with 5 tables now because then it's probably more easy to handle non overlap rules
@@ -1210,7 +1259,7 @@ felles_egenskaper topo_rein.sosi_felles_egenskaper NOT NULL
 
 -- add a topogeometry column to get a ref to the borders
 -- should this be called grense or geo ?
-SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata', 'topo_rein', 'oppsamlingomr_grense', 'grense', 'LINESTRING') As new_layer_id;
+SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata_rop', 'topo_rein', 'oppsamlingomr_grense', 'grense', 'LINESTRING') As new_layer_id;
 
 -- What should with do with linestrings that are not used form any surface ?
 -- What should wihh linestrings that form a surface but are not reffered to by the topo_rein.oppsamlingomr_flate ?
@@ -1258,10 +1307,10 @@ simple_geo geometry(MultiPolygon,4258)
 
 -- add a topogeometry column that is a ref to polygpn surface
 -- should this be called område/omrade or geo ?
-SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata', 'topo_rein', 'oppsamlingomr_flate', 'omrade', 'POLYGON'
+SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata_rop', 'topo_rein', 'oppsamlingomr_flate', 'omrade', 'POLYGON'
 	-- get parrentid
 	--,(SELECT layer_id FROM topology.layer l, topology.topology t 
-	--WHERE t.name = 'topo_rein_sysdata' AND t.id = l. topology_id AND l.schema_name = 'topo_rein' AND l.table_name = 'oppsamlingomr_grense' AND l.feature_column = 'grense')::int
+	--WHERE t.name = 'topo_rein_sysdata_rop' AND t.id = l. topology_id AND l.schema_name = 'topo_rein' AND l.table_name = 'oppsamlingomr_grense' AND l.feature_column = 'grense')::int
 ) As new_layer_id;
 
 
@@ -1273,7 +1322,7 @@ COMMENT ON COLUMN topo_rein.oppsamlingomr_flate.id IS 'Unique identifier of a su
 
 COMMENT ON COLUMN topo_rein.oppsamlingomr_flate.felles_egenskaper IS 'Sosi common meta attribute part of kvaliet TODO create user defined type ?';
 
--- COMMENT ON COLUMN topo_rein.oppsamlingomr_flate.geo IS 'This holds the ref to topo_rein_sysdata.relation table, where we find pointers needed top build the the topo surface';
+-- COMMENT ON COLUMN topo_rein.oppsamlingomr_flate.geo IS 'This holds the ref to topo_rein_sysdata_rop.relation table, where we find pointers needed top build the the topo surface';
 
 -- create function basded index to get performance
 CREATE INDEX topo_rein_oppsamlingomr_flate_geo_relation_id_idx ON topo_rein.oppsamlingomr_flate(topo_rein.get_relation_id(omrade));	
