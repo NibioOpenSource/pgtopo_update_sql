@@ -43,6 +43,7 @@ BEGIN
 
   CREATE TEMP TABLE topo_rein_topojson_edgemap
       (arc_id serial primary key, edge_id int);
+  CREATE INDEX ON topo_rein_topojson_edgemap(edge_id);
 
   -- Find TopoGeometry and attributes names
   sql := 'SELECT * FROM ( ' || query || ') foo LIMIT 1';
