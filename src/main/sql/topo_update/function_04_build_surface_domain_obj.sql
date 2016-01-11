@@ -165,25 +165,3 @@ END;
 $$ LANGUAGE plpgsql;
 
 
---SELECT topo_update.create_line_edge_domain_obj(json,'topo_rein', 'arstidsbeite_var_grense', 'grense', 1e-10)
---FROM org_rein_sosi_dump.arstidsbeite_json_grense_v g ,org_rein_sosi_dump.rein_sosi_dump_arstidsbeite_var_flate f
---WHERE f.objectid = 5358 AND g.geo && f.geo and ST_intersects(f.geo,g.geo)
-
-
---SELECT topo_update.build_surface_domain_obj(r2.json,r1.topoelementarray,'topo_rein', 'arstidsbeite_var_flate', 'omrade', 1e-10) FROM
---(
---	select distinct ST_GetFaceGeometry('topo_rein_sysdata',l.face_id) as geo,
---		topology.TopoElementArray_Agg(ARRAY[l.face_id,3]) as topoelementarray, 
---		ST_union(l.mbr) as union_face
---	from 
---	topo_rein_sysdata.face as l
---	 WHERE l.mbr is not null
---	 group by l.face_id
---	 limit 1
---) AS r1,
---org_rein_sosi_dump.arstidsbeite_var_json_flate_v r2
---WHERE r2.geo && r1.geo
---AND ST_Covers(r2.geo,ST_PointOnSurface(r1.geo));
-
--- SELECT * from topo_rein.arstidsbeite_var_flate;
-

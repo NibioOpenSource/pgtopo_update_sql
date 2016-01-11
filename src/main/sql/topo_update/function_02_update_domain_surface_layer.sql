@@ -71,38 +71,46 @@ BEGIN
 	DROP TABLE IF EXISTS old_surface_data; 
 	-- find out if any old topo objects overlaps with this new objects using the relation table
 	-- by using the surface objects owned by the both the new objects and the exting one
-	CREATE TEMP TABLE old_surface_data AS 
+	command_string :=  format('CREATE TEMP TABLE old_surface_data AS 
 	(SELECT 
 	re.* 
 	FROM 
-	topo_rein_sysdata.relation re,
-	topo_rein_sysdata.relation re_tmp,
+	%I.relation re,
+	%I.relation re_tmp,
 	new_surface_data new_sd
 	WHERE 
-	re.layer_id = surface_layer_id AND
+	re.layer_id =%L AND
 	re.element_type = 3 AND
 	re.element_id = re_tmp.element_id AND
-	re_tmp.layer_id = surface_layer_id AND
+	re_tmp.layer_id = %L AND
 	re_tmp.element_type = 3 AND
 	(new_sd.surface_topo).id = re_tmp.topogeo_id AND
-	(new_sd.surface_topo).id != re.topogeo_id);
-	
+	(new_sd.surface_topo).id != re.topogeo_id)',
+    surface_topo_info.topology_name,
+    surface_topo_info.topology_name,
+    surface_layer_id,
+    surface_layer_id);  
+	EXECUTE command_string;
 	
 	DROP TABLE IF EXISTS old_surface_data_not_in_new; 
 	-- find any old objects that are not covered totaly by 
 	-- this objets should not be deleted, but the geometry should only decrease in size.
 	-- TODO add a test case for this
-	CREATE TEMP TABLE old_surface_data_not_in_new AS 
+	command_string :=  format('CREATE TEMP TABLE old_surface_data_not_in_new AS 
 	(SELECT 
 	re.* 
 	FROM 
-	topo_rein_sysdata.relation re,
+	%I.relation re,
 	old_surface_data re_tmp
 	WHERE 
-	re.layer_id = surface_layer_id AND
+	re.layer_id = %L AND
 	re.element_type = 3 AND
 	re.topogeo_id = re_tmp.topogeo_id AND
-	re.element_id NOT IN (SELECT element_id FROM old_surface_data));
+	re.element_id NOT IN (SELECT element_id FROM old_surface_data))',
+    surface_topo_info.topology_name,
+    surface_layer_id);  
+	EXECUTE command_string;
+
 	
 	
 	DROP TABLE IF EXISTS old_rows_be_reused;
