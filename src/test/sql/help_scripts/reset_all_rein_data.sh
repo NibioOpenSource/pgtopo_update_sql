@@ -1,6 +1,7 @@
 echo 'drop schema topo_rein cascade;' > /tmp/trein.sql
 echo 'drop schema topo_update cascade;'  >> /tmp/trein.sql
 echo "select topology.droptopology('topo_rein_sysdata');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_rvr');"  >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/schema*.sql  >> /tmp/trein.sql 
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/roles_topo_rein.sql  >> /tmp/trein.sql 
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/tables_01_kode_topo_rein.sql >> /tmp/trein.sql

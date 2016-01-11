@@ -214,6 +214,18 @@ create table if not exists topo_rein.rein_kode_gjerderanlegg(
 
 
 
+select CreateTopology('topo_rein_sysdata_rvr',4258,0.0000000001);
+
+-- Workaround for PostGIS bug from Sandro, see
+-- http://trac.osgeo.org/postgis/ticket/3359
+-- Start edge_id from 2
+-- Start face_id from 3
+SELECT setval('topo_rein_sysdata_rvr.edge_data_edge_id_seq', 2, false),
+       setval('topo_rein_sysdata_rvr.face_face_id_seq', 3, false);
+
+-- give puclic access
+
+GRANT USAGE ON SCHEMA topo_rein_sysdata_rvr TO public;
 
 -- Should we have one table for all årstidsbeite thems or 5 different tables as today ?
 -- We go for the solution with 5 tables now because then it's probably more easy to handle non overlap rules
@@ -256,7 +268,7 @@ felles_egenskaper topo_rein.sosi_felles_egenskaper NOT NULL
 
 -- add a topogeometry column to get a ref to the borders
 -- should this be called grense or geo ?
-SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata', 'topo_rein', 'arstidsbeite_var_grense', 'grense', 'LINESTRING') As new_layer_id;
+SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata_rvr', 'topo_rein', 'arstidsbeite_var_grense', 'grense', 'LINESTRING') As new_layer_id;
 
 -- What should with do with linestrings that are not used form any surface ?
 -- What should wihh linestrings that form a surface but are not reffered to by the topo_rein.arstidsbeite_var_flate ?
@@ -313,10 +325,10 @@ simple_geo geometry(MultiPolygon,4258)
 
 -- add a topogeometry column that is a ref to polygpn surface
 -- should this be called område/omrade or geo ?
-SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata', 'topo_rein', 'arstidsbeite_var_flate', 'omrade', 'POLYGON'
+SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata_rvr', 'topo_rein', 'arstidsbeite_var_flate', 'omrade', 'POLYGON'
 	-- get parrentid
 	--,(SELECT layer_id FROM topology.layer l, topology.topology t 
-	--WHERE t.name = 'topo_rein_sysdata' AND t.id = l. topology_id AND l.schema_name = 'topo_rein' AND l.table_name = 'arstidsbeite_var_grense' AND l.feature_column = 'grense')::int
+	--WHERE t.name = 'topo_rein_sysdata_rvr' AND t.id = l. topology_id AND l.schema_name = 'topo_rein' AND l.table_name = 'arstidsbeite_var_grense' AND l.feature_column = 'grense')::int
 ) As new_layer_id;
 
 
@@ -328,7 +340,7 @@ COMMENT ON COLUMN topo_rein.arstidsbeite_var_flate.id IS 'Unique identifier of a
 
 COMMENT ON COLUMN topo_rein.arstidsbeite_var_flate.felles_egenskaper IS 'Sosi common meta attribute part of kvaliet TODO create user defined type ?';
 
--- COMMENT ON COLUMN topo_rein.arstidsbeite_var_flate.geo IS 'This holds the ref to topo_rein_sysdata.relation table, where we find pointers needed top build the the topo surface';
+-- COMMENT ON COLUMN topo_rein.arstidsbeite_var_flate.geo IS 'This holds the ref to topo_rein_sysdata_rvr.relation table, where we find pointers needed top build the the topo surface';
 
 -- create function basded index to get performance
 CREATE INDEX topo_rein_arstidsbeite_var_flate_geo_relation_id_idx ON topo_rein.arstidsbeite_var_flate(topo_rein.get_relation_id(omrade));	
@@ -336,11 +348,11 @@ CREATE INDEX topo_rein_arstidsbeite_var_flate_geo_relation_id_idx ON topo_rein.a
 COMMENT ON INDEX topo_rein.topo_rein_arstidsbeite_var_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
 
--- create index on topo_rein_sysdata.edge
-CREATE INDEX topo_rein_sysdata_edge_simple_geo_idx ON topo_rein.arstidsbeite_var_flate USING GIST (simple_geo); 
+-- create index on topo_rein_sysdata_rvr.edge
+CREATE INDEX topo_rein_sysdata_rvr_edge_simple_geo_idx ON topo_rein.arstidsbeite_var_flate USING GIST (simple_geo); 
 
 
---COMMENT ON INDEX topo_rein.topo_rein_sysdata_edge_simple_geo_idx IS 'A index created to avoid building topo when the data is used for wms like mapserver which do no use the topo geometry';
+--COMMENT ON INDEX topo_rein.topo_rein_sysdata_rvr_edge_simple_geo_idx IS 'A index created to avoid building topo when the data is used for wms like mapserver which do no use the topo geometry';
 
 -- Should we have one table for all årstidsbeite thems or 5 different tables as today ?
 -- We go for the solution with 5 tables now because then it's probably more easy to handle non overlap rules

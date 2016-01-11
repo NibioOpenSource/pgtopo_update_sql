@@ -38,7 +38,8 @@ select id, reinbeitebruker_id,reindrift_sesongomrade_kode,omrade from topo_rein.
 select id, reinbeitebruker_id,reindrift_sesongomrade_kode,omrade from topo_rein.arstidsbeite_var_flate a WHERE a.omrade::geometry &&  ST_GeomFromEWKT('POLYGON ((16.97999564191308 68.43998066893752, 16.984891883715484 68.49584255933902, 17.283282372748236 68.4920466014126, 17.27765152643165 68.4361955000773, 16.97999564191308 68.43998066893752))') 
 
 
-db01utv postgres@sl=# select id 
+db01utv postgres@sl=# 
+select id 
 from topo_rein.arstidsbeite_var_flate a ,topo_rein_sysdata.face fa, topo_rein_sysdata.relation re, topology.layer tl
 WHERE fa.mbr && ST_GeomFromEWKT('POLYGON ((16.97999564191308 68.43998066893752, 16.984891883715484 68.49584255933902, 17.283282372748236 68.4920466014126, 17.27765152643165 68.4361955000773, 16.97999564191308 68.43998066893752))') AND
 topo_rein.get_relation_id(a.omrade) = re.topogeo_id and re.layer_id = tl.layer_id and tl.schema_name = 'topo_rein' and tl.table_name = 'arstidsbeite_var_flate' and fa.face_id=re.element_id ; 
@@ -225,4 +226,82 @@ WHERE ST_Intersects(o.geo, k.geo) and k.objectid != o.objectid
 ) as e
 order by area desc;
 
+2016-01-09 09:43:28 CET sl postgres LOG:  duration: 6941.939 ms  execute <unnamed>: select * from topo_rein.query_to_topojson($1,$2,$3,$4) as result
+2016-01-09 09:43:28 CET sl postgres DETAIL:  parameters: $1 = 'select distinct a.* from topo_rein.arstidsbeite_var_topojson_flate_v a ,topo_rein_sysdata.face fa, topo_rein_sysdata.relation re, topology.layer tl WHERE fa.mbr && ST_GeomFromEWKT(''POLYGON ((14.731915357069346 68.73543423032712, 14.706943639062358 70.62514239649883, 26.2961257834157 70.27165556435162, 25.35531311528691 68.41541900203234, 14.731915357069346 68.73543423032712))'') AND topo_rein.get_relation_id(a.omrade) = re.topogeo_id AND re.layer_id = tl.layer_id AND tl.schema_name = ''topo_rein'' AND tl.table_name = ''arstidsbeite_var_flate'' and fa.face_id=re.element_id', $2 = '32633', $3 = '0', $4 = ''
+
+
+select count(distinct a.*) from topo_rein.arstidsbeite_var_topojson_flate_v a ,topo_rein_sysdata.face fa, topo_rein_sysdata.relation re, topology.layer tl 
+WHERE fa.mbr && ST_GeomFromEWKT('POLYGON ((14.731915357069346 68.73543423032712, 14.706943639062358 70.62514239649883, 26.2961257834157 70.27165556435162, 25.35531311528691 68.41541900203234, 14.731915357069346 68.73543423032712))') AND 
+topo_rein.get_relation_id(a.omrade) = re.topogeo_id AND re.layer_id = tl.layer_id AND tl.schema_name = 'topo_rein' AND tl.table_name = 'arstidsbeite_var_flate' and fa.face_id=re.element_id
+count 
+-------
+   380
+(1 row)
+Time: 75.910 ms
+
+select count(*) from topo_rein.query_to_topojson('select distinct a.* from topo_rein.arstidsbeite_var_topojson_flate_v a ,topo_rein_sysdata.face fa, topo_rein_sysdata.relation re, topology.layer tl WHERE fa.mbr && ST_GeomFromEWKT(''POLYGON ((14.731915357069346 68.73543423032712, 14.706943639062358 70.62514239649883, 26.2961257834157 70.27165556435162, 25.35531311528691 68.41541900203234, 14.731915357069346 68.73543423032712))'') AND topo_rein.get_relation_id(a.omrade) = re.topogeo_id AND re.layer_id = tl.layer_id AND tl.schema_name = ''topo_rein'' AND tl.table_name = ''arstidsbeite_var_flate'' and fa.face_id=re.element_id',32633,0);
+count 
+-------
+     1
+(1 row)
+Time: 7571.697 ms
+
+-- This is how the sql is called from the code execpt that we do not get length but the topJson
+select length(topo_rein.query_to_topojson('select distinct a.* from topo_rein.arstidsbeite_var_topojson_flate_v a ,topo_rein_sysdata.face fa, topo_rein_sysdata.relation re, topology.layer tl WHERE fa.mbr && ST_GeomFromEWKT(''POLYGON ((9.609839108612533 67.70153849237619, 8.564405958195684 71.4611114249892, 32.60829816266885 70.72892872531436, 29.86836714875339 67.09878623581699, 9.609839108612533 67.70153849237619))'') AND topo_rein.get_relation_id(a.omrade) = re.topogeo_id AND re.layer_id = tl.layer_id AND tl.schema_name = ''topo_rein'' AND tl.table_name = ''arstidsbeite_var_flate'' and fa.face_id=re.element_id',32633,0));
+ length  
+---------
+ 5949302
+(1 row)
+Time: 16156.707 ms
+
+-- Here is sql that is used find the rows to be used
+select count(distinct a.*) from topo_rein.arstidsbeite_var_topojson_flate_v a ,topo_rein_sysdata.face fa, topo_rein_sysdata.relation re, topology.layer tl
+WHERE fa.mbr && ST_GeomFromEWKT('POLYGON ((9.609839108612533 67.70153849237619, 8.564405958195684 71.4611114249892, 32.60829816266885 70.72892872531436, 29.86836714875339 67.09878623581699, 9.609839108612533 67.70153849237619))') AND topo_rein.get_relation_id(a.omrade) = re.topogeo_id AND re.layer_id = tl.layer_id AND tl.schema_name = 'topo_rein' AND tl.table_name = 'arstidsbeite_var_flate' and fa.face_id=re.element_id
+ count 
+-------
+   518
+(1 row)
+Time: 83.224 ms
+
+Lars
+
+SELECT count(*) from  topo_rein.arstidsbeite_var_topojson_flate_v ;
+ count 
+-------
+   669
+(1 row)
+
+Time: 5.329 ms
+
+select count(a.*) from topo_rein.arstidsbeite_var_topojson_flate_v a ,topo_rein_sysdata.face fa, topo_rein_sysdata.relation re, topology.layer tl
+WHERE fa.mbr && ST_GeomFromEWKT('POLYGON ((9.609839108612533 67.70153849237619, 8.564405958195684 71.4611114249892, 32.60829816266885 70.72892872531436, 29.86836714875339 67.09878623581699, 9.609839108612533 67.70153849237619))') AND topo_rein.get_relation_id(a.omrade) = re.topogeo_id AND re.layer_id = tl.layer_id AND tl.schema_name = 'topo_rein' AND tl.table_name = 'arstidsbeite_var_flate' and fa.face_id=re.element_id
+count 
+-------
+  6183
+(1 row)
+
+Time: 69.115 ms
+select ST_Area(ST_collect(omrade::geometry))
+FROM (select distinct a.omrade from topo_rein.arstidsbeite_var_topojson_flate_v a ,topo_rein_sysdata.face fa, topo_rein_sysdata.relation re, topology.layer tl
+WHERE fa.mbr && ST_GeomFromEWKT('POLYGON ((9.609839108612533 67.70153849237619, 8.564405958195684 71.4611114249892, 32.60829816266885 70.72892872531436, 29.86836714875339 67.09878623581699, 9.609839108612533 67.70153849237619))') AND topo_rein.get_relation_id(a.omrade) = re.topogeo_id AND re.layer_id = tl.layer_id AND tl.schema_name = 'topo_rein' AND tl.table_name = 'arstidsbeite_var_flate' and fa.face_id=re.element_id) as e
+ st_area      
+------------------
+ 7.85539947401677
+(1 row)
+Time: 6960.298 ms
+
+
+LOCATION:  exec_stmt_raise, pl_exec.c:3068
+ simplefeature_2_topo_surface 
+------------------------------
+                         7734
+(1 row)
+
+
+PL/pgSQL function org_rein_sosi_dump.simplefeature_2_topo_surface(text,text,text,text,text,text,text,double precision,geometry) line 61 at EXECUTE statement
+LOCATION:  exec_stmt_raise, pl_exec.c:3068
+ simplefeature_2_topo_surface 
+------------------------------
+                          615
+(1 row)
 
