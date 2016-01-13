@@ -33,19 +33,39 @@ BEGIN
 	
 	-- get meta data
 	border_topo_info := topo_update.make_input_meta_info(layer_schema, border_layer_table , border_layer_column );
-
 	surface_topo_info := topo_update.make_input_meta_info(layer_schema, surface_layer_table , surface_layer_column );
 
-	SELECT omrade::geometry FROM topo_rein.arstidsbeite_var_flate r WHERE id = id_in INTO delete_surface;
+	command_string := FORMAT('SELECT %I::geometry FROM %I.%I r WHERE id = %L',
+	surface_topo_info.layer_feature_column,
+	surface_topo_info.layer_schema_name,
+	surface_topo_info.layer_table_name,
+	id_in
+	);
+	-- RAISE NOTICE '%', command_string;
+    EXECUTE command_string INTO delete_surface;
         
 
-    PERFORM topology.clearTopoGeom(omrade) FROM topo_rein.arstidsbeite_var_flate r
-    WHERE id = id_in;
-    
-    DELETE FROM topo_rein.arstidsbeite_var_flate r
-    WHERE id = id_in;
-    
-    
+    command_string := FORMAT('SELECT topology.clearTopoGeom(%I) FROM %I.%I r
+    WHERE id = %L',
+	surface_topo_info.layer_feature_column,
+	surface_topo_info.layer_schema_name,
+	surface_topo_info.layer_table_name,
+	id_in
+    );
+
+    EXECUTE command_string;
+
+    command_string := FORMAT('DELETE FROM %I.%I r
+    WHERE id = %L',
+	surface_topo_info.layer_schema_name,
+	surface_topo_info.layer_table_name,
+	id_in
+    );
+
+    RAISE NOTICE '%', command_string;
+
+    EXECUTE command_string;
+
     GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 
     RAISE NOTICE 'Rows deleted  %',  num_rows_affected;
