@@ -36,16 +36,7 @@ row_id int;
 
 BEGIN
 	
-	-- TODO to be moved is justed for testing now
-	point_topo_info.topology_name := 'topo_rein_sysdata_ran';
-	point_topo_info.layer_schema_name := 'topo_rein';
-	point_topo_info.layer_table_name := 'reindrift_anlegg_punkt';
-	point_topo_info.layer_feature_column := 'punkt';
-	point_topo_info.snap_tolerance := 0.0000000001;
-	point_topo_info.element_type = 1;
-	-- find point layer id
-	
-	--point_topo_info := topo_update.make_input_meta_info(layer_schema, layer_table , layer_column );
+	point_topo_info := topo_update.make_input_meta_info(layer_schema, layer_table , layer_column );
 	point_layer_id := topo_update.get_topo_layer_id(point_topo_info);
 	
 	DROP TABLE IF EXISTS ttt_new_attributes_values;
@@ -76,7 +67,8 @@ BEGIN
 		SELECT (properties->>'id')::int FROM ttt_new_attributes_values INTO row_id;
 	END IF;
 
-	
+	RAISE NOTICE 'geo_point %', geo_point;
+
 	-- if move point
 	IF geo_point is not NULL THEN
 	
@@ -88,7 +80,7 @@ BEGIN
 	    row_id
 		);
 
-		RAISE NOTICE 'command_string %', command_string;
+		RAISE NOTICE 'command_string update point geom %', command_string;
 		EXECUTE command_string;
 
 		command_string := format('UPDATE  %I.%I r
