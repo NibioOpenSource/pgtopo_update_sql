@@ -2,6 +2,17 @@ echo 'drop schema topo_rein cascade;' > /tmp/trein.sql
 echo 'drop schema topo_update cascade;'  >> /tmp/trein.sql
 echo "select topology.droptopology('topo_rein_sysdata');"  >> /tmp/trein.sql
 echo "select topology.droptopology('topo_rein_sysdata_rvr');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_rso');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_rhs');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_rhv');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_rvi');"  >> /tmp/trein.sql
+
+echo "select topology.droptopology('topo_rein_sysdata_rbh');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_rop');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_ran');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_rtr');"  >> /tmp/trein.sql
+
+cat ~/dev/git/topologi/pgtopo_update_sql/src/test/sql/help_scripts/Performance_Fix_From_Sandro_TopoJSON.sql>> /tmp/trein.sql 
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/schema*.sql  >> /tmp/trein.sql 
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/roles_topo_rein.sql  >> /tmp/trein.sql 
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/tables_01_kode_topo_rein.sql >> /tmp/trein.sql

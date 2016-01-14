@@ -305,3 +305,46 @@ LOCATION:  exec_stmt_raise, pl_exec.c:3068
                           615
 (1 row)
 
+
+ select * from topo_rein.query_to_topojson($1,$2,$3,$4) as result
+2016-01-12 10:31:55 CET sl postgres DETAIL:  parameters: $1 = '', $2 = '32633', $3 = '0', $4 = ''
+
+select length(distinct a.*) from 
+
+
+
+-- slow point 
+
+select length(topo_rein.query_to_topojson('select distinct a.* from topo_rein.reindrift_anlegg_topojson_punkt_v a WHERE punkt && ST_GeomFromEWKT(''POLYGON ((14.731849535959158 68.74091225084454, 14.707023216094898 70.61966557245924, 26.29313720651251 70.26628453761084, 25.357800597570975 68.42080802992255, 14.731849535959158 68.74091225084454))'') ',32633,0));
+length 
+--------
+ 559330
+(1 row)
+
+Time: 8605.793 ms
+
+select count(distinct a.*) from topo_rein.reindrift_anlegg_topojson_punkt_v a WHERE punkt && ST_GeomFromEWKT('POLYGON ((14.731849535959158 68.74091225084454, 14.707023216094898 70.61966557245924, 26.29313720651251 70.26628453761084, 25.357800597570975 68.42080802992255, 14.731849535959158 68.74091225084454))');
+ count 
+-------
+  1477
+(1 row)
+
+Time: 668.624 ms
+
+select count(distinct a.*) from topo_rein.reindrift_anlegg_topojson_punkt_v a, topo_rein_sysdata_ran.node fa, topo_rein_sysdata_ran.relation re, topology.layer tl[more] - > WHERE fa.geom && ST_GeomFromEWKT('POLYGON ((14.731849535959158 68.74091225084454, 14.707023216094898 70.61966557245924, 26.29313720651251 70.26628453761084, 25.357800597570975 68.42080802992255, 14.731849535959158 68.74091225084454))')
+AND topo_rein.get_relation_id(a.punkt) = re.topogeo_id AND re.layer_id = tl.layer_id AND tl.schema_name = 'topo_rein' AND tl.table_name = 'reindrift_anlegg_punkt' AND fa.node_id=re.element_id
+ count 
+-------
+  1477
+(1 row)
+
+Time: 19.359 ms
+
+
+select length(topo_rein.query_to_topojson('select distinct a.* from topo_rein.reindrift_anlegg_topojson_punkt_v a, topo_rein_sysdata_ran.node fa, topo_rein_sysdata_ran.relation re, topology.layer tl WHERE fa.geom && ST_GeomFromEWKT(''POLYGON ((14.731849535959158 68.74091225084454, 14.707023216094898 70.61966557245924, 26.29313720651251 70.26628453761084, 25.357800597570975 68.42080802992255, 14.731849535959158 68.74091225084454))'')AND topo_rein.get_relation_id(a.punkt) = re.topogeo_id AND re.layer_id = tl.layer_id AND tl.schema_name = ''topo_rein'' AND tl.table_name = ''reindrift_anlegg_punkt'' AND fa.node_id=re.element_id',32633,0));
+ length 
+--------
+ 559330
+(1 row)
+
+Time: 1062.557 ms
