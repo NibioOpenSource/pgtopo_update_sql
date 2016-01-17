@@ -5,7 +5,7 @@
 -- NOTE: will use TopoGeometry identifier as the feature identifier
 --
 --{
-CREATE OR REPLACE FUNCTION topo_rein.query_to_topojson(query text, srid_out int, maxdecimaldigits int)
+CREATE OR REPLACE FUNCTION topo_rein.query_to_topojson(query text, srid_out int, maxdecimaldigits int, simplify_patteren int)
 RETURNS text AS
 $$
 DECLARE
@@ -143,13 +143,14 @@ BEGIN
   --RAISE DEBUG 'Adding arcs';
 
   sql := 'SELECT array_agg(ST_AsGeoJSON(' ||
-      'ST_transform(e.geom,$1),$2' ||
+      'ST_transform(topo_update.get_adjusted_edge(e.geom,$1),$2),$3' ||
+--      'ST_transform(e.geom,$1),$2' ||
       ')::json->>''coordinates'' ' ||
       'ORDER BY m.arc_id) FROM topo_rein_topojson_edgemap m ' ||
       'INNER JOIN ' || quote_ident(toponame) || '.edge e ' ||
       'ON (e.edge_id = m.edge_id)';
   --RAISE DEBUG '%', sql;
-  EXECUTE sql USING srid_out,maxdecimaldigits INTO objary;
+  EXECUTE sql USING simplify_patteren,srid_out,maxdecimaldigits INTO objary;
 
   outary = outary || ']'::text || '}'::text || '}'::text;
 
@@ -170,3 +171,5 @@ BEGIN
 END;
 $$ LANGUAGE 'plpgsql' VOLATILE;
 
+--\timing
+--select length(topo_rein.query_to_topojson('select distinct a.* from topo_rein.arstidsbeite_var_topojson_flate_v a',32633,0,0));
