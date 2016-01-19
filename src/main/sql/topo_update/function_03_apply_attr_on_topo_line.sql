@@ -60,25 +60,25 @@ BEGIN
 
 	RAISE NOTICE 'simple_sosi_felles_egenskaper_linje %', simple_sosi_felles_egenskaper_linje;
 
-	-- Create temporary table ttt2_new_topo_rows_in_org_table to receive the new record
+	-- Create temporary table ttt2_aaotl_new_topo_rows_in_org_table to receive the new record
 	command_string := topo_update.create_temp_tbl_as(
-	  'ttt2_new_topo_rows_in_org_table',
+	  'ttt2_aaotl_new_topo_rows_in_org_table',
 	  format('SELECT * FROM %I.%I LIMIT 0',
 	         topo_info.layer_schema_name,
 	         topo_info.layer_table_name));
 	EXECUTE command_string;
 
-  	-- Insert all matching column names into temp table ttt2_new_topo_rows_in_org_table 
-	INSERT INTO ttt2_new_topo_rows_in_org_table
+  	-- Insert all matching column names into temp table ttt2_aaotl_new_topo_rows_in_org_table 
+	INSERT INTO ttt2_aaotl_new_topo_rows_in_org_table
 		SELECT r.* --, t2.geom 
 		FROM ttt2_new_attributes_values t2,
          json_populate_record(
-            null::ttt2_new_topo_rows_in_org_table,
+            null::ttt2_aaotl_new_topo_rows_in_org_table,
             t2.properties) r;
-	RAISE NOTICE 'Added all attributes to ttt2_new_topo_rows_in_org_table';
+	RAISE NOTICE 'Added all attributes to ttt2_aaotl_new_topo_rows_in_org_table';
 
 	-- Update felles egenskaper with new values
-	command_string := format('UPDATE ttt2_new_topo_rows_in_org_table 
+	command_string := format('UPDATE ttt2_aaotl_new_topo_rows_in_org_table 
 	SET felles_egenskaper = topo_rein.get_rein_felles_egenskaper_update(r.felles_egenskaper, %L)
 	FROM  %I.%I r',
 	simple_sosi_felles_egenskaper_linje,
@@ -101,7 +101,7 @@ BEGIN
   	update_fields_t
   FROM (
    SELECT distinct(key) AS update_column
-   FROM ttt2_new_topo_rows_in_org_table t, json_each_text(to_json((t)))  ,
+   FROM ttt2_aaotl_new_topo_rows_in_org_table t, json_each_text(to_json((t)))  ,
    (SELECT json_object_keys(t2.properties) as res FROM ttt2_new_attributes_values t2 ) as key_list
    WHERE key != 'id' AND 
    key = key_list.res 
@@ -114,7 +114,7 @@ BEGIN
   command_string := format(
     'UPDATE %I.%I s SET
 	(%s) = (%s) 
-	FROM ttt2_new_topo_rows_in_org_table n WHERE n.id = s.id',
+	FROM ttt2_aaotl_new_topo_rows_in_org_table n WHERE n.id = s.id',
     topo_info.layer_schema_name,
     topo_info.layer_table_name,
     array_to_string(update_fields, ','),
