@@ -37,6 +37,8 @@ simple_sosi_felles_egenskaper_linje topo_rein.simple_sosi_felles_egenskaper;
 -- for attribute fields passed in by user and known (by name)
 -- in the target table
 not_null_fields text[];
+all_fields text[];
+all_fields_a text[];
 
 BEGIN
 	
@@ -151,6 +153,7 @@ BEGIN
     FROM ttt2_new_topo_rows_in_org_table t, json_each_text(to_json((t)))
    WHERE value IS NOT NULL
     INTO not_null_fields;
+
 
   RAISE NOTICE 'Extract name of not-null fields: %', not_null_fields;
 
@@ -728,16 +731,24 @@ where a.id = nr.id)',
   border_layer_id
     );
 		EXECUTE command_string;
-	
+
+
 		-- find all edges intersected by input by but not input line it self by using ttt2_final_edge_list_for_intersect_line a ;
 		-- TODO this is already done above most times but in scases where the input line is not changed all we have to do it
 		-- TDOO is this faster ? or should we just use to simple feature ???
+		
+		--command_string := topo_update.create_temp_tbl_as('ttt2_final_edge_list_for_intersect_line','SELECT * FROM ttt2_new_topo_rows_in_org_table limit 0');
 		command_string := topo_update.create_temp_tbl_def('ttt2_final_edge_list_for_intersect_line','(id int, edge_id int, geom geometry)');
 		EXECUTE command_string;
-		-- TRUNCATE TABLE ttt2_final_edge_list_for_intersect_line;
+		
+	--	alter table ttt2_final_edge_list_for_intersect_line
+--		add COLUMN edge_id int,
+ --   	add COLUMN geom geometry;
+    	
+    	-- TRUNCATE TABLE ttt2_final_edge_list_for_intersect_line;
     command_string := '
-		INSERT INTO ttt2_final_edge_list_for_intersect_line
-		SELECT distinct ud.id, ed.edge_id, ed.geom AS geom
+		INSERT INTO ttt2_final_edge_list_for_intersect_line (id,edge_id,geom)
+		SELECT distinct ud.id as id, ed.edge_id as edge_id, ed.geom AS geom
 	    FROM 
 		' || quote_ident(border_topo_info.topology_name) || '.relation re,
 		ttt2_intersection_id ud, 
@@ -799,13 +810,29 @@ where a.id = nr.id)',
 		EXECUTE command_string;
 		-- TRUNCATE TABLE ttt2_new_intersected_split_objects;
 
+		
+		  SELECT
+  	array_agg(quote_ident(update_column)) AS all_fields,
+  	array_agg('a.'||quote_ident(update_column)) as all_fields_a
+  INTO
+  	all_fields,
+  	all_fields_a
+  FROM (
+   SELECT distinct(key) AS update_column
+   FROM ttt2_new_topo_rows_in_org_table t, json_each_text(to_json((t))) 
+   WHERE key != 'id' and key != 'linje'  
+  ) AS keys;
+	    
+  RAISE NOTICE 'Extract name of not-null all_fields_a: %', all_fields_a;
+  RAISE NOTICE 'Extract name of not-null all_fields: %', all_fields;
+	    
     command_string := format('
 		WITH inserted AS (
 			INSERT INTO %I.%I('
       || quote_ident(border_topo_info.layer_feature_column) || ','
-      || array_to_string(array_remove(not_null_fields, border_topo_info.layer_feature_column::text),',')
+      || array_to_string(array_remove(all_fields, border_topo_info.layer_feature_column::text),',')
       || ') SELECT topology.toTopoGeom(b.geom, %L, %L, %L), '
-      || array_to_string(array_remove(not_null_fields, border_topo_info.layer_feature_column::text),',')
+      || array_to_string(array_remove(all_fields_a, border_topo_info.layer_feature_column::text),',')
       || ' FROM 
 			ttt2_final_edge_list_for_intersect_line b,
 			%I.%I a
@@ -822,6 +849,9 @@ where a.id = nr.id)',
     border_topo_info.layer_schema_name,
     border_topo_info.layer_table_name
     );
+    
+    	RAISE NOTICE '%', command_string;
+    	
 		EXECUTE command_string;
 	
 	
