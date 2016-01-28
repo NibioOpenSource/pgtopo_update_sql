@@ -274,7 +274,10 @@ id serial PRIMARY KEY NOT NULL,
 
 -- contains felles egenskaper for rein
 -- may be null because it is updated after id is set because it this id is used a localid
-felles_egenskaper topo_rein.sosi_felles_egenskaper NOT NULL
+felles_egenskaper topo_rein.sosi_felles_egenskaper NOT NULL,
+
+-- Reffers to the user that is logged in.
+saksbehandler varchar
 
 
 );
@@ -327,6 +330,9 @@ reindrift_sesongomrade_kode int CHECK ( reindrift_sesongomrade_kode > 0 AND rein
 -- what about the value the for indentfikajons ?
 -- may be null because it is updated after id is set because it this id is used a localid
 felles_egenskaper topo_rein.sosi_felles_egenskaper,
+
+-- Reffers to the user that is logged in.
+saksbehandler varchar,
 
 -- added because of performance, used by wms and sp on
 -- update in the same transaction as the topo objekt
@@ -413,7 +419,12 @@ id serial PRIMARY KEY NOT NULL,
 
 -- contains felles egenskaper for rein
 -- may be null because it is updated after id is set because it this id is used a localid
-felles_egenskaper topo_rein.sosi_felles_egenskaper NOT NULL
+felles_egenskaper topo_rein.sosi_felles_egenskaper NOT NULL,
+
+
+-- Reffers to the user that is logged in.
+saksbehandler varchar
+
 
 
 );
@@ -466,6 +477,9 @@ reindrift_sesongomrade_kode int CHECK ( reindrift_sesongomrade_kode > 2 AND rein
 -- what about the value the for indentfikajons ?
 -- may be null because it is updated after id is set because it this id is used a localid
 felles_egenskaper topo_rein.sosi_felles_egenskaper,
+
+-- Reffers to the user that is logged in.
+saksbehandler varchar,
 
 -- added because of performance, used by wms and sp on
 -- update in the same transaction as the topo objekt
@@ -546,7 +560,12 @@ id serial PRIMARY KEY NOT NULL,
 
 -- contains felles egenskaper for rein
 -- may be null because it is updated after id is set because it this id is used a localid
-felles_egenskaper topo_rein.sosi_felles_egenskaper NOT NULL
+felles_egenskaper topo_rein.sosi_felles_egenskaper NOT NULL,
+
+
+-- Reffers to the user that is logged in.
+saksbehandler varchar
+
 
 
 );
@@ -599,6 +618,9 @@ reindrift_sesongomrade_kode int CHECK ( reindrift_sesongomrade_kode > 4 AND rein
 -- what about the value the for indentfikajons ?
 -- may be null because it is updated after id is set because it this id is used a localid
 felles_egenskaper topo_rein.sosi_felles_egenskaper,
+
+-- Reffers to the user that is logged in.
+saksbehandler varchar,
 
 -- added because of performance, used by wms and sp on
 -- update in the same transaction as the topo objekt
@@ -679,7 +701,12 @@ id serial PRIMARY KEY NOT NULL,
 
 -- contains felles egenskaper for rein
 -- may be null because it is updated after id is set because it this id is used a localid
-felles_egenskaper topo_rein.sosi_felles_egenskaper NOT NULL
+felles_egenskaper topo_rein.sosi_felles_egenskaper NOT NULL,
+
+
+-- Reffers to the user that is logged in.
+saksbehandler varchar
+
 
 
 );
@@ -732,6 +759,10 @@ reindrift_sesongomrade_kode int CHECK ( reindrift_sesongomrade_kode > 6 AND rein
 -- what about the value the for indentfikajons ?
 -- may be null because it is updated after id is set because it this id is used a localid
 felles_egenskaper topo_rein.sosi_felles_egenskaper,
+
+
+-- Reffers to the user that is logged in.
+saksbehandler varchar,
 
 -- added because of performance, used by wms and sp on
 -- update in the same transaction as the topo objekt
@@ -812,8 +843,10 @@ id serial PRIMARY KEY NOT NULL,
 
 -- contains felles egenskaper for rein
 -- may be null because it is updated after id is set because it this id is used a localid
-felles_egenskaper topo_rein.sosi_felles_egenskaper NOT NULL
+felles_egenskaper topo_rein.sosi_felles_egenskaper NOT NULL,
 
+-- Reffers to the user that is logged in.
+saksbehandler varchar
 
 );
 
@@ -865,6 +898,9 @@ reindrift_sesongomrade_kode int CHECK ( reindrift_sesongomrade_kode > 8 AND rein
 -- what about the value the for indentfikajons ?
 -- may be null because it is updated after id is set because it this id is used a localid
 felles_egenskaper topo_rein.sosi_felles_egenskaper,
+
+-- Reffers to the user that is logged in.
+saksbehandler varchar,
 
 -- added because of performance, used by wms and sp on
 -- update in the same transaction as the topo objekt
@@ -935,6 +971,9 @@ id serial PRIMARY KEY NOT NULL,
 -- may be null because it is updated after id is set because it this id is used a localid
 felles_egenskaper topo_rein.sosi_felles_egenskaper,
 
+-- Reffers to the user that is logged in.
+saksbehandler varchar,
+
 -- angir hvilket reinbeitedistrikt som bruker beiteområdet 
 -- Definition -- indicates which reindeer pasture district uses the pasture area
 -- TODO add not null
@@ -990,6 +1029,9 @@ id serial PRIMARY KEY NOT NULL,
 -- contains felles egenskaper for rein
 -- may be null because it is updated after id is set because it this id is used a localid
 felles_egenskaper topo_rein.sosi_felles_egenskaper,
+
+-- Reffers to the user that is logged in.
+saksbehandler varchar,
 
 -- angir hvilket reinbeitedistrikt som bruker beiteområdet 
 -- Definition -- indicates which reindeer pasture district uses the pasture area
@@ -1057,6 +1099,9 @@ id serial PRIMARY KEY NOT NULL,
 -- may be null because it is updated after id is set because it this id is used a localid
 felles_egenskaper topo_rein.sosi_felles_egenskaper,
 
+-- Reffers to the user that is logged in.
+saksbehandler varchar,
+
 -- angir hvilket reinbeitedistrikt som bruker beiteområdet 
 -- Definition -- indicates which reindeer pasture district uses the pasture area
 -- TODO add not null
@@ -1118,7 +1163,11 @@ id serial PRIMARY KEY NOT NULL,
 
 -- contains felles egenskaper for rein
 -- may be null because it is updated after id is set because it this id is used a localid
-felles_egenskaper topo_rein.sosi_felles_egenskaper NOT NULL
+felles_egenskaper topo_rein.sosi_felles_egenskaper NOT NULL,
+
+
+-- Reffers to the user that is logged in.
+saksbehandler varchar
 
 
 );
@@ -1172,6 +1221,10 @@ reindriftsanleggstype int CHECK ( reindriftsanleggstype = 3) ,
 -- what about the value the for indentfikajons ?
 -- may be null because it is updated after id is set because it this id is used a localid
 felles_egenskaper topo_rein.sosi_felles_egenskaper,
+
+
+-- Reffers to the user that is logged in.
+saksbehandler varchar,
 
 -- added because of performance, used by wms and sp on
 -- update in the same transaction as the topo objekt
@@ -1252,8 +1305,11 @@ id serial PRIMARY KEY NOT NULL,
 
 -- contains felles egenskaper for rein
 -- may be null because it is updated after id is set because it this id is used a localid
-felles_egenskaper topo_rein.sosi_felles_egenskaper NOT NULL
+felles_egenskaper topo_rein.sosi_felles_egenskaper NOT NULL,
 
+
+-- Reffers to the user that is logged in.
+saksbehandler varchar
 
 );
 
@@ -1296,6 +1352,10 @@ reinbeitebruker_id varchar(3) CHECK (reinbeitebruker_id IN ('XI','ZA','ZB','ZC',
 -- what about the value the for indentfikajons ?
 -- may be null because it is updated after id is set because it this id is used a localid
 felles_egenskaper topo_rein.sosi_felles_egenskaper,
+
+
+-- Reffers to the user that is logged in.
+saksbehandler varchar,
 
 -- added because of performance, used by wms and sp on
 -- update in the same transaction as the topo objekt
@@ -1431,7 +1491,23 @@ reindrift_sesongomrade_kode,
 omrade::geometry(MultiPolygon,4258) as geo 
 from topo_rein.arstidsbeite_var_flate al;
 
--- DROP VIEW IF EXISTS topo_rein.arstidsbeite_var_topojson_flate_v cascade ;
+DROP VIEW IF EXISTS topo_rein.arstidsbeite_var_mbrs_v cascade ;
+
+
+CREATE OR REPLACE VIEW topo_rein.arstidsbeite_var_mbrs_v 
+AS
+select 
+ face_id,
+ 0 as id,
+0 reindrift_sesongomrade_kode,
+-- ST_Simplify(ST_Union(mbr),0.001) as omrade ,
+ mbr as omrade ,
+true AS "mbr" 
+from topo_rein_sysdata_rvr.face;
+
+--SELECT ST_AStext(ST_union(mbr)) from topo_rein_sysdata_rvr.face;
+
+--select * from topo_rein.arstidsbeite_var_mbrs_v-- DROP VIEW IF EXISTS topo_rein.arstidsbeite_var_topojson_flate_v cascade ;
 
 
 CREATE OR REPLACE VIEW topo_rein.arstidsbeite_var_topojson_flate_v 
