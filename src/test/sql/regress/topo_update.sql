@@ -20,8 +20,8 @@ SELECT '18', t.id,  ST_length(t.linje) l1, ST_Length(v.geo), ST_Srid(v.geo) from
 SELECT '19', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade  from topo_rein.arstidsbeite_var_flate;
 SELECT '20', topo_update.apply_attr_on_topo_line('{"properties":{"id":1,"reinbeitebruker_id":"ZH"}}','topo_rein', 'arstidsbeite_var_flate', 'omrade');
 SELECT '21', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade  from topo_rein.arstidsbeite_var_flate;
-SELECT '22', topo_update.create_point_point_domain_obj('{"type": "Feature","geometry":{"type":"Point","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[5.70182,58.55131]}}','topo_rein', 'reindrift_anlegg_punkt', 'punkt', 1e-10);
-SELECT '23', id, reinbeitebruker_id, punkt  from topo_rein.reindrift_anlegg_punkt;
+SELECT '22', topo_update.create_point_point_domain_obj('{"type": "Feature","properties":{"fellesegenskaper.forstedatafangsdato":null,"fellesegenskaper.verifiseringsdato":"2015-01-01","fellesegenskaper.oppdateringsdato":null,"fellesegenskaper.opphav":"Reindriftsforvaltningen"},"geometry":{"type":"Point","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[5.70182,58.55131]}}','topo_rein', 'reindrift_anlegg_punkt', 'punkt', 1e-10,'{"properties":{"saksbehandler":"user1","reinbeitebruker_id":null,"fellesegenskaper.opphav":"opphav ØÆÅøå"}}');
+SELECT '23', id, reinbeitebruker_id, punkt, (felles_egenskaper).opphav, saksbehandler   from topo_rein.reindrift_anlegg_punkt;
 SELECT '24', topo_update.apply_attr_on_topo_point('{"type": "Feature","properties":{"id":1,"reinbeitebruker_id":"XI","reindrift_sesongomrade_kode":1}, "geometry":{"type":"Point","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[5.0,58.0]}}');
 SELECT '25', id, reinbeitebruker_id, punkt  from topo_rein.reindrift_anlegg_punkt;
 SELECT '26', topo_update.delete_topo_point(1,'topo_rein', 'reindrift_anlegg_punkt', 'punkt');

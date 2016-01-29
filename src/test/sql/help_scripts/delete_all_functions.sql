@@ -1,5 +1,7 @@
 -- Drop alle functions
 
+DROP FUNCTION IF EXISTS topo_update.handle_input_json_props(client_json_feature json,  server_json_feature json, srid_out int)  cascade;
+
 DROP FUNCTION IF EXISTS topo_rein.get_rein_felles_egenskaper(felles topo_rein.simple_sosi_felles_egenskaper ) cascade;
 DROP FUNCTION IF EXISTS topo_rein.get_rein_felles_egenskaper_flate(felles topo_rein.simple_sosi_felles_egenskaper ) cascade;
 
@@ -13,7 +15,7 @@ DROP FUNCTION IF EXISTS topo_update.has_linestring_loose_ends(topo_info topo_upd
 DROP FUNCTION IF EXISTS topo_update.touches(_new_topo_objects regclass,id_to_check int)  cascade; 
 DROP FUNCTION IF EXISTS topo_update.make_input_meta_info(layer_schema text, layer_table text, layer_column text, snap_tolerance float8)   cascade;
 
-DROP FUNCTION IF EXISTS topo_rein.query_to_topojson(query text, srid_out int, maxdecimaldigits int) cascade;
+DROP FUNCTION IF EXISTS topo_rein.query_to_topojson(query text, srid_out int, maxdecimaldigits int, simplify_patteren int) cascade;
 DROP FUNCTION IF EXISTS topo_rein.get_var_flate_topojson(env box2d, srid_out int, maxdecimaldigits int) cascade;
 DROP FUNCTION IF EXISTS topo_rein.get_var_flate_topojson(srid_out int, maxdecimaldigits int) cascade;
 DROP FUNCTION IF EXISTS topo_rein.get_var_flate_topojson(_new_topo_objects regclass, srid_out int, maxdecimaldigits int) cascade;
@@ -37,6 +39,8 @@ DROP FUNCTION IF EXISTS topo_update.create_line_edge_domain_obj(json_feature tex
 
 DROP FUNCTION IF EXISTS topo_update.create_point_point_domain_obj(geo_in geometry) cascade;
 DROP FUNCTION IF EXISTS topo_update.create_point_point_domain_obj(json_feature text) cascade;
+DROP FUNCTION IF EXISTS topo_update.create_point_point_domain_obj(client_json_feature text,layer_schema text, layer_table text, layer_column text, snap_tolerance float8,server_json_feature text) cascade;
+
 
  
 

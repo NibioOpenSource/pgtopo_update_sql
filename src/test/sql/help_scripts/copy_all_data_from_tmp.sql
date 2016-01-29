@@ -51,7 +51,8 @@ SELECT  org_rein_sosi_dump.simplefeature_2_topo_surface(
 
 -- topo_rein.reindrift_anlegg_linje
 SELECT  org_rein_sosi_dump.simplefeature_2_topo_line('topo_rein',
-'reindrift_anlegg_linje', 'linje', 'org_rein_sosi_dump.drift_anlegg_json_linje_v', 1e-10);
+'reindrift_anlegg_linje', 'linje', 'org_rein_sosi_dump.drift_anlegg_json_linje_v', 
+1e-10);
  
 
 -- topo_rein.rein_trekklei_linje

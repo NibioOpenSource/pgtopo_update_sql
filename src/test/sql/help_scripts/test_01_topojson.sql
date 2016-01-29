@@ -348,3 +348,9 @@ select length(topo_rein.query_to_topojson('select distinct a.* from topo_rein.re
 (1 row)
 
 Time: 1062.557 ms
+
+
+select * from topo_rein.query_to_topojson('select distinct a.* from topo_rein.arstidsbeite_var_topojson_flate_v a limit 1',32633,0);
+
+
+select count(*) from topo_rein.query_to_topojson('select distinct a.* from topo_rein.arstidsbeite_var_topojson_flate_v a ,topo_rein_sysdata.face fa, topo_rein_sysdata.relation re, topology.layer tl WHERE fa.mbr && ST_GeomFromEWKT(''POLYGON ((14.731915357069346 68.73543423032712, 14.706943639062358 70.62514239649883, 26.2961257834157 70.27165556435162, 25.35531311528691 68.41541900203234, 14.731915357069346 68.73543423032712))'') AND topo_rein.get_relation_id(a.omrade) = re.topogeo_id AND re.layer_id = tl.layer_id AND tl.schema_name = ''topo_rein'' AND tl.table_name = ''arstidsbeite_var_flate'' and fa.face_id=re.element_id',32633,0);
