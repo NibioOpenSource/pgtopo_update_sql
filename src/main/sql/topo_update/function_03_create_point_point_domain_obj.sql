@@ -8,10 +8,15 @@
 
 -- DROP FUNCTION FUNCTION topo_update.create_point_point_domain_obj(geo_in geometry) cascade;
 
+--DROP FUNCTION topo_update.create_point_point_domain_obj(client_json_feature text,
+--  layer_schema text, layer_table text, layer_column text,
+--  snap_tolerance float8);
 
-CREATE OR REPLACE FUNCTION topo_update.create_point_point_domain_obj(json_feature text,
+
+CREATE OR REPLACE FUNCTION topo_update.create_point_point_domain_obj(client_json_feature text,
   layer_schema text, layer_table text, layer_column text,
-  snap_tolerance float8) 
+  snap_tolerance float8,
+  server_json_feature text default null) 
 RETURNS TABLE(id integer) AS $$
 DECLARE
 
@@ -32,99 +37,61 @@ command_string text;
 -- used for logging
 num_rows_affected int;
 
--- holds the value for felles egenskaper from input
-felles_egenskaper_linje topo_rein.sosi_felles_egenskaper;
-simple_sosi_felles_egenskaper_linje topo_rein.simple_sosi_felles_egenskaper;
+-- holde the computed value for json input reday to use
+json_input_structure topo_update.json_input_structure;  
 
 -- array of quoted field identifiers
 -- for attribute fields passed in by user and known (by name)
 -- in the target table
 not_null_fields text[];
 
-input_geo geometry;
-
 BEGIN
-	
+
+
 	-- get meta data
 	point_topo_info := topo_update.make_input_meta_info(layer_schema, layer_table , layer_column );
 	
-			-- find border layer id
+	-- find border layer id
 	point_layer_id := topo_update.get_topo_layer_id(point_topo_info);
-
-
-
-	DROP TABLE IF EXISTS ttt_new_attributes_values;
-
-	CREATE TEMP TABLE ttt_new_attributes_values(geom geometry,properties json);
 	
-	-- get json data
-	INSERT INTO ttt_new_attributes_values(geom,properties)
-	SELECT 
-		topo_rein.get_geom_from_json(feat,4258) as geom,
-		to_json(feat->'properties')::json  as properties
-	FROM (
-	  	SELECT json_feature::json AS feat
-	) AS f;
+	-- parse the input values
+	json_input_structure := topo_update.handle_input_json_props(client_json_feature::json,server_json_feature::json,4258);
 
-		-- check that it is only one row put that value into 
-	-- TODO rewrite this to not use table in
-	
-	IF (SELECT count(*) FROM ttt_new_attributes_values) != 1 THEN
-		RAISE EXCEPTION 'Not valid json_feature %', json_feature;
-	ELSE 
-		-- TODO find another way to handle this
-		SELECT * INTO simple_sosi_felles_egenskaper_linje 
-		FROM json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,
-		(select properties from ttt_new_attributes_values) );
-
-		felles_egenskaper_linje := topo_rein.get_rein_felles_egenskaper(simple_sosi_felles_egenskaper_linje);
-	END IF;
-	
-	-- TODO find another way to handle this
-	SELECT * INTO simple_sosi_felles_egenskaper_linje
-	FROM json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,
-	(select properties from ttt_new_attributes_values) );
-	
-	felles_egenskaper_linje := topo_rein.get_rein_felles_egenskaper(simple_sosi_felles_egenskaper_linje);
-	SELECT geom INTO input_geo FROM ttt_new_attributes_values;
-
-		-- Create temporary table to receive the new record
+	-- Create temporary table to receive the new record
 	command_string := topo_update.create_temp_tbl_as(
 	  'ttt2_new_topo_rows_in_org_table',
-	  format('SELECT * FROM %I.%I LIMIT 0',
-	         point_topo_info.layer_schema_name,
-	         point_topo_info.layer_table_name));
+	  format('SELECT * FROM %I.%I LIMIT 0',point_topo_info.layer_schema_name,point_topo_info.layer_table_name));
+	  
 	EXECUTE command_string;
-
-	  -- Insert all matching column names into temp table
+            
+	-- Insert all matching column names into temp table are sent from the client
+	-- This will create one row in the tmp table
 	INSERT INTO ttt2_new_topo_rows_in_org_table
-		SELECT r.* --, t2.geom
-		FROM ttt_new_attributes_values t2,
-         json_populate_record(
-            null::ttt2_new_topo_rows_in_org_table,
-            t2.properties) r;
+	SELECT * FROM json_populate_record(null::ttt2_new_topo_rows_in_org_table,json_input_structure.json_properties);
+	
+	RAISE NOTICE 'command_string,command_string,command_string  %',  ST_asText(json_input_structure.input_geo);
 
- 	 RAISE NOTICE 'Added all attributes to ttt2_new_topo_rows_in_org_table';
-
+	-- update the topology with a value for this row
    	command_string := format('UPDATE ttt2_new_topo_rows_in_org_table
     SET %I = topology.toTopoGeom(%L, %L, %L, %L)',
-    point_topo_info.layer_feature_column, input_geo,
+    point_topo_info.layer_feature_column, json_input_structure.input_geo,
     point_topo_info.topology_name, point_layer_id,
     point_topo_info.snap_tolerance);
 	EXECUTE command_string;
 
-  	RAISE NOTICE 'Converted to TopoGeometry';
-
-  	  -- Add the common felles_egenskaper field
+  	 -- Set felles_egenskaper column that is common for all tables
  	command_string := format('UPDATE ttt2_new_topo_rows_in_org_table
-    SET felles_egenskaper = %L', felles_egenskaper_linje);
+    SET felles_egenskaper = %L', json_input_structure.sosi_felles_egenskaper);
 	EXECUTE command_string;
 
-  -- Extract name of fields with not-null values:
-  SELECT array_agg(quote_ident(key))
-    FROM ttt2_new_topo_rows_in_org_table t, json_each_text(to_json((t)))
-   WHERE value IS NOT NULL
-    INTO not_null_fields;
+  	-- Extract name of fields with not-null values in tmp table
+  	-- Only those columns will be update in the org table
+  	-- To delete a value from a column you have have to set a space or create a delete command
+  	-- In reindrift there is need for delete
+	SELECT array_agg(quote_ident(key))
+	FROM ttt2_new_topo_rows_in_org_table t, json_each_text(to_json((t)))
+	WHERE value IS NOT NULL
+	INTO not_null_fields;
 
   RAISE NOTICE 'Extract name of not-null fields: %', not_null_fields;
 
@@ -142,8 +109,6 @@ ttt2_new_topo_rows_in_org_table SELECT * FROM inserted ',
     );
 	EXECUTE command_string;
 
-	
-
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 	RAISE NOTICE 'Number num_rows_affected  %',  num_rows_affected;
 	
@@ -157,9 +122,12 @@ END;
 $$ LANGUAGE plpgsql;
 
 --{ kept for backward compatility
-CREATE OR REPLACE FUNCTION topo_update.create_point_point_domain_obj(json_feature text) 
+CREATE OR REPLACE FUNCTION topo_update.create_point_point_domain_obj(client_json_feature text) 
 RETURNS TABLE(id integer) AS $$
   SELECT topo_update.create_point_point_domain_obj($1, 'topo_rein', 'reindrift_anlegg_punkt', 'punkt', 1e-10);
 $$ LANGUAGE 'sql';
 --}
 
+--SELECT '22', topo_update.create_point_point_domain_obj('{"type": "Feature","properties":{"fellesegenskaper.forstedatafangsdato":null,"fellesegenskaper.verifiseringsdato":"2015-01-01","fellesegenskaper.oppdateringsdato":null,"fellesegenskaper.opphav":"Reindriftsforvaltningen"},"geometry":{"type":"Point","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[5.70182,58.55131]}}','topo_rein', 'reindrift_anlegg_punkt', 'punkt', 1e-10,'{"properties":{"saksbehandler":"user1","reinbeitebruker_id":null,"fellesegenskaper.opphav":"opphav ØÆÅøå"}}');
+--SELECT '23', id, reinbeitebruker_id, punkt, (felles_egenskaper).opphav, saksbehandler   from topo_rein.reindrift_anlegg_punkt order by id desc limit 1;
+--SELECT * from ttt_new_attributes_values;

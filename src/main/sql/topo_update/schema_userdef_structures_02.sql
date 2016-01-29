@@ -26,3 +26,23 @@ AS (
 	
 
 );
+
+
+
+---------------------------------------------------------------------------------
+
+-- A composite type to hold infor about the currrent layers that will be updated 
+-- this will be used to pick up meta info from the topolgy layer doing a update
+CREATE TYPE topo_update.json_input_structure 
+AS (
+
+-- the input geo picked from the client properties
+input_geo geometry,
+
+-- JSON that is sent from the client combained with the server json properties
+json_properties json,
+
+-- this build up based on the input json 
+sosi_felles_egenskaper topo_rein.sosi_felles_egenskaper
+
+);
