@@ -2,7 +2,7 @@
 
 -- update attribute values for given topo object
 CREATE OR REPLACE FUNCTION topo_update.apply_attr_on_topo_point(json_feature text,
-  layer_schema text, layer_table text, layer_column text, snap_tolerance float8) 
+  layer_schema text, layer_table text, layer_column text, snap_tolerance float8,server_json_feature text default null) 
 RETURNS int AS $$DECLARE
 
 num_rows int;
@@ -24,14 +24,12 @@ command_string text;
 -- holds the num rows affected when needed
 num_rows_affected int;
 
--- used to hold values
-felles_egenskaper_flate topo_rein.sosi_felles_egenskaper;
-simple_sosi_felles_egenskaper_linje topo_rein.simple_sosi_felles_egenskaper;
-
 geo_point geometry;
 
 row_id int;
 
+-- holde the computed value for json input reday to use
+json_input_structure topo_update.json_input_structure;  
 
 
 BEGIN
@@ -39,39 +37,21 @@ BEGIN
 	point_topo_info := topo_update.make_input_meta_info(layer_schema, layer_table , layer_column );
 	point_layer_id := topo_update.get_topo_layer_id(point_topo_info);
 	
-	DROP TABLE IF EXISTS ttt_new_attributes_values;
-
-	CREATE TEMP TABLE ttt_new_attributes_values(geom geometry,properties json);
+	-- parse the input values
+	json_input_structure := topo_update.handle_input_json_props(json_feature::json,server_json_feature::json,4258);
+	geo_point := json_input_structure.input_geo;
 	
 	-- update attributtes by common proc
 	num_rows_affected := topo_update.apply_attr_on_topo_line(json_feature,
- 	point_topo_info.layer_schema_name, point_topo_info.layer_table_name, point_topo_info.layer_feature_column) ;
+ 	point_topo_info.layer_schema_name, point_topo_info.layer_table_name, point_topo_info.layer_feature_column,server_json_feature) ;
 
-	
-	-- get json data because we should also update the geometry
-	INSERT INTO ttt_new_attributes_values(geom,properties)
-	SELECT 
-		topo_rein.get_geom_from_json(feat,4258) as geom,
-		to_json(feat->'properties')::json  as properties
-	FROM (
-	  	SELECT json_feature::json AS feat
-	) AS f;
-
-	-- check that it is only one row put that value into 
-	-- TODO rewrite this to not use table in
-	
-	IF (SELECT count(*) FROM ttt_new_attributes_values) != 1 THEN
-		RAISE EXCEPTION 'Not valid json_feature %', json_feature;
-	ELSE 
-		SELECT geom FROM ttt_new_attributes_values INTO geo_point;
-		SELECT (properties->>'id')::int FROM ttt_new_attributes_values INTO row_id;
-	END IF;
-
+ 	
 	RAISE NOTICE 'geo_point %', geo_point;
 
 	-- if move point
 	IF geo_point is not NULL THEN
 	
+		row_id := (json_input_structure.json_properties->>'id')::int;
 	
 		command_string := format('SELECT topology.clearTopoGeom(%s) FROM  %I.%I r WHERE id = %s',
 		point_topo_info.layer_feature_column,
