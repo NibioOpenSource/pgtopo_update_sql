@@ -51,8 +51,12 @@ BEGIN
 	-- Because the client do not support Postgres user defined types like we have used in  topo_rein.sosi_felles_egenskaper;
 	-- First append the info from the client properties, only properties that maps to valid names in topo_rein.simple_sosi_felles_egenskaper will be used.
 	simple_sosi_felles_egenskaper := json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,client_json_properties );
-	-- Here we map from simple properties to topo_rein.sosi_felles_egenskaper
+
+	-- Here we map from simple properties to topo_rein.sosi_felles_egenskaper for line an point objects
 	json_input_structure.sosi_felles_egenskaper := topo_rein.get_rein_felles_egenskaper(simple_sosi_felles_egenskaper);
+	
+	-- Here we get info for the surface objects
+   	json_input_structure.sosi_felles_egenskaper_flate := topo_rein.get_rein_felles_egenskaper_flate(simple_sosi_felles_egenskaper);
 	
 	RAISE NOTICE 'felles_egenskaper_sosi  %',  json_input_structure.sosi_felles_egenskaper;
 

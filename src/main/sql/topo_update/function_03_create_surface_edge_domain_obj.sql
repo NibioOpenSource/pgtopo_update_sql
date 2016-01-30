@@ -12,11 +12,12 @@
 -- DROP FUNCTION IF EXISTS topo_update.create_surface_edge_domain_obj(json_feature text) cascade;
 
 
-CREATE OR REPLACE FUNCTION topo_update.create_surface_edge_domain_obj(json_feature text,
+CREATE OR REPLACE FUNCTION topo_update.create_surface_edge_domain_obj(client_json_feature text,
   layer_schema text, 
   surface_layer_table text, surface_layer_column text,
   border_layer_table text, border_layer_column text,
-  snap_tolerance float8) 
+  snap_tolerance float8,
+  server_json_feature text default null) 
 RETURNS TABLE(result text) AS $$
 DECLARE
 
@@ -50,15 +51,13 @@ geo_in geometry;
 
 line_intersection_result geometry;
 
--- holds the value for felles egenskaper from input
-felles_egenskaper_linje topo_rein.sosi_felles_egenskaper;
-felles_egenskaper_flate topo_rein.sosi_felles_egenskaper;
-simple_sosi_felles_egenskaper_linje topo_rein.simple_sosi_felles_egenskaper;
-
 -- array of quoted field identifiers
 -- for attribute fields passed in by user and known (by name)
 -- in the target table
 not_null_fields text[];
+
+-- holde the computed value for json input reday to use
+json_input_structure topo_update.json_input_structure;  
 
 BEGIN
 	
@@ -68,44 +67,12 @@ BEGIN
 	-- get meta data the surface 
 	surface_topo_info := topo_update.make_input_meta_info(layer_schema, surface_layer_table , surface_layer_column );
 	
-	CREATE TEMP TABLE IF NOT EXISTS ttt2_new_attributes_values(geom geometry,properties json, felles_egenskaper topo_rein.sosi_felles_egenskaper);
-	TRUNCATE TABLE ttt2_new_attributes_values;
-	
-	-- parse the json data to get properties and the new geometry
-	INSERT INTO ttt2_new_attributes_values(geom,properties)
-	SELECT 
-	geom,
-	properties
-	FROM (
-		SELECT 
-			topo_rein.get_geom_from_json(feat,4258) AS geom,
-			to_json(feat->'properties')::json  AS properties
-		FROM (
-		  	SELECT json_feature::json AS feat
-		) AS f
-	) AS e;
-
-	-- check that it is only one row put that value into 
-	-- TODO rewrite this to not use table in
-	IF (SELECT count(*) FROM ttt2_new_attributes_values) != 1 THEN
-		RAISE EXCEPTION 'Not valid json_feature %', json_feature;
-	ELSE 
-		-- get input geometry
-		SELECT geom FROM ttt2_new_attributes_values INTO geo_in;
-
-		-- get the felles egenskaper
-		SELECT * INTO simple_sosi_felles_egenskaper_linje 
-		FROM json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,
-		(select properties from ttt2_new_attributes_values) );
-
-		-- get felles_egenskaper both for sufcae and line
-		felles_egenskaper_linje := topo_rein.get_rein_felles_egenskaper(simple_sosi_felles_egenskaper_linje);
-		felles_egenskaper_flate := topo_rein.get_rein_felles_egenskaper_flate(simple_sosi_felles_egenskaper_linje);
-
-	END IF;
+	-- parse the input values
+	json_input_structure := topo_update.handle_input_json_props(client_json_feature::json,server_json_feature::json,4258);
 
 	-- save a copy of the input geometry
-	org_geo_in := geo_in;
+	org_geo_in := json_input_structure.input_geo;
+	geo_in := json_input_structure.input_geo;
 	RAISE NOTICE 'The input as it used before check/fixed %',  ST_AsText(geo_in);
 
 		-- Only used for debug
@@ -187,20 +154,20 @@ BEGIN
 	EXECUTE command_string;
 
   -- Insert all matching column names into temp table
-	INSERT INTO ttt2_new_topo_rows_in_org_table
-		SELECT r.* --, t2.geom
-		FROM ttt2_new_attributes_values t2,
-         json_populate_record(
-            null::ttt2_new_topo_rows_in_org_table,
-            t2.properties) r;
+    INSERT INTO ttt2_new_topo_rows_in_org_table
+	SELECT * FROM json_populate_record(null::ttt2_new_topo_rows_in_org_table,json_input_structure.json_properties);
 
   RAISE NOTICE 'Added all attributes to ttt2_new_topo_rows_in_org_table';
+
+  
+  
+
 
   -- Convert geometry to TopoGeometry, write it in the temp table
   command_string := format('UPDATE ttt2_new_topo_rows_in_org_table
     SET %I = %L,
 	 felles_egenskaper = %L',
-  border_topo_info.layer_feature_column, new_border_data,felles_egenskaper_linje);
+  border_topo_info.layer_feature_column, new_border_data,json_input_structure.sosi_felles_egenskaper);
     
   EXECUTE command_string;
 
@@ -240,7 +207,8 @@ ttt2_new_topo_rows_in_org_table SELECT * FROM inserted ',
 	-- find out if any old topo objects overlaps with this new objects using the relation table
 	-- by using the surface objects owned by the both the new objects and the exting one
 	CREATE TEMP TABLE new_surface_data_for_edge AS 
-	(SELECT topo::topogeometry AS surface_topo, felles_egenskaper_flate FROM topo_update.create_edge_surfaces(surface_topo_info,border_topo_info,new_border_data,geo_in,felles_egenskaper_flate));
+	(SELECT topo::topogeometry AS surface_topo, json_input_structure.sosi_felles_egenskaper_flate AS felles_egenskaper_flate 
+	FROM topo_update.create_edge_surfaces(surface_topo_info,border_topo_info,new_border_data,geo_in,json_input_structure.sosi_felles_egenskaper_flate));
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 	RAISE NOTICE 'Number of topo surfaces added to table new_surface_data_for_edge   %',  num_rows_affected;
 	
@@ -269,7 +237,7 @@ ttt2_new_topo_rows_in_org_table SELECT * FROM inserted ',
 		(SELECT ST_PointOnSurface(surface_topo::geometry) AS geo , surface_topo::text AS topo FROM new_surface_data_for_edge);
 
 	END IF;
-
+  
 	IF ST_IsClosed(geo_in) THEN 
 		command_string := format('INSERT INTO create_surface_edge_domain_obj_r1_r(id,id_type) ' ||
 		'SELECT tg.id AS id, ''S''::text AS id_type FROM ' || 

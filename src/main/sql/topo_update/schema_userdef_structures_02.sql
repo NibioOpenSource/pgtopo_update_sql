@@ -42,7 +42,10 @@ input_geo geometry,
 -- JSON that is sent from the client combained with the server json properties
 json_properties json,
 
--- this build up based on the input json 
-sosi_felles_egenskaper topo_rein.sosi_felles_egenskaper
+-- this build up based on the input json  this used for both line and  point
+sosi_felles_egenskaper topo_rein.sosi_felles_egenskaper,
+
+-- this only used for the surface objectand does not contain any info about drawing
+sosi_felles_egenskaper_flate topo_rein.sosi_felles_egenskaper
 
 );
