@@ -10,7 +10,8 @@
 CREATE OR REPLACE FUNCTION
 topo_update.create_nocutline_edge_domain_obj(json_feature text,
   layer_schema text, layer_table text, layer_column text,
-  snap_tolerance float8)
+  snap_tolerance float8,
+  server_json_feature text default null)
 RETURNS TABLE(id integer) AS $$
 DECLARE
 
@@ -31,15 +32,21 @@ input_geo geometry;
 
 -- holds the value for felles egenskaper from input
 felles_egenskaper_linje topo_rein.sosi_felles_egenskaper;
-simple_sosi_felles_egenskaper_linje topo_rein.simple_sosi_felles_egenskaper;
 
 -- array of quoted field identifiers
 -- for attribute fields passed in by user and known (by name)
 -- in the target table
 not_null_fields text[];
 
+-- holde the computed value for json input reday to use
+json_input_structure topo_update.json_input_structure;  
+
 BEGIN
 	
+	-- TODO totally rewrite this code
+	json_input_structure := topo_update.handle_input_json_props(json_feature::json,server_json_feature::json,4258);
+	input_geo := json_input_structure.input_geo;
+
 	
 	-- Read parameters
 	border_topo_info.layer_schema_name := layer_schema;
@@ -83,30 +90,16 @@ BEGIN
 
 	-- TRUNCATE TABLE credo_ttt2_new_attributes_values;
 	INSERT INTO credo_ttt2_new_attributes_values(geom,properties)
-	SELECT 
-		topo_rein.get_geom_from_json(feat,4258) as geom,
-		to_json(feat->'properties')  as properties
-	FROM (
-	  	SELECT json_feature::json AS feat
-	) AS f;
+	VALUES(json_input_structure.input_geo,json_input_structure.json_properties) ;
 
 		-- check that it is only one row put that value into 
 	-- TODO rewrite this to not use table in
 	
 	RAISE NOTICE 'Step::::::::::::::::: 1';
 
-	IF (SELECT count(*) FROM credo_ttt2_new_attributes_values) != 1 THEN
-		RAISE EXCEPTION 'Not valid json_feature %', json_feature;
-	END IF;
-
 	-- TODO find another way to handle this
-	SELECT * INTO simple_sosi_felles_egenskaper_linje
-	FROM json_populate_record(NULL::topo_rein.simple_sosi_felles_egenskaper,
-	(select properties from credo_ttt2_new_attributes_values) );
 
-	felles_egenskaper_linje := topo_rein.get_rein_felles_egenskaper(simple_sosi_felles_egenskaper_linje);
-
-	SELECT geom INTO input_geo FROM credo_ttt2_new_attributes_values;
+	felles_egenskaper_linje := json_input_structure.sosi_felles_egenskaper;
 	
 
 	RAISE NOTICE 'Step::::::::::::::::: 2';
