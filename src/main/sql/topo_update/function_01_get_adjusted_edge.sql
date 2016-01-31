@@ -21,7 +21,13 @@ BEGIN
 			point_array_line[1] := ST_EndPoint(edge) ;
 			new_edge := ST_MakeLine(point_array_line);	
 		END IF;
-	-- surface
+	-- linestring
+	ELSIF simplify_patteren = 11 THEN 
+		num_points := ST_NumPoints(edge);
+		IF ST_NumPoints(edge) > 4 THEN
+			new_edge := ST_SimplifyPreserveTopology(edge,0.01);
+	 	END IF;
+	END IF;
 	ELSIF simplify_patteren = 20 THEN 
 		num_points := ST_NumPoints(edge);
 		IF ST_NumPoints(edge) > 4 THEN
