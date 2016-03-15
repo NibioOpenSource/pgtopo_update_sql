@@ -31,6 +31,6 @@ cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/roles_tables.sql  >> /tmp/trei
 cat ~/dev/git/topologi/pgtopo_update_sql/src/main/sql/topo_update/schema_*  >> /tmp/trein.sql
 cat ~/dev/git/topologi/pgtopo_update_sql/src/main/sql/topo_update/roles_topo_update.sql >> /tmp/trein.sql
 cat ~/dev/git/topologi/pgtopo_update_sql/src/main/sql/topo_update/function*  >> /tmp/trein.sql
-cat /Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/import_script/function_simple*.sql  >> /tmp/trein.sql
-cat /Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/convert_to_topo/surface/view/*.sql >> /tmp/trein.sql
+#cat /Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/import_script/function_simple*.sql  >> /tmp/trein.sql
+#cat /Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/convert_to_topo/surface/view/*.sql >> /tmp/trein.sql
 cat /tmp/trein.sql
