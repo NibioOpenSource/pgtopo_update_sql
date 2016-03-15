@@ -37,6 +37,7 @@ DROP FUNCTION IF EXISTS topo_update.create_line_edge_domain_obj(geo_in geometry)
 DROP FUNCTION IF EXISTS topo_update.create_line_edge_domain_obj(geo_in geometry, json_feature text) cascade;
 DROP FUNCTION IF EXISTS topo_update.create_line_edge_domain_obj(json_feature text) cascade;
 DROP FUNCTION IF EXISTS topo_update.create_line_edge_domain_obj(json_feature text,layer_schema text, layer_table text, layer_column text,snap_tolerance float8) cascade;
+DROP FUNCTION IF EXISTS topo_update.create_nocutline_edge_domain_obj(text,text,text,text,double precision,text) cascade;
 
 DROP FUNCTION IF EXISTS topo_update.create_point_point_domain_obj(geo_in geometry) cascade;
 DROP FUNCTION IF EXISTS topo_update.create_point_point_domain_obj(json_feature text) cascade;
