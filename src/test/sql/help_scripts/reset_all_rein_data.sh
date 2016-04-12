@@ -1,16 +1,28 @@
 echo 'drop schema topo_rein cascade;' > /tmp/trein.sql
 echo 'drop schema topo_update cascade;'  >> /tmp/trein.sql
+
 echo "select topology.droptopology('topo_rein_sysdata');"  >> /tmp/trein.sql
 echo "select topology.droptopology('topo_rein_sysdata_rvr');"  >> /tmp/trein.sql
 echo "select topology.droptopology('topo_rein_sysdata_rso');"  >> /tmp/trein.sql
 echo "select topology.droptopology('topo_rein_sysdata_rhs');"  >> /tmp/trein.sql
 echo "select topology.droptopology('topo_rein_sysdata_rhv');"  >> /tmp/trein.sql
 echo "select topology.droptopology('topo_rein_sysdata_rvi');"  >> /tmp/trein.sql
-
 echo "select topology.droptopology('topo_rein_sysdata_rbh');"  >> /tmp/trein.sql
 echo "select topology.droptopology('topo_rein_sysdata_rop');"  >> /tmp/trein.sql
 echo "select topology.droptopology('topo_rein_sysdata_ran');"  >> /tmp/trein.sql
 echo "select topology.droptopology('topo_rein_sysdata_rtr');"  >> /tmp/trein.sql
+
+# added delete to handle case old schema exit
+echo 'drop schema topo_rein_sysdata cascade;' >> /tmp/trein.sql 
+echo 'drop schema topo_rein_sysdata_rvr cascade;' >> /tmp/trein.sql 
+echo 'drop schema topo_rein_sysdata_rso cascade;' >> /tmp/trein.sql 
+echo 'drop schema topo_rein_sysdata_rhs cascade;' >> /tmp/trein.sql 
+echo 'drop schema topo_rein_sysdata_rhv cascade;' >> /tmp/trein.sql 
+echo 'drop schema topo_rein_sysdata_rvi cascade;' >> /tmp/trein.sql 
+echo 'drop schema topo_rein_sysdata_rbh cascade;' >> /tmp/trein.sql 
+echo 'drop schema topo_rein_sysdata_rop cascade;' >> /tmp/trein.sql 
+echo 'drop schema topo_rein_sysdata_ran cascade;' >> /tmp/trein.sql 
+echo 'drop schema topo_rein_sysdata_rtr cascade;' >> /tmp/trein.sql 
 
 cat ~/dev/git/topologi/pgtopo_update_sql/src/test/sql/help_scripts/Performance_Fix_From_Sandro_TopoJSON.sql>> /tmp/trein.sql 
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/schema*.sql  >> /tmp/trein.sql 
@@ -33,4 +45,5 @@ cat ~/dev/git/topologi/pgtopo_update_sql/src/main/sql/topo_update/roles_topo_upd
 cat ~/dev/git/topologi/pgtopo_update_sql/src/main/sql/topo_update/function*  >> /tmp/trein.sql
 #cat /Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/import_script/function_simple*.sql  >> /tmp/trein.sql
 #cat /Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/convert_to_topo/surface/view/*.sql >> /tmp/trein.sql
+
 cat /tmp/trein.sql
