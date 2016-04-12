@@ -1,3 +1,38 @@
+SELECT  topo_rein.query_to_topojson('select reinbeitebruker_id,omrade from topo_rein.arstidsbeite_var_flate', 32632, 0, 20);
+
+
+SELECT row_to_json(f) As feature \
+     FROM (SELECT 'Feature' As type \
+     , ST_AsGeoJSON(ST_transform(geo,32632),0)::json As geometry \
+     , row_to_json((SELECT l FROM (SELECT id AS feat_id) As l)) As properties \
+     FROM topo_rein.arstidsbeite_var_flate_v) As f;
+
+psql -t -q sl -c"SELECT  topo_rein.query_to_topojson('select id,omrade from topo_rein.arstidsbeite_var_flate where id = 520', 32632, 0, 0)" > /tmp/t1.topojson
+
+psql -t -q sl -c"SELECT row_to_json(f) As feature 
+     FROM (SELECT 'Feature' As type 
+     , ST_AsGeoJSON(ST_transform(geo,32632),0)::json As geometry 
+     , row_to_json((SELECT l FROM (SELECT id AS feat_id) As l)) As properties
+     FROM topo_rein.arstidsbeite_var_flate_v) As f" > /tmp/t1.geojson
+
+     
+     ST_SimplifyPreserveTopology(edge,0.01)
+
+psql -t -q sl -c     "SELECT row_to_json(fc)
+ FROM ( SELECT 'FeatureCollection' As type, array_to_json(array_agg(f)) As features
+    FROM (SELECT 'Feature' As type 
+     , ST_AsGeoJSON(ST_transform( ST_SimplifyPreserveTopology(geo,0.01),32632),0)::json As geometry 
+     , row_to_json((SELECT l FROM (SELECT id AS feat_id) As l)) As properties
+     FROM topo_rein.arstidsbeite_var_flate_v) As f   
+   )  As fc" > /tmp/t1.geojson
+     
+     
+http://www.mapshaper.org
+     
+--- fails 
+
+select ST_AsGeoJSON('geo')
+     
 SELECT  length(topo_rein.query_to_topojson('select * from topo_rein.arstidsbeite_var_grense', 32632, 0))::text;
 
 
@@ -9,7 +44,6 @@ SELECT  topo_rein.query_to_topojson('select reinbeitebruker_id, (felles_egenskap
 
 SELECT  topo_rein.query_to_topojson('select * from topo_rein.arstidsbeite_var_topojson_flate_v ', 32632, 0);
 
-SELECT  topo_rein.query_to_topojson('select reinbeitebruker_id,omrade from topo_rein.arstidsbeite_var_flate', 32632, 0);
 
 
 SELECT  topo_rein.query_to_topojson('select reinbeitebruker_id, reindrift_sesongomrade_kode, omrade from topo_rein.arstidsbeite_var_flate', 4258, 7);
