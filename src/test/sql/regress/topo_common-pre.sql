@@ -1126,7 +1126,6 @@ reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping r
 WHERE rl.session_id = current_setting('pgtopo_update.session_id')
 AND rl.table_name = '*'
 AND rl.column_name = 'reinbeitebruker_id')));
-
 select CreateTopology('topo_rein_sysdata_rtr',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
