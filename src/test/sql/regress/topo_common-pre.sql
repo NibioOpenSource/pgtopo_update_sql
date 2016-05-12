@@ -227,6 +227,58 @@ create table if not exists topo_rein.rein_kode_gjerderanlegg(
 
 
 
+
+-- this is a table that is used to keep track of who logged in and what roles they have.
+-- The table is used by row level policy rules
+
+CREATE TABLE topo_rein.rls_role_mapping(
+
+-- a internal id will that can be changed when ver needed
+id serial PRIMARY KEY NOT NULL,
+
+-- when it was updated
+logged_in_time date default now(),
+
+-- the logged in user id from the client
+user_logged_in varchar  NOT NULL,
+
+-- the session id from the client
+session_id varchar NOT NULL,
+
+-- the user can edit any row i any table
+-- this overides all other settings indepentely of all other rows 
+-- found this session
+edit_all boolean NOT NULL DEFAULT false,
+
+-- * for all tables, means that if it will check against all table with this column name 
+table_name varchar NOT NULL,
+
+-- which columns we shoul chechk against
+column_name varchar NOT NULL,
+
+-- columns values that should be editable for this user / session
+column_value varchar NOT NULL
+
+-- did not get this to work the list of valid reinbeitebruker_id for this user
+-- reinbeitebruker_list text[] 
+-- reinbeitebruker_id varchar(3) CHECK (reinbeitebruker_id IN ('XI','ZA','ZB','ZC','ZD','ZE','ZF','ØG','UW','UX','UY','UZ','ØA','ØB','ØC','ØE','ØF','ZG','ZH','ZJ','ZS','ZL','ZÅ','YA','YB','YC','YD','YE','YF','YG','XM','XR','XT','YH','YI','YJ','YK','YL','YM','YN','YP','YX','YR','YS','YT','YU','YV','YW','YY','XA','XD','XE','XG','XH','XJ','XK','XL','XM','XR','XS','XT','XN','XØ','XP','XU','XV','XW','XZ','XX','XY','WA','WB','WD','WF','WK','WL','WN','WP','WR','WS','WX','WZ','VA','VF','VG','VJ','VM','VR','YQA','YQB','YQC','ZZ','RR','ZQA')), 
+
+);
+
+
+CREATE INDEX rls_role_mapping_session_id_idx ON topo_rein.rls_role_mapping(session_id);	
+
+CREATE INDEX rls_role_mapping_table_name_idx ON topo_rein.rls_role_mapping(table_name);	
+
+CREATE INDEX rls_role_mapping_column_name_idx ON topo_rein.rls_role_mapping(column_name);	
+
+CREATE INDEX rls_role_mapping_column_value_name_idx ON topo_rein.rls_role_mapping(column_value);	
+
+
+--GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE ON topo_rein.rls_role_mapping TO topo_rein_update_role;
+
+--GRANT SELECT, USAGE, UPDATE ON topo_rein.rls_role_mapping_id_seq TO topo_rein_update_role;
+
 select CreateTopology('topo_rein_sysdata_rvr',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
@@ -1050,6 +1102,31 @@ SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata_ran', 'topo_rein', 'rei
 
 -- create function basded index to get performance
 CREATE INDEX topo_rein_reindrift_anlegg_punkt_geo_relation_id_idx ON topo_rein.reindrift_anlegg_punkt(topo_rein.get_relation_id(punkt));	
+
+-- add row level security
+ALTER TABLE topo_rein.reindrift_anlegg_punkt ENABLE ROW LEVEL SECURITY;
+
+-- Give all user select rights  
+-- Is another way to do this
+CREATE POLICY topo_rein_reindrift_anlegg_punkt_select_policy ON topo_rein.reindrift_anlegg_punkt 
+FOR SELECT 
+TO PUBLIC USING(true);
+
+-- Give logged user access based on session id and what area they can work on 
+CREATE POLICY topo_rein_reindrift_anlegg_punkt_update_policy ON topo_rein.reindrift_anlegg_punkt 
+FOR ALL 
+WITH CHECK(
+-- a user that edit anything
+EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.edit_all = true)
+OR	
+-- a user that has access to certain areas
+reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
+WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+AND rl.table_name = '*'
+AND rl.column_name = 'reinbeitebruker_id')));
+
 select CreateTopology('topo_rein_sysdata_rtr',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
@@ -1672,8 +1749,23 @@ reindriftsanleggstype,
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
 ((al.felles_egenskaper).kvalitet).maalemetode AS "fellesegenskaper.maalemetode",
 punkt,
-true AS "editable"
+CASE 
+	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.edit_all = true)
+	THEN true
+
+	WHEN reinbeitebruker_id = 
+	ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.table_name = '*'
+	AND rl.column_name = 'reinbeitebruker_id')
+	THEN true
+	
+	ELSE false 
+END AS "editable"
 from topo_rein.reindrift_anlegg_punkt al;
+
 
 --select * from topo_rein.reindrift_anlegg_topojson_punkt_v ;
 

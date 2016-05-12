@@ -40,13 +40,15 @@ BEGIN
 	-- parse the input values
 	json_input_structure := topo_update.handle_input_json_props(json_feature::json,server_json_feature::json,4258);
 	geo_point := json_input_structure.input_geo;
-	
+
+	RAISE NOTICE 'geo_point from json %',  ST_AsEWKT(geo_point);
+
 	-- update attributtes by common proc
 	num_rows_affected := topo_update.apply_attr_on_topo_line(json_feature,
  	point_topo_info.layer_schema_name, point_topo_info.layer_table_name, point_topo_info.layer_feature_column,server_json_feature) ;
 
  	
-	RAISE NOTICE 'geo_point %', geo_point;
+	RAISE NOTICE 'geo_point %',  ST_AsEWKT(geo_point);
 
 	-- if move point
 	IF geo_point is not NULL THEN
@@ -103,3 +105,5 @@ RETURNS int AS $$
   SELECT topo_update.apply_attr_on_topo_point($1, 'topo_rein', 'reindrift_anlegg_punkt', 'punkt',  1e-10);
 $$ LANGUAGE 'sql';
 --}
+
+

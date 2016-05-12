@@ -26,7 +26,7 @@ echo 'drop schema topo_rein_sysdata_rtr cascade;' >> /tmp/trein.sql
 
 cat ~/dev/git/topologi/pgtopo_update_sql/src/test/sql/help_scripts/Performance_Fix_From_Sandro_TopoJSON.sql>> /tmp/trein.sql 
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/schema*.sql  >> /tmp/trein.sql 
-cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/roles_topo_rein.sql  >> /tmp/trein.sql 
+cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_01_rls_role_mapping.sql  >> /tmp/trein.sql 
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/tables_01_kode_topo_rein.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_arstidsbeite_var_flate.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_arstidsbeite_sommer_flate.sql >> /tmp/trein.sql
@@ -38,6 +38,7 @@ cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_reindrift_anlegg_punk
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_trekklei_linje.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_beitehage_flate.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_oppsamlingomr_flate.sql >> /tmp/trein.sql
+
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/view*.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/roles_tables.sql  >> /tmp/trein.sql 
 cat ~/dev/git/topologi/pgtopo_update_sql/src/main/sql/topo_update/schema_*  >> /tmp/trein.sql
@@ -45,5 +46,10 @@ cat ~/dev/git/topologi/pgtopo_update_sql/src/main/sql/topo_update/roles_topo_upd
 cat ~/dev/git/topologi/pgtopo_update_sql/src/main/sql/topo_update/function*  >> /tmp/trein.sql
 #cat /Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/import_script/function_simple*.sql  >> /tmp/trein.sql
 #cat /Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/convert_to_topo/surface/view/*.sql >> /tmp/trein.sql
+
+echo "INSERT INTO topo_rein.rls_role_mapping(user_logged_in,session_id,edit_all,table_name,column_name,column_value )
+VALUES('topo_rein_crud1','session_id',true,'*','reinbeitebruker_id','ZD');" >> /tmp/trein.sql 
+
+
 
 cat /tmp/trein.sql
