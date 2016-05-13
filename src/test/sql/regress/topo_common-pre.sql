@@ -1106,16 +1106,15 @@ CREATE INDEX topo_rein_reindrift_anlegg_punkt_geo_relation_id_idx ON topo_rein.r
 -- add row level security
 ALTER TABLE topo_rein.reindrift_anlegg_punkt ENABLE ROW LEVEL SECURITY;
 
--- Give all user select rights  
+-- Give all users select rights  
 -- Is another way to do this
-CREATE POLICY topo_rein_reindrift_anlegg_punkt_select_policy ON topo_rein.reindrift_anlegg_punkt 
-FOR SELECT 
-TO PUBLIC USING(true);
+CREATE POLICY topo_rein_reindrift_anlegg_punkt_select_policy ON topo_rein.reindrift_anlegg_punkt FOR SELECT  USING(true);
 
--- Give logged user access based on session id and what area they can work on 
+-- Handle update 
 CREATE POLICY topo_rein_reindrift_anlegg_punkt_update_policy ON topo_rein.reindrift_anlegg_punkt 
-FOR ALL 
-WITH CHECK(
+FOR ALL
+USING
+(
 -- a user that edit anything
 EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
@@ -1125,7 +1124,22 @@ OR
 reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
 WHERE rl.session_id = current_setting('pgtopo_update.session_id')
 AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id')));
+AND rl.column_name = 'reinbeitebruker_id'))
+)
+WITH CHECK
+(
+-- a user that edit anything
+EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.edit_all = true)
+OR	
+-- a user that has access to certain areas
+reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
+WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+AND rl.table_name = '*'
+AND rl.column_name = 'reinbeitebruker_id'))
+)
+;
 select CreateTopology('topo_rein_sysdata_rtr',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see

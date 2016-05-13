@@ -47,8 +47,8 @@ cat ~/dev/git/topologi/pgtopo_update_sql/src/main/sql/topo_update/function*  >> 
 #cat /Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/import_script/function_simple*.sql  >> /tmp/trein.sql
 #cat /Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/convert_to_topo/surface/view/*.sql >> /tmp/trein.sql
 
-echo "INSERT INTO topo_rein.rls_role_mapping(user_logged_in,session_id,edit_all,table_name,column_name,column_value )
-VALUES('topo_rein_crud1','session_id',true,'*','reinbeitebruker_id','ZD');" >> /tmp/trein.sql 
+#echo "INSERT INTO topo_rein.rls_role_mapping(user_logged_in,session_id,edit_all,table_name,column_name,column_value )
+#VALUES('topo_rein_crud1','session_id',true,'*','reinbeitebruker_id','ZD');" >> /tmp/trein.sql 
 
 
 
