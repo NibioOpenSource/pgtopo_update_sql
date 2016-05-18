@@ -81,11 +81,12 @@ BEGIN
 		RAISE NOTICE 'command_string %', command_string;
 		EXECUTE command_string;
 
+		
+		GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
+
 	
 	END IF;
 	
-	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-
 	RAISE NOTICE 'Number num_rows_affected  %',  num_rows_affected;
 	
 
