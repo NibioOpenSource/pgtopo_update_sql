@@ -426,6 +426,7 @@ CREATE INDEX topo_rein_sysdata_rvr_edge_simple_geo_idx ON topo_rein.arstidsbeite
 
 
 --COMMENT ON INDEX topo_rein.topo_rein_sysdata_rvr_edge_simple_geo_idx IS 'A index created to avoid building topo when the data is used for wms like mapserver which do no use the topo geometry';
+
 select CreateTopology('topo_rein_sysdata_rso',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
@@ -1048,6 +1049,47 @@ SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata_ran', 'topo_rein', 'rei
 -- create function basded index to get performance
 CREATE INDEX topo_rein_reindrift_anlegg_linje_geo_relation_id_idx ON topo_rein.reindrift_anlegg_linje(topo_rein.get_relation_id(linje));	
 
+
+-- add row level security
+ALTER TABLE topo_rein.reindrift_anlegg_linje ENABLE ROW LEVEL SECURITY;
+
+-- Give all users select rights  
+-- Is another way to do this
+CREATE POLICY topo_rein_reindrift_anlegg_linje_select_policy ON topo_rein.reindrift_anlegg_linje FOR SELECT  USING(true);
+
+-- Handle update 
+CREATE POLICY topo_rein_reindrift_anlegg_linje_update_policy ON topo_rein.reindrift_anlegg_linje 
+FOR ALL                                                                                                                  
+USING
+(
+-- a user that edit anything
+EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
+WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+AND rl.edit_all = true)
+OR
+-- a user that has access to certain areas
+reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
+WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+AND rl.table_name = '*'
+AND rl.column_name = 'reinbeitebruker_id'))
+)
+WITH CHECK
+(
+-- a user that edit anything
+EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
+WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+AND rl.edit_all = true)
+OR
+reinbeitebruker_id is null
+OR
+-- a user that has access to certain areas
+reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
+WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+AND rl.table_name = '*'
+AND rl.column_name = 'reinbeitebruker_id'))
+)
+;
+
 -- Should we have one table for all årstidsbeite thems or 5 different tables as today ?
 -- We go for the solution with 5 tables now because then it's probably more easy to handle non overlap rules
 -- and logically two and two thems form one single map. The only differemse between the 5 tables will be the table name.
@@ -1114,14 +1156,14 @@ CREATE POLICY topo_rein_reindrift_anlegg_punkt_select_policy ON topo_rein.reindr
 
 -- Handle update 
 CREATE POLICY topo_rein_reindrift_anlegg_punkt_update_policy ON topo_rein.reindrift_anlegg_punkt 
-FOR ALL
+FOR ALL                                                                                                                  
 USING
 (
 -- a user that edit anything
 EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-	AND rl.edit_all = true)
-OR	
+WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+AND rl.edit_all = true)
+OR
 -- a user that has access to certain areas
 reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
 WHERE rl.session_id = current_setting('pgtopo_update.session_id')
@@ -1132,9 +1174,11 @@ WITH CHECK
 (
 -- a user that edit anything
 EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-	AND rl.edit_all = true)
-OR	
+WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+AND rl.edit_all = true)
+OR
+reinbeitebruker_id is null
+OR
 -- a user that has access to certain areas
 reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
 WHERE rl.session_id = current_setting('pgtopo_update.session_id')
@@ -1208,6 +1252,48 @@ SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata_rtr', 'topo_rein', 'rei
 
 -- create function basded index to get performance
 CREATE INDEX topo_rein_rein_trekklei_linje_geo_relation_id_idx ON topo_rein.rein_trekklei_linje(topo_rein.get_relation_id(linje));	
+
+
+
+-- add row level security
+ALTER TABLE topo_rein.rein_trekklei_linje ENABLE ROW LEVEL SECURITY;
+
+-- Give all users select rights  
+-- Is another way to do this
+CREATE POLICY topo_rein_rein_trekklei_linje_select_policy ON topo_rein.rein_trekklei_linje FOR SELECT  USING(true);
+
+-- Handle update 
+CREATE POLICY topo_rein_rein_trekklei_linje_update_policy ON topo_rein.rein_trekklei_linje 
+FOR ALL                                                                                                                  
+USING
+(
+-- a user that edit anything
+EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
+WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+AND rl.edit_all = true)
+OR
+-- a user that has access to certain areas
+reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
+WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+AND rl.table_name = '*'
+AND rl.column_name = 'reinbeitebruker_id'))
+)
+WITH CHECK
+(
+-- a user that edit anything
+EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
+WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+AND rl.edit_all = true)
+OR
+reinbeitebruker_id is null
+OR
+-- a user that has access to certain areas
+reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
+WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+AND rl.table_name = '*'
+AND rl.column_name = 'reinbeitebruker_id'))
+)
+;
 select CreateTopology('topo_rein_sysdata_rbh',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
