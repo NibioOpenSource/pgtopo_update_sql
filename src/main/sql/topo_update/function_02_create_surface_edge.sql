@@ -32,7 +32,9 @@ BEGIN
 	-- Test if there are any loose ends	
 	-- TODO use topo object as input and not a object, since will bee one single topo object,
 	-- TOTO add a test if this is a linestring or not
-	-- but we may need line attributes then it's easier table as a parameter 
+	-- TODO add a tes if this has no loose ends
+	-- but we may need line attributes then it's easier table as a parameter
+ 
 	IF topo_update.has_linestring_loose_ends(border_topo_info, new_border_data)  = 1 THEN
 		-- Clean up loose ends	and ends that do not participate in surface
 	
