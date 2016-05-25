@@ -442,6 +442,10 @@ USING
 EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 WHERE rl.session_id = current_setting('pgtopo_update.session_id')
 AND rl.edit_all = true)
+
+OR
+reinbeitebruker_id is null
+
 OR
 -- a user that has access to certain areas
 reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
@@ -455,8 +459,10 @@ WITH CHECK
 EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 WHERE rl.session_id = current_setting('pgtopo_update.session_id')
 AND rl.edit_all = true)
+
 OR
 reinbeitebruker_id is null
+
 OR
 -- a user that has access to certain areas
 reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
@@ -622,6 +628,10 @@ USING
 EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 WHERE rl.session_id = current_setting('pgtopo_update.session_id')
 AND rl.edit_all = true)
+
+OR
+reinbeitebruker_id is null
+
 OR
 -- a user that has access to certain areas
 reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
@@ -801,6 +811,8 @@ USING
 EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 WHERE rl.session_id = current_setting('pgtopo_update.session_id')
 AND rl.edit_all = true)
+OR
+reinbeitebruker_id is null
 OR
 -- a user that has access to certain areas
 reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
@@ -982,6 +994,10 @@ USING
 EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 WHERE rl.session_id = current_setting('pgtopo_update.session_id')
 AND rl.edit_all = true)
+
+OR
+reinbeitebruker_id is null
+
 OR
 -- a user that has access to certain areas
 reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
@@ -1160,6 +1176,8 @@ EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 WHERE rl.session_id = current_setting('pgtopo_update.session_id')
 AND rl.edit_all = true)
 OR
+reinbeitebruker_id is null
+OR
 -- a user that has access to certain areas
 reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
 WHERE rl.session_id = current_setting('pgtopo_update.session_id')
@@ -1260,6 +1278,8 @@ EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 WHERE rl.session_id = current_setting('pgtopo_update.session_id')
 AND rl.edit_all = true)
 OR
+reinbeitebruker_id is null
+OR
 -- a user that has access to certain areas
 reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
 WHERE rl.session_id = current_setting('pgtopo_update.session_id')
@@ -1356,6 +1376,10 @@ USING
 EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 WHERE rl.session_id = current_setting('pgtopo_update.session_id')
 AND rl.edit_all = true)
+
+OR
+reinbeitebruker_id is null
+
 OR
 -- a user that has access to certain areas
 reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
@@ -1369,8 +1393,10 @@ WITH CHECK
 EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 WHERE rl.session_id = current_setting('pgtopo_update.session_id')
 AND rl.edit_all = true)
+
 OR
 reinbeitebruker_id is null
+
 OR
 -- a user that has access to certain areas
 reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
@@ -1464,6 +1490,8 @@ USING
 EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 WHERE rl.session_id = current_setting('pgtopo_update.session_id')
 AND rl.edit_all = true)
+OR
+reinbeitebruker_id is null
 OR
 -- a user that has access to certain areas
 reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
@@ -1646,6 +1674,8 @@ EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 WHERE rl.session_id = current_setting('pgtopo_update.session_id')
 AND rl.edit_all = true)
 OR
+reinbeitebruker_id is null
+OR
 -- a user that has access to certain areas
 reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
 WHERE rl.session_id = current_setting('pgtopo_update.session_id')
@@ -1815,6 +1845,8 @@ USING
 EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 WHERE rl.session_id = current_setting('pgtopo_update.session_id')
 AND rl.edit_all = true)
+OR
+reinbeitebruker_id is null
 OR
 -- a user that has access to certain areas
 reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
