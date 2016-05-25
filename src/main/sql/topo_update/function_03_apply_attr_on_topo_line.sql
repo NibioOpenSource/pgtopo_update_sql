@@ -38,6 +38,8 @@ BEGIN
 	json_input_structure := topo_update.handle_input_json_props(json_feature::json,server_json_feature::json,4258);
 
 	
+	RAISE NOTICE 'topo_update.apply_attr_on_topo_line json_input_structure %', json_input_structure;
+
 
 	-- Create temporary table ttt2_aaotl_new_topo_rows_in_org_table to receive the new record
 	command_string := topo_update.create_temp_tbl_as(
@@ -47,11 +49,12 @@ BEGIN
 	         topo_info.layer_table_name));
 	EXECUTE command_string;
 
+	
   	-- Insert all matching column names into temp table ttt2_aaotl_new_topo_rows_in_org_table 
 	INSERT INTO ttt2_aaotl_new_topo_rows_in_org_table
 	SELECT * FROM json_populate_record(null::ttt2_aaotl_new_topo_rows_in_org_table,json_input_structure.json_properties);
 	
-	RAISE NOTICE 'Added all attributes to ttt2_aaotl_new_topo_rows_in_org_table';
+	RAISE NOTICE 'topo_update.apply_attr_on_topo_line Added all attributes to ttt2_aaotl_new_topo_rows_in_org_table';
 
 	-- Update felles egenskaper with new values
 	command_string := format('UPDATE ttt2_aaotl_new_topo_rows_in_org_table 
@@ -61,10 +64,10 @@ BEGIN
     topo_info.layer_schema_name,
     topo_info.layer_table_name
 	);
-	RAISE NOTICE 'command_string %', command_string;
+	RAISE NOTICE 'topo_update.apply_attr_on_topo_line command_string %', command_string;
 	EXECUTE command_string;
 
-  RAISE NOTICE 'Set felles_egenskaper field';
+  RAISE NOTICE 'topo_update.apply_attr_on_topo_line Set felles_egenskaper field';
 
   -- Extract name of fields with not-null values:
   -- Extract name of fields with not-null values and append the table prefix n.:
@@ -83,8 +86,8 @@ BEGIN
    key = key_list.res 
   ) AS keys;
   
-  RAISE NOTICE 'Extract name of not-null fields: %', update_fields_t;
-  RAISE NOTICE 'Extract name of not-null fields: %', update_fields;
+  RAISE NOTICE 'topo_update.apply_attr_on_topo_line Extract name of not-null fields: %', update_fields_t;
+  RAISE NOTICE 'topo_update.apply_attr_on_topo_line Extract name of not-null fields: %', update_fields;
   
   -- update the org table with not null values
   command_string := format(
@@ -96,13 +99,13 @@ BEGIN
     array_to_string(update_fields, ','),
     array_to_string(update_fields_t, ',')
     );
-	RAISE NOTICE 'command_string %', command_string;
+	RAISE NOTICE 'topo_update.apply_attr_on_topo_line command_string %', command_string;
 	EXECUTE command_string;
 	
 	
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 
-	RAISE NOTICE 'Number num_rows_affected  %',  num_rows_affected;
+	RAISE NOTICE 'topo_update.apply_attr_on_topo_line Number num_rows_affected  %',  num_rows_affected;
 	
 
 	
