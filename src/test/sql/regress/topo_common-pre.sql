@@ -424,7 +424,6 @@ COMMENT ON INDEX topo_rein.topo_rein_arstidsbeite_var_flate_geo_relation_id_idx 
 -- create index on topo_rein_sysdata_rvr.edge
 CREATE INDEX topo_rein_sysdata_rvr_edge_simple_geo_idx ON topo_rein.arstidsbeite_var_flate USING GIST (simple_geo); 
 
-
 --COMMENT ON INDEX topo_rein.topo_rein_sysdata_rvr_edge_simple_geo_idx IS 'A index created to avoid building topo when the data is used for wms like mapserver which do no use the topo geometry';
 
 -- add row level security
@@ -1870,7 +1869,24 @@ reinbeitebruker_id,
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
 omrade ,
-true AS "editable"
+CASE 
+	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.edit_all = true)
+	THEN true
+
+	WHEN reinbeitebruker_id = 
+	ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.table_name = '*'
+	AND rl.column_name = 'reinbeitebruker_id')
+	THEN true
+
+	WHEN  reinbeitebruker_id is null
+	THEN true
+	
+	ELSE false 
+END AS "editable"
 from topo_rein.arstidsbeite_host_flate al;
 
 --select * from topo_rein.arstidsbeite_host_topojson_flate_v-- DROP VIEW IF EXISTS topo_rein.arstidsbeite_hostvinter_topojson_flate_v cascade ;
@@ -1887,7 +1903,24 @@ reinbeitebruker_id,
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
 omrade,
-true AS "editable" 
+CASE 
+	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.edit_all = true)
+	THEN true
+
+	WHEN reinbeitebruker_id = 
+	ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.table_name = '*'
+	AND rl.column_name = 'reinbeitebruker_id')
+	THEN true
+
+	WHEN  reinbeitebruker_id is null
+	THEN true
+	
+	ELSE false 
+END AS "editable"
 from topo_rein.arstidsbeite_hostvinter_flate al;
 
 --select * from topo_rein.arstidsbeite_hostvinter_topojson_flate_v-- DROP VIEW topo_rein.arstidsbeite_sommer_flate_v cascade ;
@@ -1921,7 +1954,24 @@ reinbeitebruker_id,
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
 omrade,
-true AS "editable" 
+CASE 
+	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.edit_all = true)
+	THEN true
+
+	WHEN reinbeitebruker_id = 
+	ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.table_name = '*'
+	AND rl.column_name = 'reinbeitebruker_id')
+	THEN true
+
+	WHEN  reinbeitebruker_id is null
+	THEN true
+	
+	ELSE false 
+END AS "editable" 
 from topo_rein.arstidsbeite_sommer_flate al;
 
 --select * from topo_rein.arstidsbeite_sommer_topojson_flate_v-- DROP VIEW topo_rein.arstidsbeite_var_flate_v cascade ;
@@ -1971,7 +2021,24 @@ reinbeitebruker_id,
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
 omrade,
-true AS "editable" 
+CASE 
+	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.edit_all = true)
+	THEN true
+
+	WHEN reinbeitebruker_id = 
+	ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.table_name = '*'
+	AND rl.column_name = 'reinbeitebruker_id')
+	THEN true
+
+	WHEN  reinbeitebruker_id is null
+	THEN true
+
+	ELSE false 
+END AS "editable"
 from topo_rein.arstidsbeite_var_flate al;
 
 --select * from topo_rein.arstidsbeite_var_topojson_flate_v-- DROP VIEW IF EXISTS topo_rein.arstidsbeite_vinter_topojson_flate_v cascade ;
@@ -1988,7 +2055,24 @@ reinbeitebruker_id,
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
 omrade,
-true AS "editable" 
+CASE 
+	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.edit_all = true)
+	THEN true
+
+	WHEN reinbeitebruker_id = 
+	ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.table_name = '*'
+	AND rl.column_name = 'reinbeitebruker_id')
+	THEN true
+
+	WHEN  reinbeitebruker_id is null
+	THEN true
+	
+	ELSE false 
+END AS "editable"
 from topo_rein.arstidsbeite_vinter_flate al;
 
 --select * from topo_rein.arstidsbeite_vinter_topojson_flate_v-- DROP VIEW IF EXISTS topo_rein.beitehage_topojson_flate_v cascade ;
@@ -2005,7 +2089,24 @@ reinbeitebruker_id,
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
 omrade,
-true AS "editable"
+CASE 
+	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.edit_all = true)
+	THEN true
+
+	WHEN reinbeitebruker_id = 
+	ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.table_name = '*'
+	AND rl.column_name = 'reinbeitebruker_id')
+	THEN true
+
+	WHEN  reinbeitebruker_id is null
+	THEN true
+	
+	ELSE false 
+END AS "editable"
 from topo_rein.beitehage_flate al;
 
 --select * from topo_rein.beitehage_topojson_flate_v-- DROP VIEW IF EXISTS topo_rein.oppsamlingomr_topojson_flate_v cascade ;
@@ -2021,7 +2122,24 @@ reinbeitebruker_id,
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
 omrade,
-true AS "editable"
+CASE 
+	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.edit_all = true)
+	THEN true
+
+	WHEN reinbeitebruker_id = 
+	ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.table_name = '*'
+	AND rl.column_name = 'reinbeitebruker_id')
+	THEN true
+	
+	WHEN  reinbeitebruker_id is null
+	THEN true
+
+	ELSE false 
+END AS "editable"
 from topo_rein.oppsamlingomr_flate al;
 
 --select * from topo_rein.oppsamlingomr_topojson_flate_vDROP VIEW IF EXISTS topo_rein.rein_trekklei_topojson_linje_v cascade ;
@@ -2038,7 +2156,24 @@ reinbeitebruker_id,
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
 ((al.felles_egenskaper).kvalitet).maalemetode AS "fellesegenskaper.maalemetode",
 linje,
-true AS "editable"
+CASE 
+	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.edit_all = true)
+	THEN true
+
+	WHEN reinbeitebruker_id = 
+	ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.table_name = '*'
+	AND rl.column_name = 'reinbeitebruker_id')
+	THEN true
+	
+	WHEN  reinbeitebruker_id is null
+	THEN true
+
+	ELSE false 
+END AS "editable"
 from topo_rein.rein_trekklei_linje al;
 
 -- select * from topo_rein.rein_trekklei_topojson_linje_v ;
@@ -2101,7 +2236,24 @@ reindriftsanleggstype,
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
 ((al.felles_egenskaper).kvalitet).maalemetode AS "fellesegenskaper.maalemetode",
 linje,
-true AS "editable"
+CASE 
+	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.edit_all = true)
+	THEN true
+
+	WHEN reinbeitebruker_id = 
+	ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.table_name = '*'
+	AND rl.column_name = 'reinbeitebruker_id')
+	THEN true
+	
+	WHEN  reinbeitebruker_id is null
+	THEN true
+
+	ELSE false 
+END AS "editable"
 from topo_rein.reindrift_anlegg_linje al;
 
 -- select * from topo_rein.reindrift_anlegg_topojson_linje_v ;
@@ -2135,6 +2287,9 @@ CASE
 	AND rl.column_name = 'reinbeitebruker_id')
 	THEN true
 	
+	WHEN  reinbeitebruker_id is null
+	THEN true
+
 	ELSE false 
 END AS "editable"
 from topo_rein.reindrift_anlegg_punkt al;
