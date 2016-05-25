@@ -50,14 +50,14 @@ update_fields_t text[];
 surface_layer_name text;
 
 BEGIN
-	
+
 	-- find border layer id
 	border_layer_id := border_topo_info.border_layer_id;
-	RAISE NOTICE 'border_layer_id   %',  border_layer_id ;
+	RAISE NOTICE 'topo_update.update_domain_surface_layer border_layer_id   %',  border_layer_id ;
 	
 	-- find surface layer id
 	surface_layer_id := surface_topo_info.border_layer_id;
-	RAISE NOTICE 'surface_layer_id   %',  surface_layer_id ;
+	RAISE NOTICE 'topo_update.update_domain_surface_layer surface_layer_id   %',  surface_layer_id ;
 
 	surface_layer_name := surface_topo_info.layer_schema_name || '.' || surface_topo_info.layer_table_name;
     
@@ -170,15 +170,20 @@ BEGIN
 	EXECUTE command_string;
 	
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-	RAISE NOTICE 'Number rows to be reused in org table %',  num_rows_affected;
+	RAISE NOTICE 'topo_update.update_domain_surface_layer Number rows to be reused in org table %',  num_rows_affected;
 
+	-- If no rows are updated the user don't have update rights
+	IF num_rows_affected = 0 AND (SELECT count(*) FROM old_rows_be_reused)::int > 0 THEN
+		RETURN;	
+	END IF;
+	
 	SELECT (num_rows_affected - (SELECT count(*) FROM new_surface_data)) INTO num_rows_to_delete;
 
-	RAISE NOTICE 'Number rows to be added in org table  %',  count(*) FROM new_surface_data;
+	RAISE NOTICE 'topo_update.update_domain_surface_layer Number rows to be added in org table  %',  count(*) FROM new_surface_data;
 
-	RAISE NOTICE 'Number rows to be deleted in org table  %',  num_rows_to_delete;
+	RAISE NOTICE 'topo_update.update_domain_surface_layer Number rows to be deleted in org table  %',  num_rows_to_delete;
 
-	-- When overwrite we may have more rows in the org table so we may need do delete the rows not needed 
+	-- When overwrite we may have more rows in the org table so we may need do delete the rows that are not needed 
 	-- from  topo_rein.arstidsbeite_var_flate, we the just delete the left overs 
 	command_string :=  format('DELETE FROM %I.%I
 	WHERE ctid IN (
@@ -192,12 +197,12 @@ BEGIN
     surface_topo_info.layer_schema_name,
     surface_topo_info.layer_table_name,
     num_rows_to_delete
-  );  
+  	);  
 	EXECUTE command_string;
 	
-
 	
-	-- Also rows that could be reused, since I was not able to update those.
+	-- Delete rows, also rows that could be reused, since I was not able to update those.
+	-- TODO fix update of old rows instead of using delete
 	DROP TABLE IF EXISTS new_rows_updated_in_org_table;
 	
 	command_string :=  format('CREATE TEMP TABLE new_rows_updated_in_org_table AS (SELECT * FROM %I.%I  limit 0);
@@ -213,11 +218,13 @@ BEGIN
     surface_topo_info.layer_table_name,
     surface_topo_info.layer_schema_name,
     surface_topo_info.layer_table_name
-  );  
+  	);  
 	EXECUTE command_string;
 	
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-	RAISE NOTICE 'Number old rows to deleted table %',  num_rows_affected;
+	RAISE NOTICE 'topo_update.update_domain_surface_layer Number old rows to deleted in table %',  num_rows_affected;
+	
+	
 
 
 	-- Only used for debug
@@ -251,12 +258,11 @@ BEGIN
     surface_topo_info.layer_schema_name,
     surface_topo_info.layer_table_name,
     surface_topo_info.layer_feature_column
-  );  
+  	);  
 	EXECUTE command_string;
 	
-
-
-		-- Only used for debug
+	
+	-- Only used for debug
 	IF add_debug_tables = 1 THEN
 		-- list new objects added reused
 		-- get new objects created from topo_update.create_edge_surfaces
@@ -270,32 +276,23 @@ BEGIN
   -- Extract name of fields with not-null values and append the table prefix n.:
   -- Only update json value that exits 
   IF (SELECT count(*) FROM old_rows_attributes)::int > 0 THEN
-	  SELECT
+  
+ 	 	RAISE NOTICE 'topo_update.update_domain_surface_layer num rows in old attrbuttes: %', (SELECT count(*) FROM old_rows_attributes)::int;
+	
+  		SELECT
 	  	array_agg(quote_ident(update_column)) AS update_fields,
 	  	array_agg('c.'||quote_ident(update_column)) as update_fields_t
-	  INTO
-	  	update_fields,
-	  	update_fields_t
-	  FROM (
-	   SELECT distinct(key) AS update_column
-	   FROM old_rows_attributes t, json_each_text(to_json((t)))  
-	   WHERE key != 'id' AND key != 'foo_geo'  AND key != 'omrade'  
-	  ) AS keys;
-	
-	  RAISE NOTICE 'Extract name of not-null fields-c: %', update_fields_t;
-	  RAISE NOTICE 'Extract name of not-null fields-c: %', update_fields;
-	
-	-- update the newly inserted rows with attribute values based from old_rows_table
---	    UPDATE topo_rein.arstidsbeite_var_flate a
---	       SET 
---	       reinbeitebruker_id  = c.reinbeitebruker_id, 
---	       reindrift_sesongomrade_kode = c.reindrift_sesongomrade_kode,
---	       felles_egenskaper = c.felles_egenskaper
---	       FROM new_rows_added_in_org_table b, 
---	       old_rows_attributes c
---	       WHERE 
---	    a.id = b.id AND                           
---	    ST_Intersects(c.foo_geo,ST_pointOnSurface(a.omrade::geometry));
+		  INTO
+		  	update_fields,
+		  	update_fields_t
+		  FROM (
+		   SELECT distinct(key) AS update_column
+		   FROM old_rows_attributes t, json_each_text(to_json((t)))  
+		   WHERE key != 'id' AND key != 'foo_geo'  AND key != 'omrade'  
+		  ) AS keys;
+		
+		  RAISE NOTICE 'topo_update.update_domain_surface_layer Extract name of not-null fields-c: %', update_fields_t;
+		  RAISE NOTICE 'topo_update.update_domain_surface_layer Extract name of not-null fields-c: %', update_fields;
 		
 	    command_string := format(
 	    'UPDATE %I.%I a
@@ -312,8 +309,14 @@ BEGIN
 	    array_to_string(update_fields_t, ','),
 	    surface_topo_info.layer_feature_column
 	    );
-		RAISE NOTICE 'command_string %', command_string;
+		RAISE NOTICE 'topo_update.update_domain_surface_layer command_string %', command_string;
 		EXECUTE command_string;
+		
+		GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
+
+		RAISE NOTICE 'topo_update.update_domain_surface_layer no old attribute values found  %',  num_rows_affected;
+
+	
 	END IF;
 
     
@@ -326,65 +329,60 @@ BEGIN
   FROM new_rows_added_in_org_table a);
 
 
- IF (SELECT count(*) FROM touching_surface)::int > 0 THEN
+	IF (SELECT count(*) FROM touching_surface)::int > 0 THEN
 
-   SELECT
-	  	array_agg(quote_ident(update_column)) AS update_fields,
-	  	array_agg('d.'||quote_ident(update_column)) as update_fields_t
-	  INTO
-	  	update_fields,
-	  	update_fields_t
-	  FROM (
-	   SELECT distinct(key) AS update_column
-	   FROM new_rows_added_in_org_table t, json_each_text(to_json((t)))  
-	   WHERE key != 'id' AND key != 'foo_geo' AND key != 'omrade' AND key != 'felles_egenskaper'
-	  ) AS keys;
+	   SELECT
+		  	array_agg(quote_ident(update_column)) AS update_fields,
+		  	array_agg('d.'||quote_ident(update_column)) as update_fields_t
+		  INTO
+		  	update_fields,
+		  	update_fields_t
+		  FROM (
+		   SELECT distinct(key) AS update_column
+		   FROM new_rows_added_in_org_table t, json_each_text(to_json((t)))  
+		   WHERE key != 'id' AND key != 'foo_geo' AND key != 'omrade' AND key != 'felles_egenskaper'
+		  ) AS keys;
+		
+		  RAISE NOTICE 'topo_update.update_domain_surface_layer Extract name of not-null fields-a: %', update_fields_t;
+		  RAISE NOTICE 'topo_update.update_domain_surface_layer Extract name of not-null fields-a: %', update_fields;
+		
+	   	-- update the newly inserted rows with attribute values based from old_rows_table
+	    -- find the rows toubching
+	  	DROP TABLE IF EXISTS touching_surface;
+		CREATE TEMP TABLE touching_surface AS 
+		(SELECT topo_update.touches(surface_layer_name,a.id,surface_topo_info) as id 
+		FROM new_rows_added_in_org_table a);
 	
-	  RAISE NOTICE 'Extract name of not-null fields-a: %', update_fields_t;
-	  RAISE NOTICE 'Extract name of not-null fields-a: %', update_fields;
 	
-   	-- update the newly inserted rows with attribute values based from old_rows_table
-    -- find the rows toubching
-  	DROP TABLE IF EXISTS touching_surface;
-	CREATE TEMP TABLE touching_surface AS 
-	(SELECT topo_update.touches(surface_layer_name,a.id,surface_topo_info) as id 
-	FROM new_rows_added_in_org_table a);
-
---	UPDATE topo_rein.arstidsbeite_var_flate a
---	SET reinbeitebruker_id  = d.reinbeitebruker_id, 
---	reindrift_sesongomrade_kode = d.reindrift_sesongomrade_kode,
---	felles_egenskaper = d.felles_egenskaper
---	FROM 
---	topo_rein.arstidsbeite_var_flate d,
---	touching_surface b
---	WHERE 
---	a.reinbeitebruker_id is null AND
---	d.id = b.id ;
-
-	-- we set values with null row that can pick up a value from a neighbor.
-	-- NB! this onlye work if new rows dont' have any defalut value
-	-- TODO use a test based on new rows added and not a test on null values
-    command_string := format('UPDATE %I.%I a
-	SET 
-		(%s) = (%s) 
-	FROM 
-	%I.%I d,
-	touching_surface b
-	WHERE 
-	a.%I is null AND
-	d.id = b.id',
-    surface_topo_info.layer_schema_name,
-    surface_topo_info.layer_table_name,
-    array_to_string(update_fields, ','),
-    array_to_string(update_fields_t, ','),
-    surface_topo_info.layer_schema_name,
-    surface_topo_info.layer_table_name,
-    'reinbeitebruker_id');
-	RAISE NOTICE 'command_string %', command_string;
-	EXECUTE command_string;
-
-END IF;
+		-- we set values with null row that can pick up a value from a neighbor.
+		-- NB! this onlye work if new rows dont' have any defalut value
+		-- TODO use a test based on new rows added and not a test on null values
+	    command_string := format('UPDATE %I.%I a
+		SET 
+			(%s) = (%s) 
+		FROM 
+		%I.%I d,
+		touching_surface b
+		WHERE 
+		a.%I is null AND
+		d.id = b.id',
+	    surface_topo_info.layer_schema_name,
+	    surface_topo_info.layer_table_name,
+	    array_to_string(update_fields, ','),
+	    array_to_string(update_fields_t, ','),
+	    surface_topo_info.layer_schema_name,
+	    surface_topo_info.layer_table_name,
+	    'reinbeitebruker_id');
+		RAISE NOTICE 'topo_update.update_domain_surface_layer command_string %', command_string;
+		EXECUTE command_string;
 	
+		GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
+	
+		RAISE NOTICE 'topo_update.update_domain_surface_layer Number num_rows_affected  %',  num_rows_affected;
+		
+	END IF;
+
+
 	RETURN QUERY SELECT a.surface_topo::topogeometry as t FROM new_surface_data a;
 
 	
