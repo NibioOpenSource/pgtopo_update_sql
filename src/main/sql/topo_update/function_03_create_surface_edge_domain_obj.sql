@@ -73,7 +73,7 @@ BEGIN
 	-- save a copy of the input geometry
 	org_geo_in := json_input_structure.input_geo;
 	geo_in := json_input_structure.input_geo;
-	RAISE NOTICE 'The input as it used before check/fixed %',  ST_AsText(geo_in);
+	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj The input as it used before check/fixed %',  ST_AsText(geo_in);
 
 		-- Only used for debug
 	IF add_debug_tables = 1 THEN
@@ -88,17 +88,17 @@ BEGIN
 		-- This is probably a crossing line so we try to build a surface
 		BEGIN
 			line_intersection_result := ST_BuildArea(ST_UnaryUnion(geo_in))::geometry;
-			RAISE NOTICE 'Line intersection result is %', ST_AsText(line_intersection_result);
+			RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Line intersection result is %', ST_AsText(line_intersection_result);
 			geo_in := ST_ExteriorRing(line_intersection_result);
 		EXCEPTION WHEN others THEN
-		 	RAISE NOTICE 'Error code: %', SQLSTATE;
-      		RAISE NOTICE 'Error message: %', SQLERRM;
-			RAISE NOTICE 'Failed to to use line intersection result is %, try buffer', ST_AsText(line_intersection_result);
+		 	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Error code: %', SQLSTATE;
+      		RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Error message: %', SQLERRM;
+			RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Failed to to use line intersection result is %, try buffer', ST_AsText(line_intersection_result);
 			geo_in := ST_ExteriorRing(ST_Buffer(line_intersection_result,0.00000000001));
 		END;
 		
 		-- check the object after a fix
-		RAISE NOTICE 'Fixed a non simple line to be valid simple line by using by buildArea %',  geo_in;
+		RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Fixed a non simple line to be valid simple line by using by buildArea %',  geo_in;
 	ELSIF NOT ST_IsClosed(geo_in) THEN
 		-- If this is not closed just check that it intersects two times with a exting border
 		-- TODO make more precice check that only used edges that in varbeite surface
@@ -107,14 +107,14 @@ BEGIN
 		
 		command_string := format('select ST_Union(ST_Intersection(%L,e.geom)) FROM %I.edge_data e WHERE ST_Intersects(%L,e.geom)',
   		geo_in,border_topo_info.topology_name,geo_in);
-  		RAISE NOTICE 'command_string %', command_string;
+  		RAISE NOTICE 'topo_update.create_surface_edge_domain_obj command_string %', command_string;
   		EXECUTE command_string INTO line_intersection_result;
 
-		RAISE NOTICE 'Line intersection result is %', ST_AsText(line_intersection_result);
+		RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Line intersection result is %', ST_AsText(line_intersection_result);
 
 		num_edge_intersects :=  (SELECT ST_NumGeometries(line_intersection_result))::int;
 		
-		RAISE NOTICE 'Found a non closed linestring does intersect % times, with any borders by using buildArea %', num_edge_intersects, geo_in;
+		RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Found a non closed linestring does intersect % times, with any borders by using buildArea %', num_edge_intersects, geo_in;
 		IF num_edge_intersects is null OR num_edge_intersects < 2 THEN
 			geo_in := ST_ExteriorRing(ST_BuildArea(ST_UnaryUnion(ST_AddPoint(geo_in, ST_StartPoint(geo_in)))));
 		ELSEIF num_edge_intersects > 2 THEN
@@ -126,7 +126,7 @@ BEGIN
 		INSERT INTO topo_rein.create_surface_edge_domain_obj_t0(geo_in,IsSimple,IsClosed) VALUES(geo_in,St_IsSimple(geo_in),St_IsSimple(geo_in));
 	END IF;
 
-	RAISE NOTICE 'The input as it used after check/fixed %',  ST_AsText(geo_in);
+	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj The input as it used after check/fixed %',  ST_AsText(geo_in);
 	
 	IF geo_in IS NULL THEN
 		RAISE EXCEPTION 'The geo generated from geo_in is null %', org_geo_in;
@@ -136,14 +136,14 @@ BEGIN
 	
 	-- create the new topo object for the egde layer, this edges will be used by the new surface objects later
 	new_border_data := topo_update.create_surface_edge(geo_in,border_topo_info);
-	RAISE NOTICE 'The new topo object created for based on the input geo % in table %.%',  new_border_data, border_topo_info.layer_schema_name,border_topo_info.layer_table_name;
+	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj The new topo object created for based on the input geo % in table %.%',  new_border_data, border_topo_info.layer_schema_name,border_topo_info.layer_table_name;
 	
 	-- perpare table for rows to be returned to the caller 
 	DROP TABLE IF EXISTS create_surface_edge_domain_obj_r1_r; 
 	CREATE TEMP TABLE create_surface_edge_domain_obj_r1_r(id int, id_type text) ;
 	
 	
-	RAISE NOTICE 'Step::::::::::::::::: 2';
+	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Step::::::::::::::::: 2';
 
 	-- Create temporary table to receive the new record
 	command_string := topo_update.create_temp_tbl_as(
@@ -157,7 +157,7 @@ BEGIN
     INSERT INTO ttt2_new_topo_rows_in_org_table
 	SELECT * FROM json_populate_record(null::ttt2_new_topo_rows_in_org_table,json_input_structure.json_properties);
 
-  RAISE NOTICE 'Added all attributes to ttt2_new_topo_rows_in_org_table';
+  RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Added all attributes to ttt2_new_topo_rows_in_org_table';
 
   
   
@@ -171,7 +171,7 @@ BEGIN
     
   EXECUTE command_string;
 
-  RAISE NOTICE 'Set felles_egenskaper field';
+  RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Set felles_egenskaper field';
 
   -- Extract name of fields with not-null values:
   SELECT array_agg(quote_ident(key))
@@ -179,7 +179,7 @@ BEGIN
    WHERE value IS NOT NULL
     INTO not_null_fields;
 
-  RAISE NOTICE 'Extract name of not-null fields: %', not_null_fields;
+  RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Extract name of not-null fields: %', not_null_fields;
 
   -- Copy full record from temp table to actual table and
   -- update temp table with actual table values
@@ -195,12 +195,11 @@ ttt2_new_topo_rows_in_org_table SELECT * FROM inserted ',
     );
 	EXECUTE command_string;
 
-	RAISE NOTICE 'Step::::::::::::::::: 3';
+	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Step::::::::::::::::: 3';
 	
 	
 	INSERT INTO create_surface_edge_domain_obj_r1_r(id,id_type)
 	SELECT id, 'L' as id_type FROM ttt2_new_topo_rows_in_org_table;
-
 	
 	-- create the new topo object for the surfaces
 	DROP TABLE IF EXISTS new_surface_data_for_edge; 
@@ -210,14 +209,14 @@ ttt2_new_topo_rows_in_org_table SELECT * FROM inserted ',
 	(SELECT topo::topogeometry AS surface_topo, json_input_structure.sosi_felles_egenskaper_flate AS felles_egenskaper_flate 
 	FROM topo_update.create_edge_surfaces(surface_topo_info,border_topo_info,new_border_data,geo_in,json_input_structure.sosi_felles_egenskaper_flate));
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-	RAISE NOTICE 'Number of topo surfaces added to table new_surface_data_for_edge   %',  num_rows_affected;
+	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Number of topo surfaces added to table new_surface_data_for_edge   %',  num_rows_affected;
 	
 	-- clean up old surface and return a list of the objects
 	DROP TABLE IF EXISTS res_from_update_domain_surface_layer; 
 	CREATE TEMP TABLE res_from_update_domain_surface_layer AS 
 	(SELECT topo::topogeometry AS surface_topo FROM topo_update.update_domain_surface_layer(surface_topo_info,border_topo_info,'new_surface_data_for_edge'));
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-	RAISE NOTICE 'Number_of_rows removed from topo_update.update_domain_surface_layer   %',  num_rows_affected;
+	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Number_of_rows removed from topo_update.update_domain_surface_layer   %',  num_rows_affected;
 
 	-- Only used for debug
 	IF add_debug_tables = 1 THEN
@@ -246,7 +245,7 @@ ttt2_new_topo_rows_in_org_table SELECT * FROM inserted ',
 		'WHERE (new.surface_topo).id = (tg.omrade).id AND ' || 
 		'ST_intersects(ST_PointOnSurface((new.surface_topo)::geometry), ST_MakePolygon(%1$L))'
 		,geo_in);
-    	RAISE NOTICE 'A closed objects only return objects in %', command_string;
+    	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj A closed objects only return objects in %', command_string;
   	ELSE	
 		command_string := 'INSERT INTO create_surface_edge_domain_obj_r1_r(id,id_type) ' ||
 		' SELECT tg.id AS id, ''S'' AS id_type FROM ' || 
@@ -258,6 +257,7 @@ ttt2_new_topo_rows_in_org_table SELECT * FROM inserted ',
 
 	command_string := 'SELECT json_agg(row_to_json(t.*))::text FROM create_surface_edge_domain_obj_r1_r AS t';
 
+	
     RETURN QUERY EXECUTE command_string;
     
 END;
