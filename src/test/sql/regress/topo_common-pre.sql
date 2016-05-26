@@ -370,6 +370,19 @@ id serial PRIMARY KEY not null,
 reinbeitebruker_id varchar(3) CHECK (reinbeitebruker_id IN ('XI','ZA','ZB','ZC','ZD','ZE','ZF','ØG','UW','UX','UY','UZ','ØA','ØB','ØC','ØE','ØF','ZG','ZH','ZJ','ZS','ZL','ZÅ','YA','YB','YC','YD','YE','YF','YG','XM','XR','XT','YH','YI','YJ','YK','YL','YM','YN','YP','YX','YR','YS','YT','YU','YV','YW','YY','XA','XD','XE','XG','XH','XJ','XK','XL','XM','XR','XS','XT','XN','XØ','XP','XU','XV','XW','XZ','XX','XY','WA','WB','WD','WF','WK','WL','WN','WP','WR','WS','WX','WZ','VA','VF','VG','VJ','VM','VR','YQA','YQB','YQC','ZZ','RR','ZQA')), 
 
 
+-- Since we in sosi can have multiple reinbeitebruker_id, this list contains the origninal list from the sosi file
+-- The format is a simple XI,ZA,ZF, but we could also have used an array (text[]), but since we are not sure about how this field is used
+-- we use a simple comma separated text for now
+alle_reinbeitebr_id varchar not null default '',
+
+-- This is flag used indicate the status of this record. The rules for how to use this flag is not decided yet.
+-- Here is a list of the current states.
+-- 0: Ukjent (uknown)
+-- 1: Godkjent 
+-- 10: Endret
+status int not null default 0,
+
+
 -- identifiserer hvorvidt reinbeiteområdet er egnet og brukes til vårbeite, høstbeite, etc 
 -- Definition -- identifies whether the reindeer pasture area is suitable and is being used for spring grazing, autumn grazing, etc.
 -- Reduces this to only vårbeite I og vårbeite II, because this types form one single map
@@ -562,6 +575,18 @@ id serial PRIMARY KEY not null,
 reinbeitebruker_id varchar(3) CHECK (reinbeitebruker_id IN ('XI','ZA','ZB','ZC','ZD','ZE','ZF','ØG','UW','UX','UY','UZ','ØA','ØB','ØC','ØE','ØF','ZG','ZH','ZJ','ZS','ZL','ZÅ','YA','YB','YC','YD','YE','YF','YG','XM','XR','XT','YH','YI','YJ','YK','YL','YM','YN','YP','YX','YR','YS','YT','YU','YV','YW','YY','XA','XD','XE','XG','XH','XJ','XK','XL','XM','XR','XS','XT','XN','XØ','XP','XU','XV','XW','XZ','XX','XY','WA','WB','WD','WF','WK','WL','WN','WP','WR','WS','WX','WZ','VA','VF','VG','VJ','VM','VR','YQA','YQB','YQC','ZZ','RR','ZQA')), 
 
 
+-- Since we in sosi can have multiple reinbeitebruker_id, this list contains the origninal list from the sosi file
+-- The format is a simple XI,ZA,ZF, but we could also have used an array (text[]), but since we are not sure about how this field is used
+-- we use a simple comma separated text for now
+alle_reinbeitebr_id varchar not null default '',
+
+-- This is flag used indicate the status of this record. The rules for how to use this flag is not decided yet.
+-- Here is a list of the current states.
+-- 0: Ukjent (uknown)
+-- 1: Godkjent 
+-- 10: Endret
+status int not null default 0,
+
 -- identifiserer hvorvidt reinbeiteområdet er egnet og brukes til vårbeite, høstbeite, etc 
 -- Definition -- identifies whether the reindeer pasture area is suitable and is being used for spring grazing, autumn grazing, etc.
 -- Reduces this to only vårbeite I og vårbeite II, because this types form one single map
@@ -753,6 +778,18 @@ reinbeitebruker_id varchar(3) CHECK (reinbeitebruker_id IN ('XI','ZA','ZB','ZC',
 -- it's better to use a code here, because that is what is descrbeied in the spec
 reindrift_sesongomrade_kode int CHECK ( reindrift_sesongomrade_kode > 4 AND reindrift_sesongomrade_kode < 7), 
 
+-- Since we in sosi can have multiple reinbeitebruker_id, this list contains the origninal list from the sosi file
+-- The format is a simple XI,ZA,ZF, but we could also have used an array (text[]), but since we are not sure about how this field is used
+-- we use a simple comma separated text for now
+alle_reinbeitebr_id varchar not null default '',
+
+-- This is flag used indicate the status of this record. The rules for how to use this flag is not decided yet.
+-- Here is a list of the current states.
+-- 0: Ukjent (uknown)
+-- 1: Godkjent 
+-- 10: Endret
+status int not null default 0,
+
 -- contains felles egenskaper for rein
 -- should this be moved to the border, because the is just a result drawing border lines ??
 -- what about the value the for indentfikajons ?
@@ -926,6 +963,18 @@ id serial PRIMARY KEY not null,
 -- Definition -- indicates which reindeer pasture district uses the pasture area
 reinbeitebruker_id varchar(3) CHECK (reinbeitebruker_id IN ('XI','ZA','ZB','ZC','ZD','ZE','ZF','ØG','UW','UX','UY','UZ','ØA','ØB','ØC','ØE','ØF','ZG','ZH','ZJ','ZS','ZL','ZÅ','YA','YB','YC','YD','YE','YF','YG','XM','XR','XT','YH','YI','YJ','YK','YL','YM','YN','YP','YX','YR','YS','YT','YU','YV','YW','YY','XA','XD','XE','XG','XH','XJ','XK','XL','XM','XR','XS','XT','XN','XØ','XP','XU','XV','XW','XZ','XX','XY','WA','WB','WD','WF','WK','WL','WN','WP','WR','WS','WX','WZ','VA','VF','VG','VJ','VM','VR','YQA','YQB','YQC','ZZ','RR','ZQA')), 
 
+
+-- Since we in sosi can have multiple reinbeitebruker_id, this list contains the origninal list from the sosi file
+-- The format is a simple XI,ZA,ZF, but we could also have used an array (text[]), but since we are not sure about how this field is used
+-- we use a simple comma separated text for now
+alle_reinbeitebr_id varchar not null default '',
+
+-- This is flag used indicate the status of this record. The rules for how to use this flag is not decided yet.
+-- Here is a list of the current states.
+-- 0: Ukjent (uknown)
+-- 1: Godkjent 
+-- 10: Endret
+status int not null default 0,
 
 -- identifiserer hvorvidt reinbeiteområdet er egnet og brukes til vårbeite, høstbeite, etc 
 -- Definition -- identifies whether the reindeer pasture area is suitable and is being used for spring grazing, autumn grazing, etc.
@@ -1118,6 +1167,18 @@ reinbeitebruker_id varchar(3) CHECK (reinbeitebruker_id IN ('XI','ZA','ZB','ZC',
 -- it's better to use a code here, because that is what is descrbeied in the spec
 reindrift_sesongomrade_kode int CHECK ( reindrift_sesongomrade_kode > 8 AND reindrift_sesongomrade_kode < 11), 
 
+-- Since we in sosi can have multiple reinbeitebruker_id, this list contains the origninal list from the sosi file
+-- The format is a simple XI,ZA,ZF, but we could also have used an array (text[]), but since we are not sure about how this field is used
+-- we use a simple comma separated text for now
+alle_reinbeitebr_id varchar not null default '',
+
+-- This is flag used indicate the status of this record. The rules for how to use this flag is not decided yet.
+-- Here is a list of the current states.
+-- 0: Ukjent (uknown)
+-- 1: Godkjent 
+-- 10: Endret
+status int not null default 0,
+
 -- contains felles egenskaper for rein
 -- should this be moved to the border, because the is just a result drawing border lines ??
 -- what about the value the for indentfikajons ?
@@ -1245,6 +1306,19 @@ saksbehandler varchar,
 -- TODO add not null
 reinbeitebruker_id varchar(3) CHECK (reinbeitebruker_id IN ('XI','ZA','ZB','ZC','ZD','ZE','ZF','ØG','UW','UX','UY','UZ','ØA','ØB','ØC','ØE','ØF','ZG','ZH','ZJ','ZS','ZL','ZÅ','YA','YB','YC','YD','YE','YF','YG','XM','XR','XT','YH','YI','YJ','YK','YL','YM','YN','YP','YX','YR','YS','YT','YU','YV','YW','YY','XA','XD','XE','XG','XH','XJ','XK','XL','XM','XR','XS','XT','XN','XØ','XP','XU','XV','XW','XZ','XX','XY','WA','WB','WD','WF','WK','WL','WN','WP','WR','WS','WX','WZ','VA','VF','VG','VJ','VM','VR','YQA','YQB','YQC','ZZ','RR','ZQA')), 
 
+
+-- Since we in sosi can have multiple reinbeitebruker_id, this list contains the origninal list from the sosi file
+-- The format is a simple XI,ZA,ZF, but we could also have used an array (text[]), but since we are not sure about how this field is used
+-- we use a simple comma separated text for now
+alle_reinbeitebr_id varchar not null default '',
+
+-- This is flag used indicate the status of this record. The rules for how to use this flag is not decided yet.
+-- Here is a list of the current states.
+-- 0: Ukjent (uknown)
+-- 1: Godkjent 
+-- 10: Endret
+status int not null default 0,
+
 -- spesifikasjon av type teknisk anlegg som er etablert i forbindelse med utmarksbeite 
 -- TODO add not null
 reindriftsanleggstype int CHECK ( (reindriftsanleggstype > 0 AND reindriftsanleggstype < 8) or (reindriftsanleggstype=12)) 
@@ -1345,6 +1419,19 @@ saksbehandler varchar,
 -- angir hvilket reinbeitedistrikt som bruker beiteområdet 
 -- Definition -- indicates which reindeer pasture district uses the pasture area
 reinbeitebruker_id varchar(3) CHECK (reinbeitebruker_id IN ('XI','ZA','ZB','ZC','ZD','ZE','ZF','ØG','UW','UX','UY','UZ','ØA','ØB','ØC','ØE','ØF','ZG','ZH','ZJ','ZS','ZL','ZÅ','YA','YB','YC','YD','YE','YF','YG','XM','XR','XT','YH','YI','YJ','YK','YL','YM','YN','YP','YX','YR','YS','YT','YU','YV','YW','YY','XA','XD','XE','XG','XH','XJ','XK','XL','XM','XR','XS','XT','XN','XØ','XP','XU','XV','XW','XZ','XX','XY','WA','WB','WD','WF','WK','WL','WN','WP','WR','WS','WX','WZ','VA','VF','VG','VJ','VM','VR','YQA','YQB','YQC','ZZ','RR','ZQA')), 
+
+
+-- Since we in sosi can have multiple reinbeitebruker_id, this list contains the origninal list from the sosi file
+-- The format is a simple XI,ZA,ZF, but we could also have used an array (text[]), but since we are not sure about how this field is used
+-- we use a simple comma separated text for now
+alle_reinbeitebr_id varchar not null default '',
+
+-- This is flag used indicate the status of this record. The rules for how to use this flag is not decided yet.
+-- Here is a list of the current states.
+-- 0: Ukjent (uknown)
+-- 1: Godkjent 
+-- 10: Endret
+status int not null default 0,
 
 -- spesifikasjon av type teknisk anlegg som er etablert i forbindelse med utmarksbeite 
 reindriftsanleggstype int CHECK (reindriftsanleggstype > 9 AND reindriftsanleggstype < 21) 
@@ -1460,7 +1547,20 @@ saksbehandler varchar,
 -- angir hvilket reinbeitedistrikt som bruker beiteområdet 
 -- Definition -- indicates which reindeer pasture district uses the pasture area
 -- TODO add not null
-reinbeitebruker_id varchar(3) CHECK (reinbeitebruker_id IN ('XI','ZA','ZB','ZC','ZD','ZE','ZF','ØG','UW','UX','UY','UZ','ØA','ØB','ØC','ØE','ØF','ZG','ZH','ZJ','ZS','ZL','ZÅ','YA','YB','YC','YD','YE','YF','YG','XM','XR','XT','YH','YI','YJ','YK','YL','YM','YN','YP','YX','YR','YS','YT','YU','YV','YW','YY','XA','XD','XE','XG','XH','XJ','XK','XL','XM','XR','XS','XT','XN','XØ','XP','XU','XV','XW','XZ','XX','XY','WA','WB','WD','WF','WK','WL','WN','WP','WR','WS','WX','WZ','VA','VF','VG','VJ','VM','VR','YQA','YQB','YQC','ZZ','RR','ZQA'))
+reinbeitebruker_id varchar(3) CHECK (reinbeitebruker_id IN ('XI','ZA','ZB','ZC','ZD','ZE','ZF','ØG','UW','UX','UY','UZ','ØA','ØB','ØC','ØE','ØF','ZG','ZH','ZJ','ZS','ZL','ZÅ','YA','YB','YC','YD','YE','YF','YG','XM','XR','XT','YH','YI','YJ','YK','YL','YM','YN','YP','YX','YR','YS','YT','YU','YV','YW','YY','XA','XD','XE','XG','XH','XJ','XK','XL','XM','XR','XS','XT','XN','XØ','XP','XU','XV','XW','XZ','XX','XY','WA','WB','WD','WF','WK','WL','WN','WP','WR','WS','WX','WZ','VA','VF','VG','VJ','VM','VR','YQA','YQB','YQC','ZZ','RR','ZQA')),
+
+
+-- Since we in sosi can have multiple reinbeitebruker_id, this list contains the origninal list from the sosi file
+-- The format is a simple XI,ZA,ZF, but we could also have used an array (text[]), but since we are not sure about how this field is used
+-- we use a simple comma separated text for now
+alle_reinbeitebr_id varchar not null default '',
+
+-- This is flag used indicate the status of this record. The rules for how to use this flag is not decided yet.
+-- Here is a list of the current states.
+-- 0: Ukjent (uknown)
+-- 1: Godkjent 
+-- 10: Endret
+status int not null default 0
 
 );
 
@@ -1603,6 +1703,18 @@ id serial PRIMARY KEY not null,
 -- angir hvilket reinbeitedistrikt som bruker beiteområdet 
 -- Definition -- indicates which reindeer pasture district uses the pasture area
 reinbeitebruker_id varchar(3) CHECK (reinbeitebruker_id IN ('XI','ZA','ZB','ZC','ZD','ZE','ZF','ØG','UW','UX','UY','UZ','ØA','ØB','ØC','ØE','ØF','ZG','ZH','ZJ','ZS','ZL','ZÅ','YA','YB','YC','YD','YE','YF','YG','XM','XR','XT','YH','YI','YJ','YK','YL','YM','YN','YP','YX','YR','YS','YT','YU','YV','YW','YY','XA','XD','XE','XG','XH','XJ','XK','XL','XM','XR','XS','XT','XN','XØ','XP','XU','XV','XW','XZ','XX','XY','WA','WB','WD','WF','WK','WL','WN','WP','WR','WS','WX','WZ','VA','VF','VG','VJ','VM','VR','YQA','YQB','YQC','ZZ','RR','ZQA')), 
+
+-- Since we in sosi can have multiple reinbeitebruker_id, this list contains the origninal list from the sosi file
+-- The format is a simple XI,ZA,ZF, but we could also have used an array (text[]), but since we are not sure about how this field is used
+-- we use a simple comma separated text for now
+alle_reinbeitebr_id varchar not null default '',
+
+-- This is flag used indicate the status of this record. The rules for how to use this flag is not decided yet.
+-- Here is a list of the current states.
+-- 0: Ukjent (uknown)
+-- 1: Godkjent 
+-- 10: Endret
+status int not null default 0,
 
 
 -- identifiserer hvorvidt reinbeiteområdet er egnet og brukes til vårbeite, høstbeite, etc 
@@ -1785,6 +1897,19 @@ id serial PRIMARY KEY not null,
 -- angir hvilket reinbeitedistrikt som bruker beiteområdet 
 -- Definition -- indicates which reindeer pasture district uses the pasture area
 reinbeitebruker_id varchar(3) CHECK (reinbeitebruker_id IN ('XI','ZA','ZB','ZC','ZD','ZE','ZF','ØG','UW','UX','UY','UZ','ØA','ØB','ØC','ØE','ØF','ZG','ZH','ZJ','ZS','ZL','ZÅ','YA','YB','YC','YD','YE','YF','YG','XM','XR','XT','YH','YI','YJ','YK','YL','YM','YN','YP','YX','YR','YS','YT','YU','YV','YW','YY','XA','XD','XE','XG','XH','XJ','XK','XL','XM','XR','XS','XT','XN','XØ','XP','XU','XV','XW','XZ','XX','XY','WA','WB','WD','WF','WK','WL','WN','WP','WR','WS','WX','WZ','VA','VF','VG','VJ','VM','VR','YQA','YQB','YQC','ZZ','RR','ZQA')), 
+
+
+-- Since we in sosi can have multiple reinbeitebruker_id, this list contains the origninal list from the sosi file
+-- The format is a simple XI,ZA,ZF, but we could also have used an array (text[]), but since we are not sure about how this field is used
+-- we use a simple comma separated text for now
+alle_reinbeitebr_id varchar not null default '',
+
+-- This is flag used indicate the status of this record. The rules for how to use this flag is not decided yet.
+-- Here is a list of the current states.
+-- 0: Ukjent (uknown)
+-- 1: Godkjent 
+-- 10: Endret
+status int not null default 0,
 
 
 -- contains felles egenskaper for rein
