@@ -2026,6 +2026,8 @@ reinbeitebruker_id,
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
 omrade ,
+alle_reinbeitebr_id, 
+status,
 CASE 
 	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
@@ -2060,6 +2062,8 @@ reinbeitebruker_id,
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
 omrade,
+alle_reinbeitebr_id, 
+status,
 CASE 
 	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
@@ -2111,6 +2115,8 @@ reinbeitebruker_id,
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
 omrade,
+alle_reinbeitebr_id, 
+status,
 CASE 
 	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
@@ -2164,7 +2170,7 @@ from topo_rein_sysdata_rvr.face;
 
 --SELECT ST_AStext(ST_union(mbr)) from topo_rein_sysdata_rvr.face;
 
---select * from topo_rein.arstidsbeite_var_mbrs_v-- DROP VIEW IF EXISTS topo_rein.arstidsbeite_var_topojson_flate_v cascade ;
+--select * from topo_rein.arstidsbeite_var_mbrs_vDROP VIEW IF EXISTS topo_rein.arstidsbeite_var_topojson_flate_v cascade ;
 
 
 CREATE OR REPLACE VIEW topo_rein.arstidsbeite_var_topojson_flate_v 
@@ -2178,6 +2184,8 @@ reinbeitebruker_id,
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
 omrade,
+alle_reinbeitebr_id, 
+status,
 CASE 
 	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
@@ -2212,6 +2220,8 @@ reinbeitebruker_id,
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
 omrade,
+alle_reinbeitebr_id, 
+status,
 CASE 
 	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
@@ -2246,6 +2256,8 @@ reinbeitebruker_id,
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
 omrade,
+alle_reinbeitebr_id, 
+status,
 CASE 
 	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
@@ -2279,6 +2291,8 @@ reinbeitebruker_id,
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
 omrade,
+alle_reinbeitebr_id, 
+status,
 CASE 
 	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
@@ -2313,6 +2327,8 @@ reinbeitebruker_id,
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
 ((al.felles_egenskaper).kvalitet).maalemetode AS "fellesegenskaper.maalemetode",
 linje,
+alle_reinbeitebr_id, 
+status,
 CASE 
 	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
@@ -2393,6 +2409,8 @@ reindriftsanleggstype,
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
 ((al.felles_egenskaper).kvalitet).maalemetode AS "fellesegenskaper.maalemetode",
 linje,
+alle_reinbeitebr_id, 
+status,
 CASE 
 	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
@@ -2431,6 +2449,8 @@ reindriftsanleggstype,
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
 ((al.felles_egenskaper).kvalitet).maalemetode AS "fellesegenskaper.maalemetode",
 punkt,
+alle_reinbeitebr_id, 
+status,
 CASE 
 	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
