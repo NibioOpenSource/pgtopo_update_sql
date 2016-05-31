@@ -69,7 +69,7 @@ BEGIN
 	ALTER TABLE new_surface_data ADD COLUMN id_foo SERIAL PRIMARY KEY;
 	
 	DROP TABLE IF EXISTS old_surface_data; 
-	-- find out if any old topo objects overlaps with this new objects using the relation table
+	-- Find out if any old topo objects overlaps with this new objects using the relation table
 	-- by using the surface objects owned by the both the new objects and the exting one
 	command_string :=  format('CREATE TEMP TABLE old_surface_data AS 
 	(SELECT 
@@ -93,8 +93,8 @@ BEGIN
 	EXECUTE command_string;
 	
 	DROP TABLE IF EXISTS old_surface_data_not_in_new; 
-	-- find any old objects that are not covered totaly by 
-	-- this objets should not be deleted, but the geometry should only decrease in size.
+	-- Find any old objects that are not covered totaly by new surfaces 
+	-- This objets should not be deleted, but the geometry should only decrease in size.
 	-- TODO add a test case for this
 	command_string :=  format('CREATE TEMP TABLE old_surface_data_not_in_new AS 
 	(SELECT 
@@ -340,7 +340,7 @@ BEGIN
 		  FROM (
 		   SELECT distinct(key) AS update_column
 		   FROM new_rows_added_in_org_table t, json_each_text(to_json((t)))  
-		   WHERE key != 'id' AND key != 'foo_geo' AND key != 'omrade' AND key != 'felles_egenskaper'
+		   WHERE key != 'id' AND key != 'foo_geo' AND key != 'omrade' AND key != 'felles_egenskaper' AND key != 'status'
 		  ) AS keys;
 		
 		  RAISE NOTICE 'topo_update.update_domain_surface_layer Extract name of not-null fields-a: %', update_fields_t;
