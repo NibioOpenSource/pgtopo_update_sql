@@ -27,6 +27,9 @@ DROP FUNCTION IF EXISTS topo_update.create_edge_surfaces(new_border_data topogeo
 
 DROP FUNCTION IF EXISTS topo_update.create_surface_edge(geo_in geometry) cascade; 
 DROP FUNCTION IF EXISTS topo_update.update_domain_surface_layer(_new_topo_objects regclass) cascade; 
+DROP FUNCTION IF EXISTS topo_update.update_domain_surface_layer(surface_topo_info topo_update.input_meta_info, border_topo_info topo_update.input_meta_info, _new_topo_objects regclass) cascade; 
+DROP FUNCTION IF EXISTS topo_update.update_domain_surface_layer(surface_topo_info topo_update.input_meta_info, border_topo_info topo_update.input_meta_info, valid_user_geometry geometry,  _new_topo_objects regclass) cascade; 
+
 DROP FUNCTION IF EXISTS topo_update.create_surface_edge_domain_obj(client_json_feature text,layer_schema text, surface_layer_table text, surface_layer_column text, border_layer_table text, border_layer_column text,snap_tolerance float8) cascade; 
 DROP FUNCTION IF EXISTS topo_update.create_surface_edge_domain_obj(client_json_feature text,layer_schema text, surface_layer_table text, surface_layer_column text, border_layer_table text, border_layer_column text,snap_tolerance float8,server_json_feature text) cascade; 
 DROP FUNCTION IF EXISTS topo_update.create_surface_edge_domain_obj(geo_in geometry,srid_out int, maxdecimaldigits int) cascade; 
