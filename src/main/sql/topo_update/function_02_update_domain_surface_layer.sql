@@ -5,7 +5,7 @@
 -- DROP FUNCTION topo_update.update_domain_surface_layer(_new_topo_objects regclass) cascade;
 
 
-CREATE OR REPLACE FUNCTION topo_update.update_domain_surface_layer(surface_topo_info topo_update.input_meta_info, border_topo_info topo_update.input_meta_info, _new_topo_objects regclass) 
+CREATE OR REPLACE FUNCTION topo_update.update_domain_surface_layer(surface_topo_info topo_update.input_meta_info, border_topo_info topo_update.input_meta_info, valid_user_geometry geometry,  _new_topo_objects regclass) 
 RETURNS SETOF topo_update.topogeometry_def AS $$
 DECLARE
 
@@ -49,6 +49,10 @@ update_fields_t text[];
 -- String surface layer name
 surface_layer_name text;
 
+-- the closed geom if the instring is closed
+valid_closed_user_geometry geometry = null;
+
+
 BEGIN
 
 	-- find border layer id
@@ -60,7 +64,13 @@ BEGIN
 	RAISE NOTICE 'topo_update.update_domain_surface_layer surface_layer_id   %',  surface_layer_id ;
 
 	surface_layer_name := surface_topo_info.layer_schema_name || '.' || surface_topo_info.layer_table_name;
-    
+
+	-- check if this is closed polygon drawn by the user 
+	-- if it's a closed polygon the only surface inside this polygon should be affected
+	IF St_IsClosed(valid_user_geometry) THEN
+		valid_closed_user_geometry = ST_MakePolygon(valid_user_geometry);
+	END IF;
+
 	-- get the data into a new tmp table
 	DROP TABLE IF EXISTS new_surface_data; 
 
@@ -71,6 +81,8 @@ BEGIN
 	DROP TABLE IF EXISTS old_surface_data; 
 	-- Find out if any old topo objects overlaps with this new objects using the relation table
 	-- by using the surface objects owned by the both the new objects and the exting one
+	-- Exlude the the new surface object created
+	-- We are using the rows in new_surface_data to cpare with, this contains all the rows which are affected
 	command_string :=  format('CREATE TEMP TABLE old_surface_data AS 
 	(SELECT 
 	re.* 
@@ -95,6 +107,7 @@ BEGIN
 	DROP TABLE IF EXISTS old_surface_data_not_in_new; 
 	-- Find any old objects that are not covered totaly by new surfaces 
 	-- This objets should not be deleted, but the geometry should only decrease in size.
+	-- TODO Take a disscusion about how to handle attributtes in this cases
 	-- TODO add a test case for this
 	command_string :=  format('CREATE TEMP TABLE old_surface_data_not_in_new AS 
 	(SELECT 
@@ -132,12 +145,12 @@ BEGIN
 	
 	-- Take a copy of old attribute values because they will be needed when you add new rows.
 	-- The new surfaces should pick up old values from the old row attributtes that overlaps the new rows
-	-- We also take copy of the geometry we need that to overlaps when we pick up old values
+	-- We also have to take copy of the geometry we need that to find overlaps when we pick up old values
 	-- TODO this should have been solved by using topology relation table, but I do that later 
 	DROP TABLE IF EXISTS old_rows_attributes;
 	
 	command_string :=  format('CREATE TEMP TABLE old_rows_attributes AS 
-	(SELECT old_data_row.*, old_data_row.omrade::geometry as foo_geo FROM 
+	(SELECT distinct old_data_row.*, old_data_row.omrade::geometry as foo_geo FROM 
 	%I.%I  old_data_row,
 	old_surface_data sf 
 	WHERE (old_data_row.%I).id = sf.topogeo_id)',
@@ -145,7 +158,16 @@ BEGIN
     surface_topo_info.layer_table_name,
     surface_topo_info.layer_feature_column);  
 	EXECUTE command_string;
-	
+
+		-- Only used for debug
+	IF add_debug_tables = 1 THEN
+		-- list topo objects to be reused
+		-- get new objects created from topo_update.create_edge_surfaces
+		DROP TABLE IF EXISTS topo_rein.update_domain_surface_layer_t4;
+		CREATE TABLE topo_rein.update_domain_surface_layer_t4 AS 
+		( SELECT * FROM old_rows_attributes) ;
+	END IF;
+
 	
 	-- Only used for debug
 	IF add_debug_tables = 1 THEN
@@ -154,7 +176,7 @@ BEGIN
 		DROP TABLE IF EXISTS topo_rein.update_domain_surface_layer_t1;
 		CREATE TABLE topo_rein.update_domain_surface_layer_t1 AS 
 		( SELECT r.id, r.omrade::geometry AS geo, 'reuse topo objcts' || r.omrade::text AS topo
-			FROM topo_rein.arstidsbeite_var_flate r, old_rows_be_reused reuse WHERE reuse.id = r.id) ;
+			FROM topo_rein.arstidsbeite_sommer_flate r, old_rows_be_reused reuse WHERE reuse.id = r.id) ;
 	END IF;
 
 	
@@ -172,7 +194,8 @@ BEGIN
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 	RAISE NOTICE 'topo_update.update_domain_surface_layer Number rows to be reused in org table %',  num_rows_affected;
 
-	-- If no rows are updated the user don't have update rights
+	-- If no rows are updated the user don't have update rights, we are using row level security
+	-- We return no data and it will done a rollback
 	IF num_rows_affected = 0 AND (SELECT count(*) FROM old_rows_be_reused)::int > 0 THEN
 		RETURN;	
 	END IF;
@@ -324,11 +347,26 @@ BEGIN
 	   	-- update the newly inserted rows with attribute values based from old_rows_table
     -- find the rows toubching
   DROP TABLE IF EXISTS touching_surface;
-  CREATE TEMP TABLE touching_surface AS 
-  (SELECT topo_update.touches(surface_layer_name,a.id,surface_topo_info) as id 
-  FROM new_rows_added_in_org_table a);
+  
+
+  -- If this is a not a closed polygon you have use touches
+  IF  valid_closed_user_geometry IS NULL  THEN
+	  CREATE TEMP TABLE touching_surface AS 
+	  (SELECT a.id, topo_update.touches(surface_layer_name,a.id,surface_topo_info) as id_from 
+	  FROM new_rows_added_in_org_table a);
+  ELSE
+  -- IF this a cloesed polygon only use objcet thats inside th e surface drawn by the user
+	  CREATE TEMP TABLE touching_surface AS 
+	  (
+	  SELECT a.id, topo_update.touches(surface_layer_name,a.id,surface_topo_info) as id_from 
+	  FROM new_rows_added_in_org_table a
+	  WHERE ST_Covers(valid_closed_user_geometry,ST_PointOnSurface(a.omrade::geometry))
+	  );
+	  
+  END IF;
 
 
+  -- if there are any toching interfaces  
 	IF (SELECT count(*) FROM touching_surface)::int > 0 THEN
 
 	   SELECT
@@ -348,10 +386,10 @@ BEGIN
 		
 	   	-- update the newly inserted rows with attribute values based from old_rows_table
 	    -- find the rows toubching
-	  	DROP TABLE IF EXISTS touching_surface;
-		CREATE TEMP TABLE touching_surface AS 
-		(SELECT topo_update.touches(surface_layer_name,a.id,surface_topo_info) as id 
-		FROM new_rows_added_in_org_table a);
+--	  	DROP TABLE IF EXISTS touching_surface;
+--		CREATE TEMP TABLE touching_surface AS 
+--		(SELECT topo_update.touches(surface_layer_name,a.id,surface_topo_info) as id 
+--		FROM new_rows_added_in_org_table a);
 	
 	
 		-- we set values with null row that can pick up a value from a neighbor.
@@ -365,14 +403,16 @@ BEGIN
 		touching_surface b
 		WHERE 
 		a.%I is null AND
-		d.id = b.id',
+		d.id = b.id_from AND
+		a.id = b.id OR %L IS NULL',
 	    surface_topo_info.layer_schema_name,
 	    surface_topo_info.layer_table_name,
 	    array_to_string(update_fields, ','),
 	    array_to_string(update_fields_t, ','),
 	    surface_topo_info.layer_schema_name,
 	    surface_topo_info.layer_table_name,
-	    'reinbeitebruker_id');
+	    'reinbeitebruker_id',
+	   valid_closed_user_geometry);
 		RAISE NOTICE 'topo_update.update_domain_surface_layer command_string %', command_string;
 		EXECUTE command_string;
 	

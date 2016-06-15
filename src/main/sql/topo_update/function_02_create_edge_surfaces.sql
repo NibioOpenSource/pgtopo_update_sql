@@ -39,6 +39,9 @@ rec RECORD;
 -- used for creating new topo objects
 new_surface_topo topogeometry;
 
+-- the closed geom if the instring is closed
+valid_closed_user_geometry geometry;
+
 BEGIN
 	
 	-- find border layer id
@@ -48,8 +51,14 @@ BEGIN
 	-- find surface layer id
 	surface_layer_id := surface_topo_info.border_layer_id;
 	RAISE NOTICE 'surface_layer_id   %',  surface_layer_id ;
-
-	RAISE NOTICE 'The topo objected added  %',  new_border_data;
+	
+	RAISE NOTICE 'The topo objected added  %, isClosed %',  new_border_data, St_IsClosed(valid_user_geometry);
+	
+	IF St_IsClosed(valid_user_geometry) THEN
+		valid_closed_user_geometry = ST_MakePolygon(valid_user_geometry);
+	END IF;
+	
+	
 	
 	-------------------- Surface ---------------------------------
 
@@ -132,16 +141,21 @@ BEGIN
 			new_surface_topo := topology.CreateTopoGeom(surface_topo_info.topology_name,surface_topo_info.element_type,surface_layer_id,topology.TopoElementArray_Agg(ARRAY[rec.face_id,3])  );
 			-- if not null
 			IF new_surface_topo IS NOT NULL THEN
+			
 				-- check if this topo already exist
 				-- TODO find out this chck is needed then we can only check on id 
 	--			IF NOT EXISTS(SELECT 1 FROM topo_rein.arstidsbeite_var_flate WHERE (omrade).id = (new_surface_topo).id) AND
 	--			   NOT EXISTS(SELECT 1 FROM new_surface_data WHERE (surface_topo).id = (new_surface_topo).id)
 	--			THEN
-					INSERT INTO new_surface_data(surface_topo,felles_egenskaper_flate) VALUES(new_surface_topo,felles_egenskaper_flate);
+				-- Could we here have used topplogical equality 
+				IF valid_closed_user_geometry IS NOT NULL AND NOT ST_Intersects(valid_closed_user_geometry,ST_PointOnSurface (new_surface_topo::geometry)) THEN
+					RAISE NOTICE 'Use new topo object % , but this new surface is outside user input %',  ST_asText(valid_closed_user_geometry), ST_AsText(ST_PointOnSurface (new_surface_topo::geometry));
+				ELSE
 					RAISE NOTICE 'Use new topo object % for face % created from user input %',  new_surface_topo, rec.face_id, new_border_data;
-	--			ELSE
-	--				RAISE NOTICE 'Not Use new topo object % for face %',  new_surface_topo, rec.face_id;
-	--			END IF;
+				END IF;
+				
+				INSERT INTO new_surface_data(surface_topo,felles_egenskaper_flate) VALUES(new_surface_topo,felles_egenskaper_flate);
+
 			END IF;
 		--END IF;
     END LOOP;
