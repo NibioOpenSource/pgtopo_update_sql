@@ -404,15 +404,14 @@ BEGIN
 		WHERE 
 		a.%I is null AND
 		d.id = b.id_from AND
-		a.id = b.id OR %L IS NULL',
+		a.id = b.id',
 	    surface_topo_info.layer_schema_name,
 	    surface_topo_info.layer_table_name,
 	    array_to_string(update_fields, ','),
 	    array_to_string(update_fields_t, ','),
 	    surface_topo_info.layer_schema_name,
 	    surface_topo_info.layer_table_name,
-	    'reinbeitebruker_id',
-	   valid_closed_user_geometry);
+	    'reinbeitebruker_id');
 		RAISE NOTICE 'topo_update.update_domain_surface_layer command_string %', command_string;
 		EXECUTE command_string;
 	
