@@ -38,12 +38,19 @@ SELECT '28', count(id) FROM (SELECT 1 AS id FROM topo_update.create_surface_edge
 SELECT '29', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status  from topo_rein.arstidsbeite_sommer_flate;
 SELECT '30', count(*) from topo_rein.arstidsbeite_sommer_flate;
 -- Set attributtes
-SELECT '31', topo_update.apply_attr_on_topo_line('{"properties":{"id":1,"status":1,"reinbeitebruker_id":"ZH"}}','topo_rein', 'arstidsbeite_sommer_flate', 'omrade');
+SELECT '31', topo_update.apply_attr_on_topo_line('{"properties":{"id":1,"status":1,"reinbeitebruker_id":"ZH","reindrift_sesongomrade_kode":4}}','topo_rein', 'arstidsbeite_sommer_flate', 'omrade');
 SELECT '32', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status  from topo_rein.arstidsbeite_sommer_flate;
 --Add new polygon this surface 
 SELECT '32_1', count(id) FROM (SELECT 1 AS id FROM topo_update.create_surface_edge_domain_obj('{"type": "Feature","properties":{"reinbeitebruker_id":"XI","reindrift_sesongomrade_kode":1},"geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[18.33500,69.20970],[18.37686,69.22246],[18.34102,69.19811]]}}','topo_rein', 'arstidsbeite_sommer_flate', 'omrade', 'arstidsbeite_sommer_grense','grense',  1e-10,'{"properties":{"reinbeitebruker_id":"ZX"}}')) AS R;
 -- Check tht new status is 0  
 SELECT '32_2', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status  from topo_rein.arstidsbeite_sommer_flate order by id;
+-- create a hole in this polygon (craete a surface and delete it)
+SELECT '32_3', topo_update.delete_topo_surface((SELECT ((SELECT * FROM topo_update.create_surface_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[18.340281,69.21086],[18.3536658335307,69.2066558329758],[18.3318345167625,69.1987665997243],[18.3210217330378,69.2029603714597],[18.338227,69.209054]]}}','topo_rein', 'arstidsbeite_sommer_flate', 'omrade', 'arstidsbeite_sommer_grense','grense',  1e-10))::json->1)::json->'id')::text::int,
+'topo_rein', 'arstidsbeite_sommer_flate', 'omrade', 'arstidsbeite_sommer_grense','grense');
+-- Add new polygon crosses this hole
+SELECT '32_4', count(id) FROM (SELECT 1 AS id FROM topo_update.create_surface_edge_domain_obj('{"type": "Feature","properties":{"reinbeitebruker_id":"XI","reindrift_sesongomrade_kode":1},"geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[18.3280037021665,69.2052819683587],[18.3259630939192,69.2058277962915],[18.3308917879818,69.2079652996634],[18.3337429119852,69.2071903313823],[18.3459575177129,69.2038702611246],[18.3485458015754,69.2031667358155],[18.3436457100541,69.2010979977988],[18.3405657643562,69.2019218307887],[18.3280037021665,69.2052819683587]]}}','topo_rein', 'arstidsbeite_sommer_flate', 'omrade', 'arstidsbeite_sommer_grense','grense',  1e-10,'{"properties":{"reinbeitebruker_id":"ZX"}}')) AS R;
+-- Check number of rows
+SELECT '32_5', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status  from topo_rein.arstidsbeite_sommer_flate order by id;
 
 SELECT '33', count(id) FROM (SELECT 1 AS id FROM topo_update.create_nocutline_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[15.9657743158,68.5173276573],[15.967341771,68.5175244919],[15.9707442177,68.5176731338],[15.973023534,68.5173234018],[15.9742820186,68.516710382],[15.9747133486,68.5160684285],[15.974409086,68.5153971067],[15.9733312891,68.5142292209],[15.9727112129,68.5130578708],[15.970050698,68.5124466358],[15.9661982366,68.5122599406],[15.9640955173,68.5121580206]]},"properties":{"reinbeitebruker_id":"XA","felles_egenskaper.forstedatafangsdato":null,"felles_egenskaper.verifiseringsdato":"2015-01-01","felles_egenskaper.oppdateringsdato":null,"felles_egenskaper.opphav":"Reindriftsforvaltningen","felles_egenskaper.kvalitet.maalemetode":82}}','topo_rein', 'rein_trekklei_linje', 'linje', 1e-10)) AS R;
 SELECT '34', id, reinbeitebruker_id, linje  from topo_rein.rein_trekklei_linje;
