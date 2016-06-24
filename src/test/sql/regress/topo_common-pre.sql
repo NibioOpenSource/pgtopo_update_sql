@@ -401,6 +401,12 @@ felles_egenskaper topo_rein.sosi_felles_egenskaper,
 -- Reffers to the user that is logged in.
 saksbehandler varchar,
 
+
+-- This is used by the user to indicate that he wants to delete object or not use it
+-- 0 menas that the object exits in normal way
+-- 1 menas that the users has selcted delete object
+slette_status_kode smallint not null default 0  CHECK (slette_status_kode IN (0,1)), 
+
 -- added because of performance, used by wms and sp on
 -- update in the same transaction as the topo objekt
 simple_geo geometry(MultiPolygon,4258) 
@@ -605,6 +611,11 @@ felles_egenskaper topo_rein.sosi_felles_egenskaper,
 -- Reffers to the user that is logged in.
 saksbehandler varchar,
 
+-- This is used by the user to indicate that he wants to delete object or not use it
+-- 0 menas that the object exits in normal way
+-- 1 menas that the users has selcted delete object
+slette_status_kode smallint not null default 0  CHECK (slette_status_kode IN (0,1)), 
+
 -- added because of performance, used by wms and sp on
 -- update in the same transaction as the topo objekt
 simple_geo geometry(MultiPolygon,4258) 
@@ -798,6 +809,12 @@ felles_egenskaper topo_rein.sosi_felles_egenskaper,
 
 -- Reffers to the user that is logged in.
 saksbehandler varchar,
+
+-- This is used by the user to indicate that he wants to delete object or not use it
+-- 0 menas that the object exits in normal way
+-- 1 menas that the users has selcted delete object
+slette_status_kode smallint not null default 0  CHECK (slette_status_kode IN (0,1)), 
+
 
 -- added because of performance, used by wms and sp on
 -- update in the same transaction as the topo objekt
@@ -995,6 +1012,11 @@ felles_egenskaper topo_rein.sosi_felles_egenskaper,
 -- Reffers to the user that is logged in.
 saksbehandler varchar,
 
+-- This is used by the user to indicate that he wants to delete object or not use it
+-- 0 menas that the object exits in normal way
+-- 1 menas that the users has selcted delete object
+slette_status_kode smallint not null default 0  CHECK (slette_status_kode IN (0,1)), 
+
 -- added because of performance, used by wms and sp on
 -- update in the same transaction as the topo objekt
 simple_geo geometry(MultiPolygon,4258) 
@@ -1187,6 +1209,12 @@ felles_egenskaper topo_rein.sosi_felles_egenskaper,
 
 -- Reffers to the user that is logged in.
 saksbehandler varchar,
+
+
+-- This is used by the user to indicate that he wants to delete object or not use it
+-- 0 menas that the object exits in normal way
+-- 1 menas that the users has selcted delete object
+slette_status_kode smallint not null default 0  CHECK (slette_status_kode IN (0,1)), 
 
 -- added because of performance, used by wms and sp on
 -- update in the same transaction as the topo objekt
@@ -1737,6 +1765,11 @@ felles_egenskaper topo_rein.sosi_felles_egenskaper,
 -- Reffers to the user that is logged in.
 saksbehandler varchar,
 
+-- This is used by the user to indicate that he wants to delete object or not use it
+-- 0 menas that the object exits in normal way
+-- 1 menas that the users has selcted delete object
+slette_status_kode smallint not null default 0  CHECK (slette_status_kode IN (0,1)), 
+
 -- added because of performance, used by wms and sp on
 -- update in the same transaction as the topo objekt
 simple_geo geometry(MultiPolygon,4258) 
@@ -1922,6 +1955,11 @@ felles_egenskaper topo_rein.sosi_felles_egenskaper,
 -- Reffers to the user that is logged in.
 saksbehandler varchar,
 
+-- This is used by the user to indicate that he wants to delete object or not use it
+-- 0 menas that the object exits in normal way
+-- 1 menas that the users has selcted delete object
+slette_status_kode smallint not null default 0  CHECK (slette_status_kode IN (0,1)), 
+
 -- added because of performance, used by wms and sp on
 -- update in the same transaction as the topo objekt
 simple_geo geometry(MultiPolygon,4258) 
@@ -2028,6 +2066,7 @@ reinbeitebruker_id,
 omrade ,
 alle_reinbeitebr_id, 
 status,
+slette_status_kode,
 CASE 
 	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
@@ -2064,6 +2103,7 @@ reinbeitebruker_id,
 omrade,
 alle_reinbeitebr_id, 
 status,
+slette_status_kode,
 CASE 
 	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
@@ -2117,6 +2157,7 @@ reinbeitebruker_id,
 omrade,
 alle_reinbeitebr_id, 
 status,
+slette_status_kode,
 CASE 
 	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
@@ -2186,6 +2227,7 @@ reinbeitebruker_id,
 omrade,
 alle_reinbeitebr_id, 
 status,
+slette_status_kode,
 CASE 
 	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
@@ -2222,6 +2264,7 @@ reinbeitebruker_id,
 omrade,
 alle_reinbeitebr_id, 
 status,
+slette_status_kode,
 CASE 
 	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
@@ -2258,6 +2301,7 @@ reinbeitebruker_id,
 omrade,
 alle_reinbeitebr_id, 
 status,
+slette_status_kode,
 CASE 
 	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
@@ -2293,6 +2337,7 @@ reinbeitebruker_id,
 omrade,
 alle_reinbeitebr_id, 
 status,
+slette_status_kode,
 CASE 
 	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
