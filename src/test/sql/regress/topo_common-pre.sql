@@ -1329,6 +1329,11 @@ felles_egenskaper topo_rein.sosi_felles_egenskaper,
 -- Reffers to the user that is logged in.
 saksbehandler varchar,
 
+-- This is used by the user to indicate that he wants to delete object or not use it
+-- 0 menas that the object exits in normal way
+-- 1 menas that the users has selcted delete object
+slette_status_kode smallint not null default 0  CHECK (slette_status_kode IN (0,1)), 
+
 -- angir hvilket reinbeitedistrikt som bruker beiteområdet 
 -- Definition -- indicates which reindeer pasture district uses the pasture area
 -- TODO add not null
@@ -1442,7 +1447,12 @@ id serial PRIMARY KEY NOT NULL,
 felles_egenskaper topo_rein.sosi_felles_egenskaper,
 
 -- Reffers to the user that is logged in.
+
 saksbehandler varchar,
+-- This is used by the user to indicate that he wants to delete object or not use it
+-- 0 menas that the object exits in normal way
+-- 1 menas that the users has selcted delete object
+slette_status_kode smallint not null default 0  CHECK (slette_status_kode IN (0,1)), 
 
 -- angir hvilket reinbeitedistrikt som bruker beiteområdet 
 -- Definition -- indicates which reindeer pasture district uses the pasture area
@@ -1571,6 +1581,11 @@ felles_egenskaper topo_rein.sosi_felles_egenskaper,
 
 -- Reffers to the user that is logged in.
 saksbehandler varchar,
+
+-- This is used by the user to indicate that he wants to delete object or not use it
+-- 0 menas that the object exits in normal way
+-- 1 menas that the users has selcted delete object
+slette_status_kode smallint not null default 0  CHECK (slette_status_kode IN (0,1)), 
 
 -- angir hvilket reinbeitedistrikt som bruker beiteområdet 
 -- Definition -- indicates which reindeer pasture district uses the pasture area
@@ -1753,7 +1768,7 @@ status int not null default 0,
 
 -- spesifikasjon av type teknisk anlegg som er etablert i forbindelse med utmarksbeite 
 -- TODO add not null
-reindriftsanleggstype int CHECK ( reindriftsanleggstype = 3) ,
+reindriftsanleggstype int default 3 NOT NULL CHECK ( reindriftsanleggstype = 3) ,
 
 -- contains felles egenskaper for rein
 -- should this be moved to the border, because the is just a result drawing border lines ??
@@ -2374,6 +2389,7 @@ reinbeitebruker_id,
 linje,
 alle_reinbeitebr_id, 
 status,
+slette_status_kode,
 CASE 
 	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
@@ -2456,6 +2472,7 @@ reindriftsanleggstype,
 linje,
 alle_reinbeitebr_id, 
 status,
+slette_status_kode,
 CASE 
 	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
@@ -2496,6 +2513,7 @@ reindriftsanleggstype,
 punkt,
 alle_reinbeitebr_id, 
 status,
+slette_status_kode,
 CASE 
 	WHEN EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
 	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
