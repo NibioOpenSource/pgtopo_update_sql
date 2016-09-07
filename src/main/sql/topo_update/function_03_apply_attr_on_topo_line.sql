@@ -86,8 +86,12 @@ BEGIN
    key = key_list.res 
   ) AS keys;
   
+  -- This is hardcoding if a column name that should have been done i a better way
+  update_fields := array_append(update_fields, 'felles_egenskaper');
+  update_fields_t := array_append(update_fields_t, 'n.felles_egenskaper');
+  
   RAISE NOTICE 'topo_update.apply_attr_on_topo_line Extract name of not-null fields: %', update_fields_t;
-  RAISE NOTICE 'topo_update.apply_attr_on_topo_line Extract name of not-null fields: %', update_fields;
+  RAISE NOTICE 'topo_update.apply_attr_on_topo_line Euuxtract name of not-null fields: %', update_fields;
   
   -- update the org table with not null values
   command_string := format(
