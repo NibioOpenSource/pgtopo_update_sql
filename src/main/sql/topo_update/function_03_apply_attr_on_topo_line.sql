@@ -57,9 +57,10 @@ BEGIN
 	RAISE NOTICE 'topo_update.apply_attr_on_topo_line Added all attributes to ttt2_aaotl_new_topo_rows_in_org_table';
 
 	-- Update felles egenskaper with new values
-	command_string := format('UPDATE ttt2_aaotl_new_topo_rows_in_org_table 
+	command_string := format('UPDATE ttt2_aaotl_new_topo_rows_in_org_table AS s
 	SET felles_egenskaper = topo_rein.get_rein_felles_egenskaper_update(r.felles_egenskaper, %L)
-	FROM  %I.%I r',
+	FROM  %I.%I r
+	WHERE r.id = s.id',
 	json_input_structure.sosi_felles_egenskaper,
     topo_info.layer_schema_name,
     topo_info.layer_table_name
