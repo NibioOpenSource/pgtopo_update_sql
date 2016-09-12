@@ -45,19 +45,17 @@ BEGIN
 -- res.informasjon 
 -- res.kopidata
 
--- res.identifikasjon := 'NO_LDIR_REINDRIFT_VAARBEITE 0 ' || localid_in;
+-- res.identifikasjon := 'NO_LDIR_REINDRIFT_VAARBEITE 0 ' |ß| localid_in;
 
 	
--- if we have a value for felles_egenskaper.verifiseringsdato or else use current date
-res.verifiseringsdato :=  (felles)."fellesegenskaper.verifiseringsdato";
-IF res.verifiseringsdato is null THEN
-	res.verifiseringsdato :=  current_date;
-END IF;
-
--- if we have a value for felles_egenskaper.forstedatafangstdato or else use verifiseringsdato
+-- if we have a value for felles_egenskaper.forstedatafangstdato 
 res.forstedatafangstdato :=  (felles)."fellesegenskaper.forstedatafangstdato";
-IF res.forstedatafangstdato is null THEN
-	res.forstedatafangstdato :=  res.verifiseringsdato;
+
+-- if we have a value for felles_egenskaper.verifiseringsdato is null use forstedatafangstdato
+IF (felles)."fellesegenskaper.verifiseringsdato" is null THEN
+	res.verifiseringsdato := res.forstedatafangstdato;
+ELSE
+	res.verifiseringsdato := (felles)."fellesegenskaper.verifiseringsdato";
 END IF;
 
 -- if we have a value for oppdateringsdato or else use current date
@@ -105,12 +103,7 @@ DECLARE
 
 BEGIN
 
-	
--- if we have a value for felles_egenskaper.verifiseringsdato or else use current date
 res.verifiseringsdato :=  (felles)."verifiseringsdato";
-IF res.verifiseringsdato is null THEN
-	res.verifiseringsdato :=  current_date;
-END IF;
 
 res.oppdateringsdato :=  current_date;
 

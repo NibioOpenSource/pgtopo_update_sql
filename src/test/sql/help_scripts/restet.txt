@@ -15,3 +15,11 @@ select face_id from topo_rein_sysdata.face;
 
 
  create extension pg_stat_statements
+ 
+ 
+ Failed tests:   test1_UpdSurfaceWithLineRequestEntity(no.skogoglandskap.topo.client.itopoclientcom.Test_PrepareEdit_1_RVR_F): Respsonse requestId should be equa for getEditLayerListRequest  expected:<2> but was:<1>
+  testEditLayersRequestEntity_RVR_F(no.skogoglandskap.topo.client.TestReadCsvFilesForGUI): Check that layer name is ok expected:<År[]tidsbeite – vårbeite> but was:<År[s]tidsbeite – vårbeite>
+  testEditLayersRequestEntity_RSO_F(no.skogoglandskap.topo.client.TestReadCsvFilesForGUI): Check that layer name is ok expected:<År[]tidsbeite – sommerbe...> but was:<År[s]tidsbeite – sommerbe...>
+  testEditLayersRequestEntity_RAN_L(no.skogoglandskap.topo.client.TestReadCsvFilesForGUI): That attribute some edit layeres are found in list of of size 10
+  testEditLayersRequestEntity_RAN_P(no.skogoglandskap.topo.client.TestReadCsvFilesForGUI): That attribute some edit layeres are found in list of of size 10
+  testEditLayersRequestEntity_RAN_P_login(no.skogoglandskap.topo.client.TestReadCsvFilesForGUI): That attribute some edit layeres are found in list of of size 10

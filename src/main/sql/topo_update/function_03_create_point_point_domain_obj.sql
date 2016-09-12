@@ -84,6 +84,10 @@ BEGIN
     SET felles_egenskaper = %L', json_input_structure.sosi_felles_egenskaper);
 	EXECUTE command_string;
 
+	RAISE NOTICE 'point json_input_structure.sosi_felles_egenskaperg  %', json_input_structure.sosi_felles_egenskaper;
+
+	RAISE NOTICE 'command_string,command_string,command_string  %',  ST_asText(json_input_structure.input_geo);
+
   	-- Extract name of fields with not-null values in tmp table
   	-- Only those columns will be update in the org table
   	-- To delete a value from a column you have have to set a space or create a delete command

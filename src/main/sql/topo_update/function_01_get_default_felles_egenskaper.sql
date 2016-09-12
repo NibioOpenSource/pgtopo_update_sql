@@ -29,7 +29,7 @@ res.kvalitet = res_kvalitet;
 -- TODO find if we should use oppdaterings dato the same way as QMS
 -- res.oppdateringsdato only used by QMS
 
-res.verifiseringsdato := now(); 
+--res.verifiseringsdato := now(); 
 
 -- TODO that will be a input from the user
 -- How to handle lines that crosses municipality
@@ -46,7 +46,7 @@ res.registreringsversjon := res_sosi_registreringsversjon;
 -- TODO find out what to with informasjon
 -- res.informasjon 
 
-res.verifiseringsdato := now();
+--res.verifiseringsdato := now();
 
 	
 return res;
