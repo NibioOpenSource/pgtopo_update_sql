@@ -94,6 +94,9 @@ $$ LANGUAGE plpgsql IMMUTABLE ;
 
 -- used to get felles egenskaper when it is a update
 -- we then only update verifiseringsdato, opphav
+-- res is the old record
+-- felles is the new value from server
+
 CREATE OR REPLACE FUNCTION topo_rein.get_rein_felles_egenskaper_update(
 res topo_rein.sosi_felles_egenskaper,
 felles topo_rein.sosi_felles_egenskaper) 
@@ -102,6 +105,13 @@ RETURNS topo_rein.sosi_felles_egenskaper AS $$DECLARE
 DECLARE 
 
 BEGIN
+
+	
+
+-- if we don't hava a value for forstedatafangstdato is null use forstedatafangstdato sendt in.
+IF res.forstedatafangstdato is null AND (felles)."forstedatafangstdato" is not null THEN
+res.forstedatafangstdato :=  (felles)."forstedatafangstdato";
+END IF;
 
 res.verifiseringsdato :=  (felles)."verifiseringsdato";
 
