@@ -11,5 +11,6 @@ addons:
 
 script:
   - echo "select version()" | psql template1
+  - echo "select postgis_full_version()" | psql template1
   - make check RUNTESTFLAGS=-v
  
