@@ -8,6 +8,8 @@ addons:
   apt:
     packages:
     - postgis
+    - postgresql-9.5-postgis-2.1
+    - postgresql-9.5-postgis-scripts
 
 script:
   - echo "select version()" | psql template1
