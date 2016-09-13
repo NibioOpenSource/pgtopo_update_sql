@@ -1,12 +1,14 @@
-addons: 
-  postgresql: "9.5"
-before_script: 
-  - sudo apt-get install -y postgis 
-  - sudo apt-get install -y postgresql-contrib-9.5 
-  - "psql -U postgres -a -c \"create extension postgis;\""
-dist: trusty
-language: ruby
-script: 
-  - "echo \"select version()\" | psql template1"
-  - "make check RUNTESTFLAGS=-v"
 sudo: required
+dist: trusty
+
+language: sql
+
+addons:
+  postgresql: "9.5"
+  apt:
+    packages:
+    - postgis
+
+script:
+  - echo "select version()" | psql template1
+  - make check RUNTESTFLAGS=-v
