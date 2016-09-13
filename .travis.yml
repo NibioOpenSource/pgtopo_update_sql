@@ -1,9 +1,10 @@
-sudo: false
+sudo: required
+dist: trusty
 
 language: sql
 
 addons:
-  postgresql: "9.4"
+  postgresql: "9.5"
   apt:
     packages:
     - postgis
