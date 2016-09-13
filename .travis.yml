@@ -6,6 +6,6 @@ dist: trusty
 language: ruby
 script: 
   - "echo \"select version()\" | psql template1"
-  - "echo \"select postgis_full_version()\" | psql template1"
+  - "echo \"select postgis_full_version()\" | psql "
   - "make check RUNTESTFLAGS=-v"
 sudo: required
