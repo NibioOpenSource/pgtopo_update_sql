@@ -8,9 +8,10 @@ addons:
   apt:
     packages:
     - postgis
-    - postgresql-9.5-postgis-2.2 
-    - postgresql-9.5-postgis-scripts
 
+before_script:
+ - psql -U postgres -c "create extension postgis"
+ 
 script:
   - echo "select version()" | psql template1
   - echo "select postgis_full_version()" | psql template1
