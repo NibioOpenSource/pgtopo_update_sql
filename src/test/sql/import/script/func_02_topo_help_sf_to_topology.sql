@@ -23,6 +23,9 @@
 -- # copy data from shape file to postgis
 -- shp2pgsql -W ISO-8859-1 -d -D -s 4258 data/muni_surface.shp test.muni_surface | psql sl;
 
+-- #copy data from simple feature to topology
+-- psql sl -c "SELECT topo_help_sf_to_topology_case_1('test.muni_surface','test_topo.muni_surface');" 2>> /tmp/importfromtemp.log; 
+
 
 -- To instal it 
 -- git clone https://github.com/NibioOpenSource/pgtopo_update_sql

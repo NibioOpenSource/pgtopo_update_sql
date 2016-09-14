@@ -46,10 +46,13 @@ BEGIN
 -- res.kopidata
 
 -- res.identifikasjon := 'NO_LDIR_REINDRIFT_VAARBEITE 0 ' |ß| localid_in;
-
+-- set default to null if not set
+res.forstedatafangstdato := now();
 	
 -- if we have a value for felles_egenskaper.forstedatafangstdato 
-res.forstedatafangstdato :=  (felles)."fellesegenskaper.forstedatafangstdato";
+IF (felles)."fellesegenskaper.forstedatafangstdato" is NOT null THEN
+	res.forstedatafangstdato :=  (felles)."fellesegenskaper.forstedatafangstdato";
+END IF;
 
 -- if we have a value for felles_egenskaper.verifiseringsdato is null use forstedatafangstdato
 IF (felles)."fellesegenskaper.verifiseringsdato" is null THEN
@@ -98,8 +101,8 @@ $$ LANGUAGE plpgsql IMMUTABLE ;
 -- felles is the new value from server
 
 CREATE OR REPLACE FUNCTION topo_rein.get_rein_felles_egenskaper_update(
-res topo_rein.sosi_felles_egenskaper,
-felles topo_rein.sosi_felles_egenskaper) 
+curent_value topo_rein.sosi_felles_egenskaper, 
+new_value_from_client topo_rein.sosi_felles_egenskaper) 
 RETURNS topo_rein.sosi_felles_egenskaper AS $$DECLARE
 
 DECLARE 
@@ -109,18 +112,18 @@ BEGIN
 	
 
 -- if we don't hava a value for forstedatafangstdato is null use forstedatafangstdato sendt in.
-IF res.forstedatafangstdato is null AND (felles)."forstedatafangstdato" is not null THEN
-res.forstedatafangstdato :=  (felles)."forstedatafangstdato";
-END IF;
+--IF (new_value_from_client)."forstedatafangstdato" is not null THEN
+	curent_value.forstedatafangstdato :=  (new_value_from_client)."forstedatafangstdato";
+--END IF;
 
-res.verifiseringsdato :=  (felles)."verifiseringsdato";
+curent_value.verifiseringsdato :=  (new_value_from_client)."verifiseringsdato";
 
-res.oppdateringsdato :=  current_date;
+curent_value.oppdateringsdato :=  current_date;
 
-res.opphav :=  (felles)."opphav";
+curent_value.opphav :=  (new_value_from_client)."opphav";
 
 
-return res;
+return curent_value;
 
 END;
 $$ LANGUAGE plpgsql IMMUTABLE ;
