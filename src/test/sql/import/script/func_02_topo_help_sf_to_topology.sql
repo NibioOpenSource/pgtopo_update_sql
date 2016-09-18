@@ -41,11 +41,11 @@
 drop FUNCTION IF EXISTS topo_help_sf_to_topology_case_1 (
 in_table_simple_feature text,
 in_table_topology_output text,
-in_tolerance double precision ,
+in_tolerance double precision,
 append_data boolean,
-in_topology_schema_name text ,
+in_topology_schema_name text,
 in_drop_topology_schema boolean,
-in_drop_table_topology_output boolean 
+in_drop_table_topology_output boolean
 );
 
 
@@ -65,15 +65,16 @@ in_tolerance double precision default 0.0000000001,
 -- Append data if in_table_topology_output exits
 append_data boolean default true,
 
--- the new schema name where we will put the topology_stuff, if not given it will use the schema from the 
--- topology table name in parameter 2 
-in_topology_schema_name text  default null,
-
 -- Drops a topology schema. This function should be USED WITH CAUTION, as it could destroy data you care about.
 in_drop_topology_schema boolean default false,
 
 -- Deletes the output topolofy table. This function should be USED WITH CAUTION, as it could destroy data you care about. 
-in_drop_table_topology_output boolean default false
+in_drop_table_topology_output boolean default false,
+
+-- the new schema name where we will put the topology_stuff, if not given it will use the schema from the 
+-- topology table name in parameter 2 
+in_topology_schema_name text  default null
+
 )
   RETURNS text AS
 $body$
@@ -337,14 +338,14 @@ in_tolerance double precision ,
 -- Append data if in_table_topology_output exits
 append_data boolean ,
 
--- the topology name and schema name where we will put the topology_stuff, uses by default name from in_table_topology_output 
-in_topology_schema_name text ,
-
 -- Drops a topology schema. This function should be USED WITH CAUTION, as it could destroy data you care about.
 in_drop_topology_schema boolean,
 
 -- Deletes the output topolofy table. This function should be USED WITH CAUTION, as it could destroy data you care about. 
-in_drop_table_topology_output boolean 
+in_drop_table_topology_output boolean,
+
+-- the topology name and schema name where we will put the topology_stuff, uses by default name from in_table_topology_output 
+in_topology_schema_name text 
 ) to PUBLIC;
 
 
@@ -353,9 +354,9 @@ drop FUNCTION IF EXISTS topo_help_sf_to_topology_case_1 (
 in_table_simple_feature text,
 in_table_topology_output text,
 in_tolerance double precision ,
-in_topology_schema_name text ,
+in_topology_schema_name text,
 in_drop_topology_schema boolean,
-in_drop_table_topology_output boolean 
+in_drop_table_topology_output boolean
 );
 
 
