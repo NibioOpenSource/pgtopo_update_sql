@@ -43,6 +43,7 @@ in_table_simple_feature text,
 in_table_topology_output text,
 in_tolerance double precision,
 append_data boolean,
+primary_column_id text,
 in_topology_schema_name text,
 in_drop_topology_schema boolean,
 in_drop_table_topology_output boolean
@@ -65,6 +66,9 @@ in_tolerance double precision default 0.0000000001,
 -- Append data if in_table_topology_output exits
 append_data boolean default true,
 
+-- the new serial column in_table_topology_output
+primary_column_id text default 'new_gid_id',
+
 -- Drops a topology schema. This function should be USED WITH CAUTION, as it could destroy data you care about.
 in_drop_topology_schema boolean default false,
 
@@ -74,6 +78,8 @@ in_drop_table_topology_output boolean default false,
 -- the new schema name where we will put the topology_stuff, if not given it will use the schema from the 
 -- topology table name in parameter 2 
 in_topology_schema_name text  default null
+
+
 
 )
   RETURNS text AS
@@ -285,6 +291,11 @@ BEGIN
 		RAISE NOTICE 'command_string %', command_string;
 		EXECUTE command_string;
 	
+		-- add serial column
+		command_string := format('ALTER TABLE %s ADD COLUMN %s serial PRIMARY KEY ',in_table_topology_output,primary_column_id);
+		RAISE NOTICE 'command_string %', command_string;
+		EXECUTE command_string;
+
 		-- add topology columns
 		--integer AddTopoGeometryColumn(varchar topology_name, varchar schema_name, varchar table_name, varchar column_name, varchar feature_type);
 		command_string := format('SELECT topology.AddTopoGeometryColumn(%L, %L, %L, %L, %L)',
@@ -309,8 +320,8 @@ BEGIN
 	
 	-- create a simple feature view 
 	-- TODO remove geo view  geometry(POLYGON,4258)
-	command_string := format('CREATE OR REPLACE VIEW  %s AS SELECT %s, %s::geometry(%s,%s) FROM %s',
-	topoology_view_name, non_geo_collumn_names, geo_collumn_name, 
+	command_string := format('CREATE OR REPLACE VIEW  %s AS SELECT %s, %s, %s::geometry(%s,%s) FROM %s',
+	topoology_view_name, primary_column_id, non_geo_collumn_names, geo_collumn_name, 
 	topo_help_get_sf_multi_feature_type(topo_geometry_type),srid,
 	in_table_topology_output);
 	RAISE NOTICE 'command_string %', command_string;
@@ -326,25 +337,13 @@ LANGUAGE 'plpgsql';
 
 -- give all execute acess
 GRANT EXECUTE ON FUNCTION topo_help_sf_to_topology_case_1 (
--- the table with the orignal data
 in_table_simple_feature text,
-
--- the table with the orignal data
 in_table_topology_output text,
-
--- the tolerance to be used when creating data
 in_tolerance double precision ,
-
--- Append data if in_table_topology_output exits
 append_data boolean ,
-
--- Drops a topology schema. This function should be USED WITH CAUTION, as it could destroy data you care about.
+primary_column_id text,
 in_drop_topology_schema boolean,
-
--- Deletes the output topolofy table. This function should be USED WITH CAUTION, as it could destroy data you care about. 
 in_drop_table_topology_output boolean,
-
--- the topology name and schema name where we will put the topology_stuff, uses by default name from in_table_topology_output 
 in_topology_schema_name text 
 ) to PUBLIC;
 
