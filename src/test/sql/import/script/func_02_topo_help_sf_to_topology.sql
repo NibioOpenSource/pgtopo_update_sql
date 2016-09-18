@@ -37,6 +37,17 @@
 -- To get performance is to use postgres 9.6 and paralell functions
 
 
+-- drop the old version if exits
+drop FUNCTION IF EXISTS topo_help_sf_to_topology_case_1 (
+in_table_simple_feature text,
+in_table_topology_output text,
+in_tolerance double precision ,
+append_data boolean,
+in_topology_schema_name text ,
+in_drop_topology_schema boolean,
+in_drop_table_topology_output boolean 
+);
+
 
 CREATE OR REPLACE FUNCTION topo_help_sf_to_topology_case_1(
 
@@ -50,6 +61,9 @@ in_table_topology_output text,
 -- the tolerance to be used adding new lines. The default is mostly used for degrees but for
 -- meters try with something like 0.0000001
 in_tolerance double precision default 0.0000000001,
+
+-- Append data if in_table_topology_output exits
+append_data boolean default true,
 
 -- the new schema name where we will put the topology_stuff, if not given it will use the schema from the 
 -- topology table name in parameter 2 
@@ -99,7 +113,7 @@ topoology_view_name text;
 -- the polygon geometry type
 topo_geometry_type text;
 
--- the layer id for geomcolumn added created
+-- the layer id for geomcolumn added or created
 layer_id int;
 
 -- this is a list of non geo colums name
@@ -113,8 +127,8 @@ geo_collumn_name text;
 line_values VARCHAR[];
 int_result int;
 
--- the topoid created
-topoid int;
+-- the topoid created or found
+topology_id int;
 
 -- used to to execte commands
 command_string text;
@@ -213,13 +227,13 @@ BEGIN
 	-- create topology schema it's not alreday exist
 	command_string := format('SELECT id FROM topology.topology WHERE name like %L',in_topology_schema_name);
 	RAISE NOTICE 'command_string %', command_string;
-	EXECUTE command_string INTO topoid;
+	EXECUTE command_string INTO topology_id;
 	
-	IF (in_drop_topology_schema or topoid is null) THEN
+	IF (in_drop_topology_schema or topology_id is null) THEN
 		command_string := format('SELECT CreateTopology(%L,%s,%s)',in_topology_schema_name, srid,in_tolerance);
 		RAISE NOTICE 'command_string %', command_string;
-		EXECUTE command_string INTO topoid;
-	RAISE NOTICE 'Created new topology with id  %', topoid;
+		EXECUTE command_string INTO topology_id;
+	RAISE NOTICE 'Created new topology with id  %', topology_id;
 	END IF;
 	
 	command_string := format('CREATE SCHEMA IF NOT EXISTS %s',in_topology_schema_name);
@@ -232,7 +246,7 @@ BEGIN
 
 
 	-- delete table if exits used for testing
-	IF (in_drop_table_topology_output) THEN
+	IF (append_data = false) THEN
 		command_string := format('DROP TABLE IF EXISTS %s CASCADE',in_table_topology_output);
 		RAISE NOTICE 'command_string %', command_string;
 		EXECUTE command_string;
@@ -242,14 +256,14 @@ BEGIN
 	command_string := format('SELECT topology_id FROM topology.layer WHERE schema_name like %L AND table_name like %L AND feature_column like %L',table_schema_topology_output,table_name_topology_output,geo_collumn_name);
 	RAISE NOTICE 'command_string %', command_string;
 	EXECUTE command_string INTO int_result;
-	IF (int_result > 0) THEN
+	IF (append_data = false and int_result > 0) THEN
 		-- drop geomtry column
 		-- DropTopoGeometryColumn(varchar schema_name, varchar table_name, varchar column_name);
 		command_string := format('SELECT topology.DropTopoGeometryColumn(%L, %L, %L)',
 		table_schema_topology_output,table_name_topology_output,geo_collumn_name);
 		RAISE NOTICE 'command_string %', command_string;
 		EXECUTE command_string INTO command_result_text;
-		RAISE NOTICE 'Delete TopoGeometryColumn with id  %', topoid;
+		RAISE NOTICE 'Delete TopoGeometryColumn with id  %', topology_id;
 		
 		command_string := format('DROP TABLE IF EXISTS %s CASCADE',in_table_topology_output);
 		RAISE NOTICE 'command_string %', command_string;
@@ -257,20 +271,29 @@ BEGIN
 
 	END IF;
 
-	-- create table new topo table but with out geo column names
-	command_string := format('CREATE TABLE %s AS (SELECT  %s FROM %s LIMIT 0)',in_table_topology_output, non_geo_collumn_names, in_table_simple_feature);
-	RAISE NOTICE 'command_string %', command_string;
-	EXECUTE command_string;
-
-	-- add topology columns
-	--integer AddTopoGeometryColumn(varchar topology_name, varchar schema_name, varchar table_name, varchar column_name, varchar feature_type);
-	command_string := format('SELECT topology.AddTopoGeometryColumn(%L, %L, %L, %L, %L)',
-	in_topology_schema_name,
-	table_schema_topology_output,table_name_topology_output,
-	geo_collumn_name,topo_geometry_type);
+	-- check again fix this in nocer way 
+	command_string := format('SELECT layer_id FROM topology.layer WHERE topology_id = %L AND schema_name like %L AND table_name like %L AND feature_column like %L',
+	topology_id,table_schema_topology_output,table_name_topology_output,geo_collumn_name);
 	RAISE NOTICE 'command_string %', command_string;
 	EXECUTE command_string INTO layer_id;
-	RAISE NOTICE 'Added TopoGeometryColumn with id  %', topoid; 
+	RAISE NOTICE 'found layer_id %', layer_id;
+
+	IF (layer_id is null) THEN
+		-- create table new topo table but with out geo column names
+		command_string := format('CREATE TABLE %s AS (SELECT  %s FROM %s LIMIT 0)',in_table_topology_output, non_geo_collumn_names, in_table_simple_feature);
+		RAISE NOTICE 'command_string %', command_string;
+		EXECUTE command_string;
+	
+		-- add topology columns
+		--integer AddTopoGeometryColumn(varchar topology_name, varchar schema_name, varchar table_name, varchar column_name, varchar feature_type);
+		command_string := format('SELECT topology.AddTopoGeometryColumn(%L, %L, %L, %L, %L)',
+		in_topology_schema_name,
+		table_schema_topology_output,table_name_topology_output,
+		geo_collumn_name,topo_geometry_type);
+		RAISE NOTICE 'command_string %', command_string;
+		EXECUTE command_string INTO layer_id;
+		RAISE NOTICE 'Added TopoGeometryColumn with id  %', topology_id; 
+	END IF;
 	
 	-- Copy data from simple featue
 	command_string := format('INSERT INTO %s(%s,%s) SELECT %s, toTopoGeom(%s, %L, %s, %s) AS %s FROM %s sf',
@@ -311,6 +334,9 @@ in_table_topology_output text,
 -- the tolerance to be used when creating data
 in_tolerance double precision ,
 
+-- Append data if in_table_topology_output exits
+append_data boolean ,
+
 -- the topology name and schema name where we will put the topology_stuff, uses by default name from in_table_topology_output 
 in_topology_schema_name text ,
 
@@ -322,7 +348,15 @@ in_drop_table_topology_output boolean
 ) to PUBLIC;
 
 
---select topo_help_sf_to_topology_case_1('org_rein_sosi_dump.rein_konsesjonomr_flate','topo_test.rrrein_konsesjonomr_flate');
---select topo_help_sf_to_topology_case_1('org_rein_sosi_dump.rein_konsesjonomr_flate','topo_test.rein_konsesjonomr_flate');
+-- drop the old version if exits
+drop FUNCTION IF EXISTS topo_help_sf_to_topology_case_1 (
+in_table_simple_feature text,
+in_table_topology_output text,
+in_tolerance double precision ,
+in_topology_schema_name text ,
+in_drop_topology_schema boolean,
+in_drop_table_topology_output boolean 
+);
+
 
 
