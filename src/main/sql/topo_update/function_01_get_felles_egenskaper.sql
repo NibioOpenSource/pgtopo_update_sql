@@ -122,6 +122,8 @@ curent_value.oppdateringsdato :=  current_date;
 
 curent_value.opphav :=  (new_value_from_client)."opphav";
 
+curent_value.kvalitet = (new_value_from_client)."kvalitet";
+
 
 return curent_value;
 
