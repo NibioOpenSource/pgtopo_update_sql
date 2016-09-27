@@ -17,8 +17,8 @@ res := topo_rein.get_rein_felles_egenskaper_flate(felles);
 	
 
 res_kvalitet.maalemetode := (felles)."fellesegenskaper.kvalitet.maalemetode";
---res_kvalitet.noyaktighet := 200;
---res_kvalitet.synbarhet := 0;
+res_kvalitet.noyaktighet := (felles)."fellesegenskaper.kvalitet.noyaktighet";
+res_kvalitet.synbarhet := (felles)."fellesegenskaper.kvalitet.synbarhet";
 res.kvalitet = res_kvalitet;
 return res;
 
