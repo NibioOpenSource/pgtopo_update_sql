@@ -102,6 +102,7 @@ AS (
 	-- Merknad: Denne er identisk med ..KVALITET i tidligere versjoner av SOSI.
 	kvalitet topo_rein.sosi_kvalitet,
 
+	
 	-- dato for siste endring på objektetdataene 
 	-- Merknad: Oppdateringsdato kan være forskjellig fra Datafangsdato ved at data som er registrert kan bufres en kortere eller lengre periode før disse legges inn i datasystemet (databasen).
 	-- Definition: Date and time at which this version of the spatial object was inserted or changed in the spatial data set. 
@@ -148,7 +149,10 @@ CREATE TYPE topo_rein.simple_sosi_felles_egenskaper AS (
 	"fellesegenskaper.verifiseringsdato" date ,
 	"fellesegenskaper.oppdateringsdato" date ,
 	"fellesegenskaper.opphav" varchar, 
-	"fellesegenskaper.kvalitet.maalemetode" int 
+	"fellesegenskaper.kvalitet.maalemetode" int ,
+	"fellesegenskaper.kvalitet.noyaktighet" int ,
+	"fellesegenskaper.kvalitet.synbarhet" smallint
+	
 );
 
 
@@ -2386,6 +2390,7 @@ reinbeitebruker_id,
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
 ((al.felles_egenskaper).kvalitet).maalemetode AS "fellesegenskaper.maalemetode",
+((al.felles_egenskaper).kvalitet).noyaktighet AS "fellesegenskaper.noyaktighet",
 linje,
 alle_reinbeitebr_id, 
 status,
@@ -2469,6 +2474,7 @@ reindriftsanleggstype,
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
 ((al.felles_egenskaper).kvalitet).maalemetode AS "fellesegenskaper.maalemetode",
+((al.felles_egenskaper).kvalitet).noyaktighet AS "fellesegenskaper.noyaktighet",
 linje,
 alle_reinbeitebr_id, 
 status,
@@ -2510,6 +2516,7 @@ reindriftsanleggstype,
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
 ((al.felles_egenskaper).kvalitet).maalemetode AS "fellesegenskaper.maalemetode",
+((al.felles_egenskaper).kvalitet).noyaktighet AS "fellesegenskaper.noyaktighet",
 punkt,
 alle_reinbeitebr_id, 
 status,
