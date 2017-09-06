@@ -2214,23 +2214,7 @@ reindrift_sesongomrade_kode,
 omrade::geometry(MultiPolygon,4258) as geo 
 from topo_rein.arstidsbeite_var_flate al;
 
-DROP VIEW IF EXISTS topo_rein.arstidsbeite_var_mbrs_v cascade ;
-
-
-CREATE OR REPLACE VIEW topo_rein.arstidsbeite_var_mbrs_v 
-AS
-select 
- face_id,
- 0 as id,
-0 reindrift_sesongomrade_kode,
--- ST_Simplify(ST_Union(mbr),0.001) as omrade ,
- mbr as omrade ,
-true AS "mbr" 
-from topo_rein_sysdata_rvr.face;
-
---SELECT ST_AStext(ST_union(mbr)) from topo_rein_sysdata_rvr.face;
-
---select * from topo_rein.arstidsbeite_var_mbrs_vDROP VIEW IF EXISTS topo_rein.arstidsbeite_var_topojson_flate_v cascade ;
+DROP VIEW IF EXISTS topo_rein.arstidsbeite_var_topojson_flate_v cascade ;
 
 
 CREATE OR REPLACE VIEW topo_rein.arstidsbeite_var_topojson_flate_v 
