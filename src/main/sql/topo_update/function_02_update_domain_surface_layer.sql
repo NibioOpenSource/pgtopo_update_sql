@@ -16,7 +16,7 @@ border_layer_id int;
 surface_layer_id int;
 
 -- this is the tolerance used for snap to 
-snap_tolerance float8 = 0.0000000001;
+snap_tolerance float8 = null;
 
 -- hold striped gei
 edge_with_out_loose_ends geometry = null;
@@ -54,7 +54,9 @@ valid_closed_user_geometry geometry = null;
 
 
 BEGIN
-
+	-- this is the tolerance used for snap to 
+	snap_tolerance := surface_topo_info.snap_tolerance;
+	
 	-- find border layer id
 	border_layer_id := border_topo_info.border_layer_id;
 	RAISE NOTICE 'topo_update.update_domain_surface_layer border_layer_id   %',  border_layer_id ;
