@@ -44,17 +44,19 @@ all_fields_a text[];
 json_input_structure topo_update.json_input_structure;  
 
 BEGIN
-	
+
+		-- get meta data the border line for the surface
+	border_topo_info := topo_update.make_input_meta_info(layer_schema, layer_table , layer_column );
+
 	-- TODO totally rewrite this code
-	json_input_structure := topo_update.handle_input_json_props(json_feature::json,server_json_feature::json,4258);
+	json_input_structure := topo_update.handle_input_json_props(json_feature::json,server_json_feature::json,border_topo_info.srid);
 	input_geo := json_input_structure.input_geo;
 
 	
 	
-	-- get meta data the border line for the surface
-	border_topo_info := topo_update.make_input_meta_info(layer_schema, layer_table , layer_column );
-		-- find border layer id
-	border_layer_id := topo_update.get_topo_layer_id(border_topo_info);
+	-- find border layer id
+	-- TODO remove this variable
+	border_layer_id := border_topo_info.border_layer_id;
 
 	
 	RAISE NOTICE 'The JSON input %',  json_feature;
