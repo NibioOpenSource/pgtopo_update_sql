@@ -22,7 +22,10 @@ AS (
 	snap_tolerance float8,
 	
 	-- this is computed by using function topo_update.get_topo_layer_id
-	border_layer_id int
+	border_layer_id int,
+	
+	-- refferes to topology.topology
+	srid  int
 	
 
 );

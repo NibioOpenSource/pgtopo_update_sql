@@ -21,7 +21,7 @@ BEGIN
 
 -- Find out topology name and element_type from layer identifier
   BEGIN
-    SELECT t.name, l.feature_type
+    SELECT t.name, l.feature_type, t.srid
     FROM topology.topology t, topology.layer l
     WHERE l.level = 0 -- need be primitive
       AND l.schema_name = topo_info.layer_schema_name
@@ -29,7 +29,8 @@ BEGIN
       AND l.feature_column = topo_info.layer_feature_column
       AND t.id = l.topology_id
     INTO STRICT topo_info.topology_name,
-                topo_info.element_type;
+                topo_info.element_type,
+                topo_info.srid;
   EXCEPTION
     WHEN NO_DATA_FOUND THEN
       RAISE EXCEPTION 'Cannot find info for primitive layer %.%.%',
