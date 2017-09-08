@@ -27,7 +27,7 @@ BEGIN
 	RAISE NOTICE 'client_json_feature %, server_json_feature %',  client_json_feature, server_json_feature ;
 	
 	-- geth the geometry may be null
-	json_input_structure.input_geo := topo_rein.get_geom_from_json(client_json_feature::json,4258);
+	json_input_structure.input_geo := topo_rein.get_geom_from_json(client_json_feature::json,srid_out);
 
 	-- get json from the client
 	client_json_properties := to_json(client_json_feature::json->'properties');
