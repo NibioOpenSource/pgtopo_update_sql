@@ -15,9 +15,6 @@ topo_update.create_nocutline_edge_domain_obj(json_feature text,
 RETURNS TABLE(id integer) AS $$
 DECLARE
 
--- this border layer id will picked up by input parameters
-border_layer_id int;
-
 -- this is the tolerance used for snap to 
 -- TODO use as parameter put for testing we just have here for now
 border_topo_info topo_update.input_meta_info ;
@@ -42,22 +39,18 @@ not_null_fields text[];
 json_input_structure topo_update.json_input_structure;  
 
 BEGIN
-	
-	-- TODO totally rewrite this code
-	json_input_structure := topo_update.handle_input_json_props(json_feature::json,server_json_feature::json,4258);
-	input_geo := json_input_structure.input_geo;
 
-	
-	
 	-- get meta data the border line for the surface
 	border_topo_info := topo_update.make_input_meta_info(layer_schema, layer_table , layer_column );
-		-- find border layer id
-	border_layer_id := topo_update.get_topo_layer_id(border_topo_info);
+
+	-- TODO totally rewrite this code
+	json_input_structure := topo_update.handle_input_json_props(json_feature::json,server_json_feature::json,border_topo_info.srid);
+	input_geo := json_input_structure.input_geo;
 
 	
 	RAISE NOTICE 'The JSON input %',  json_feature;
 
-	RAISE NOTICE 'border_layer_id %', border_layer_id;
+	RAISE NOTICE 'border_layer_id %', border_topo_info.border_layer_id;
 
 
 	-- get the json values
@@ -104,7 +97,7 @@ BEGIN
   command_string := format('UPDATE ttt2_new_topo_rows_in_org_table
     SET %I = topology.toTopoGeom(%L, %L, %L, %L)',
     border_topo_info.layer_feature_column, input_geo,
-    border_topo_info.topology_name, border_layer_id,
+    border_topo_info.topology_name, border_topo_info.border_layer_id,
     border_topo_info.snap_tolerance);
 	EXECUTE command_string;
 
