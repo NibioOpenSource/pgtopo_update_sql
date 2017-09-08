@@ -15,9 +15,6 @@ border_layer_id int;
 -- this surface layer id will picked up by input parameters
 surface_layer_id int;
 
--- this is the tolerance used for snap to 
-snap_tolerance float8 = 0.0000000001;
-
 -- hold striped gei
 edge_with_out_loose_ends geometry = null;
 
