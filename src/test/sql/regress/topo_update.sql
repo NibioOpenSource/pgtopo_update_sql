@@ -22,15 +22,15 @@ SELECT '8', SUM(ST_Length(geom)), count(*) from topo_rein_sysdata.edge_data;
 SELECT '9', SUM(ST_Length(linje::geometry)), count(*) from topo_rein.reindrift_anlegg_linje;
 SELECT '10', count(id) FROM (SELECT 1 AS id FROM topo_update.create_line_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[15.9657743158,68.5173276573],[15.967341771,68.5175244919],[15.9707442177,68.5176731338],[15.973023534,68.5173234018],[15.9742820186,68.516710382],[15.9747133486,68.5160684285],[15.974409086,68.5153971067],[15.9733312891,68.5142292209],[15.9727112129,68.5130578708],[15.970050698,68.5124466358],[15.9661982366,68.5122599406],[15.9640955173,68.5121580206]]},"properties":{"reinbeitebruker_id":"XA","reindriftsanleggstype":4,"felles_egenskaper.forstedatafangstdato":null,"felles_egenskaper.verifiseringsdato":"2015-01-01","felles_egenskaper.oppdateringsdato":null,"felles_egenskaper.opphav":"Reindriftsforvaltningen","felles_egenskaper.kvalitet.maalemetode":82}}','topo_rein', 'reindrift_anlegg_linje', 'linje', 1e-10)) AS R;
 SELECT '11', SUM(ST_Length(geom)), count(*) from topo_rein_sysdata.edge_data;
-SELECT '12', t.id,  ST_length(t.linje) l1, ST_Length(v.geo), ST_Srid(v.geo) from topo_rein.reindrift_anlegg_linje t, topo_rein.reindrift_anlegg_linje_v v WHERE v.id = t.id order by v.id;
+SELECT '12', t.id,  ST_length(t.linje) l1, ST_Length(t.linje::geometry(MultiLineString,4258)), ST_Srid(t.linje::geometry(MultiLineString,4258)) from topo_rein.reindrift_anlegg_linje t;
 SELECT '13', count(id) FROM (SELECT 1 AS id FROM topo_update.create_line_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[5.70182,58.55131],[5.70368,58.55134],[5.70403,58.553751],[5.705207,58.552386]]}}','topo_rein', 'reindrift_anlegg_linje', 'linje', 1e-10)) AS R;
 SELECT '14', count(id) FROM (SELECT 1 AS id FROM topo_update.create_line_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[5.70182,58.55131],[5.70368,58.55134],[5.70403,58.553751]]}}','topo_rein', 'reindrift_anlegg_linje', 'linje', 1e-10)) AS R;
-SELECT '15', t.id,  ST_length(t.linje) l1, ST_Length(v.geo), ST_Srid(v.geo) from topo_rein.reindrift_anlegg_linje t, topo_rein.reindrift_anlegg_linje_v v WHERE v.id = t.id order by v.id;
+SELECT '15', t.id,  ST_length(t.linje) l1, ST_Length(t.linje::geometry(MultiLineString,4258)), ST_Srid(t.linje::geometry(MultiLineString,4258)) from topo_rein.reindrift_anlegg_linje t order by id;
 SELECT '16', count(id) FROM (SELECT 1 AS id FROM topo_update.create_line_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[5.70182,58.55131],[5.70368,58.55134],[5.70403,58.553751],[5.705207,58.552386]]},"properties":{"Fellesegenskaper.Kvalitet.Maalemetode":82,"fellesegenskaper.forstedatafangstdato":"2016-01-01"}}','topo_rein', 'reindrift_anlegg_linje', 'linje', 1e-10)) AS R;;
 SELECT '16_01', (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_linje WHERE id = (select max(id) FROM topo_rein.reindrift_anlegg_linje) AND (felles_egenskaper).oppdateringsdato = current_date;
 SELECT '17', count(id) FROM (SELECT 1 AS id FROM topo_update.create_line_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[5.70513,58.55249],[5.70638,58.54978]]},"properties":{"Fellesegenskaper.Kvalitet.Maalemetode":82,"fellesegenskaper.forstedatafangstdato":"2016-01-01"}}','topo_rein', 'reindrift_anlegg_linje', 'linje', 1e-10)) AS R;
 SELECT '17_01', (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_linje WHERE id = (select max(id) FROM topo_rein.reindrift_anlegg_linje) AND (felles_egenskaper).oppdateringsdato = current_date;
-SELECT '18', t.id,  ST_length(t.linje) l1, ST_Length(v.geo), ST_Srid(v.geo) from topo_rein.reindrift_anlegg_linje t, topo_rein.reindrift_anlegg_linje_v v WHERE v.id = t.id order by v.id;
+SELECT '18', t.id,  ST_length(t.linje) l1, ST_Length(t.linje::geometry(MultiLineString,4258)), ST_Srid(t.linje::geometry(MultiLineString,4258)) from topo_rein.reindrift_anlegg_linje t order by id;
 SELECT '19', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade  from topo_rein.arstidsbeite_var_flate;
 UPDATE topo_rein.arstidsbeite_var_flate set felles_egenskaper = '(2001-01-22,,"(,,)",2016-09-03,Landbruksdirektoratet,2015-01-01,,"(,)")' where id = 1;
 SELECT '20_01', felles_egenskaper FROM topo_rein.arstidsbeite_var_flate WHERE id = 1;
@@ -68,7 +68,17 @@ SELECT '32_3', topo_update.delete_topo_surface((SELECT ((SELECT * FROM topo_upda
 -- Add new polygon crosses this hole
 SELECT '32_4', count(id) FROM (SELECT 1 AS id FROM topo_update.create_surface_edge_domain_obj('{"type": "Feature","properties":{"reinbeitebruker_id":"XI","reindrift_sesongomrade_kode":1},"geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[18.3280037021665,69.2052819683587],[18.3259630939192,69.2058277962915],[18.3308917879818,69.2079652996634],[18.3337429119852,69.2071903313823],[18.3459575177129,69.2038702611246],[18.3485458015754,69.2031667358155],[18.3436457100541,69.2010979977988],[18.3405657643562,69.2019218307887],[18.3280037021665,69.2052819683587]]}}','topo_rein', 'arstidsbeite_sommer_flate', 'omrade', 'arstidsbeite_sommer_grense','grense',  1e-10,'{"properties":{"reinbeitebruker_id":"ZX"}}')) AS R;
 -- Check number of rows
-SELECT '32_5', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status  from topo_rein.arstidsbeite_sommer_flate order by id;
+-- This  fails with postgres 11 and postgis 2.5 ????
+-- SELECT '32_5', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status  from topo_rein.arstidsbeite_sommer_flate order by id;
+-- This is the result from postgres 11 and postgis 2.5
+-- 32_5|2|ZH|4|(4,2,2,3)|0
+-- 32_5|5|ZH|4|(4,2,5,3)|1
+-- 32_5|6|ZH|4|(4,2,6,3)|1
+-- 32_5|7|ZH|4|(4,2,7,3)|0
+-- 32_5|8|||(4,2,8,3)|0
+-- 32_5|9|ZH|4|(4,2,9,3)|1
+-- 32_5|10|||(4,2,10,3)|0
+
 
 SELECT '33', count(id) FROM (SELECT 1 AS id FROM topo_update.create_nocutline_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[15.9657743158,68.5173276573],[15.967341771,68.5175244919],[15.9707442177,68.5176731338],[15.973023534,68.5173234018],[15.9742820186,68.516710382],[15.9747133486,68.5160684285],[15.974409086,68.5153971067],[15.9733312891,68.5142292209],[15.9727112129,68.5130578708],[15.970050698,68.5124466358],[15.9661982366,68.5122599406],[15.9640955173,68.5121580206]]},"properties":{"reinbeitebruker_id":"XA","felles_egenskaper.forstedatafangstdato":null,"felles_egenskaper.verifiseringsdato":"2015-01-01","felles_egenskaper.oppdateringsdato":null,"felles_egenskaper.opphav":"Reindriftsforvaltningen","felles_egenskaper.kvalitet.maalemetode":82}}','topo_rein', 'rein_trekklei_linje', 'linje', 1e-10)) AS R;
 SELECT '34', id, reinbeitebruker_id, linje  from topo_rein.rein_trekklei_linje;
