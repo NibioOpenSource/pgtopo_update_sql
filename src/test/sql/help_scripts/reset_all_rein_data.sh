@@ -1,16 +1,25 @@
 echo 'drop schema topo_rein cascade;' > /tmp/trein.sql
 echo 'drop schema topo_update cascade;'  >> /tmp/trein.sql
 
-echo "select topology.droptopology('topo_rein_sysdata');"  >> /tmp/trein.sql
-echo "select topology.droptopology('topo_rein_sysdata_rvr');"  >> /tmp/trein.sql
-echo "select topology.droptopology('topo_rein_sysdata_rso');"  >> /tmp/trein.sql
-echo "select topology.droptopology('topo_rein_sysdata_rhs');"  >> /tmp/trein.sql
-echo "select topology.droptopology('topo_rein_sysdata_rhv');"  >> /tmp/trein.sql
-echo "select topology.droptopology('topo_rein_sysdata_rvi');"  >> /tmp/trein.sql
-echo "select topology.droptopology('topo_rein_sysdata_rbh');"  >> /tmp/trein.sql
-echo "select topology.droptopology('topo_rein_sysdata_rop');"  >> /tmp/trein.sql
-echo "select topology.droptopology('topo_rein_sysdata_ran');"  >> /tmp/trein.sql
-echo "select topology.droptopology('topo_rein_sysdata_rtr');"  >> /tmp/trein.sql
+echo "echo 'drop schema topo_rein_sysdata');"  >> /tmp/trein.sql
+echo "echo 'drop schema topo_rein_sysdata_rvr');"  >> /tmp/trein.sql
+echo "echo 'drop schema topo_rein_sysdata_rso');"  >> /tmp/trein.sql
+echo "echo 'drop schema topo_rein_sysdata_rhs');"  >> /tmp/trein.sql
+echo "echo 'drop schema topo_rein_sysdata_rhv');"  >> /tmp/trein.sql
+echo "echo 'drop schema topo_rein_sysdata_rvi');"  >> /tmp/trein.sql
+echo "echo 'drop schema topo_rein_sysdata_rbh');"  >> /tmp/trein.sql
+echo "echo 'drop schema topo_rein_sysdata_rop');"  >> /tmp/trein.sql
+echo "echo 'drop schema topo_rein_sysdata_ran');"  >> /tmp/trein.sql
+echo "echo 'drop schema topo_rein_sysdata_rtr');"  >> /tmp/trein.sql
+
+echo "echo 'drop schema topo_rein_sysdata_rav');"  >> /tmp/trein.sql
+echo "echo 'drop schema topo_rein_sysdata_reo');"  >> /tmp/trein.sql
+echo "echo 'drop schema topo_rein_sysdata_rks');"  >> /tmp/trein.sql
+echo "echo 'drop schema topo_rein_sysdata_rko');"  >> /tmp/trein.sql
+echo "echo 'drop schema topo_rein_sysdata_rdg');"  >> /tmp/trein.sql
+echo "echo 'drop schema topo_rein_sysdata_reb');"  >> /tmp/trein.sql
+echo "echo 'drop schema topo_rein_sysdata_rro');"  >> /tmp/trein.sql
+echo "echo 'drop schema topo_rein_sysdata_rsi');"  >> /tmp/trein.sql
 
 # added delete to handle case old schema exit
 echo 'drop schema topo_rein_sysdata cascade;' >> /tmp/trein.sql 
@@ -23,6 +32,17 @@ echo 'drop schema topo_rein_sysdata_rbh cascade;' >> /tmp/trein.sql
 echo 'drop schema topo_rein_sysdata_rop cascade;' >> /tmp/trein.sql 
 echo 'drop schema topo_rein_sysdata_ran cascade;' >> /tmp/trein.sql 
 echo 'drop schema topo_rein_sysdata_rtr cascade;' >> /tmp/trein.sql 
+
+echo 'drop schema topo_rein_sysdata_rav cascade;' >> /tmp/trein.sql
+echo 'drop schema topo_rein_sysdata_reo cascade;' >> /tmp/trein.sql
+echo 'drop schema topo_rein_sysdata_rks cascade;' >> /tmp/trein.sql
+echo 'drop schema topo_rein_sysdata_rko cascade;' >> /tmp/trein.sql
+echo 'drop schema topo_rein_sysdata_rdg cascade;' >> /tmp/trein.sql
+echo 'drop schema topo_rein_sysdata_reb cascade;' >> /tmp/trein.sql
+echo 'drop schema topo_rein_sysdata_rro cascade;' >> /tmp/trein.sql
+echo 'drop schema topo_rein_sysdata_rsi cascade;' >> /tmp/trein.sql
+
+
 
 cat ~/dev/git/topologi/pgtopo_update_sql/src/test/sql/help_scripts/Performance_Fix_From_Sandro_TopoJSON.sql>> /tmp/trein.sql 
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/schema*.sql  >> /tmp/trein.sql 
@@ -38,6 +58,16 @@ cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_reindrift_anlegg_punk
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_trekklei_linje.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_beitehage_flate.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_oppsamlingomr_flate.sql >> /tmp/trein.sql
+
+cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_avtaleomrade.sql >> /tmp/trein.sql
+cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_ekspropriasjonsomrade.sql >> /tmp/trein.sql
+cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_konsesjonsomrade.sql >> /tmp/trein.sql
+cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_konvensjonsomrade.sql >> /tmp/trein.sql
+cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_reinbeitedistrikt.sql >> /tmp/trein.sql
+cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_reinbeiteomrade.sql >> /tmp/trein.sql
+cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_restriksjonsomrade_flate.sql >> /tmp/trein.sql
+cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_restriksjonsomrade_linje.sql >> /tmp/trein.sql
+cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_siidaomrade.sql >> /tmp/trein.sql
 
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/view*.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/roles_tables.sql  >> /tmp/trein.sql 
