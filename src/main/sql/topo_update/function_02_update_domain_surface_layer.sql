@@ -313,7 +313,7 @@ BEGIN
 		  FROM (
 		   SELECT distinct(key) AS update_column
 		   FROM old_rows_attributes t, json_each_text(to_json((t)))  
-		   WHERE key != 'id' AND key != 'foo_geo'  AND key != 'omrade'  
+		   WHERE key != 'id' AND key != 'foo_geo'  AND key != 'omrade' AND key != 'felles_egenskaper'  
 		  ) AS keys;
 		
 		  RAISE NOTICE 'topo_update.update_domain_surface_layer Extract name of not-null fields-c: %', update_fields_t;
