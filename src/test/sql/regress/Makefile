@@ -7,7 +7,7 @@ check: loader 00-regress
 loader:
 	find / -name shp2pgsql 2>/dev/null # debug 
 	export PATH=$(PATH):`pg_config --bindir`; \
-	export PATH=$(PATH):/usr/bin \
+	export PATH=$(PATH):/usr/bin; \
 	which shp2pgsql pgsql2shp > /dev/null || \
     { echo "shp2pgsql and pgsql2shp must be in your PATH" && exit 1; }; \
 	mkdir -p ../loader; \
