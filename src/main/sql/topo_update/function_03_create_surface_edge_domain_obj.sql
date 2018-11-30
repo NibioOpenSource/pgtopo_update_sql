@@ -61,14 +61,15 @@ json_input_structure topo_update.json_input_structure;
 
 BEGIN
 	
-	-- get meta data the border line for the surface
+	-- get topology meta data like layer num, srid, ... for the border line layer for this surface
 	border_topo_info := topo_update.make_input_meta_info(layer_schema, border_layer_table , border_layer_column );
 
-	-- get meta data the surface 
+	-- get topology meta data like layer num, srid, ... for the surface layer
 	surface_topo_info := topo_update.make_input_meta_info(layer_schema, surface_layer_table , surface_layer_column );
 	
 	-- parse the input values and find input geo and properties. 
-	-- Equal properties found both in client_json_feature and server_json_feature, then the values in server_json_feature will be used.
+	-- If there are properties with equal name found both in client_json_feature and server_json_feature, 
+	-- then the values in server_json_feature will be used.
 	json_input_structure := topo_update.handle_input_json_props(client_json_feature::json,server_json_feature::json,4258);
 
 	-- save a copy of the input geometry before modfied, used for logging later.
@@ -85,7 +86,7 @@ BEGIN
 		INSERT INTO topo_rein.create_surface_edge_domain_obj_t0(geo_in,IsSimple,IsClosed) VALUES(geo_in,St_IsSimple(geo_in),St_IsSimple(geo_in));
 	END IF;
 	
-	-- modify the input if it's not simple.
+	-- modify the input geometry if it's not simple.
 	IF NOT ST_IsSimple(geo_in) THEN
 		-- This is probably a crossing line so we try to build a surface
 		BEGIN
@@ -124,12 +125,10 @@ BEGIN
 		END IF;
 	END IF;
 
-	-- check that is not null
+	-- check the geometry is not null after it potencially may have checked/changed.
 	IF geo_in IS NULL THEN
 		RAISE EXCEPTION 'The geo generated from geo_in is null %', org_geo_in;
 	END IF;
-
-	-- The geo_in is now modified and we know that it is a valid geo we can use it to create the new border. 
 
 	IF add_debug_tables = 1 THEN
 		INSERT INTO topo_rein.create_surface_edge_domain_obj_t0(geo_in,IsSimple,IsClosed) VALUES(geo_in,St_IsSimple(geo_in),St_IsClosed(geo_in));
