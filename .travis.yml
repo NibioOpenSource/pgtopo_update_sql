@@ -7,8 +7,9 @@ addons:
   postgresql: "10"
   apt:
     packages:
-    - postgresql-10-postgis-2.5
-    - postgis
+    - postgresql-10-postgis-2.4
+    - postgresql-10-postgis-2.4-scripts
+    - postgresql-client-10s
 
 script:
   - echo "select version()" | psql template1
