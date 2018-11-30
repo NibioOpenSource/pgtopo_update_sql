@@ -14,6 +14,8 @@ loader:
 
 00-regress:
 	find /usr/share/postgresql -name postgis.sql # debug 
+	find /usr/share/postgresql -name shp2pgsql # debug 
+	
 	ls $(POSTGIS_SCRIPT_DIR) # debug
 	@test -f $(POSTGIS_SCRIPT_DIR)/postgis.sql || \
     { echo "No postgis.sql file found in $(POSTGIS_SCRIPT_DIR)," \
