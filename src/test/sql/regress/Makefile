@@ -1,4 +1,4 @@
-POSTGIS_SCRIPT_DIR ?= `pg_config --sharedir`/contrib/postgis-2.3
+POSTGIS_SCRIPT_DIR ?= `pg_config --sharedir`/contrib/postgis-2.5
 
 check: 00-regress
 	POSTGIS_REGRESS_DB=nibio_reg ./run_test.pl --spatial_ref_sys --topology $(RUNTESTFLAGS) topo_update 
@@ -12,6 +12,7 @@ loader:
 	ln -fs `which pgsql2shp` ../loader
 
 00-regress:
+	find /usr/share/postgresql -name postgis.sql 
 	ls $(POSTGIS_SCRIPT_DIR) # debug
 	@test -f $(POSTGIS_SCRIPT_DIR)/postgis.sql || \
     { echo "No postgis.sql file found in $(POSTGIS_SCRIPT_DIR)," \
