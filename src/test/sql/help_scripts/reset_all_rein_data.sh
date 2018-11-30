@@ -1,25 +1,25 @@
 echo 'drop schema topo_rein cascade;' > /tmp/trein.sql
 echo 'drop schema topo_update cascade;'  >> /tmp/trein.sql
 
-echo "echo 'drop schema topo_rein_sysdata');"  >> /tmp/trein.sql
-echo "echo 'drop schema topo_rein_sysdata_rvr');"  >> /tmp/trein.sql
-echo "echo 'drop schema topo_rein_sysdata_rso');"  >> /tmp/trein.sql
-echo "echo 'drop schema topo_rein_sysdata_rhs');"  >> /tmp/trein.sql
-echo "echo 'drop schema topo_rein_sysdata_rhv');"  >> /tmp/trein.sql
-echo "echo 'drop schema topo_rein_sysdata_rvi');"  >> /tmp/trein.sql
-echo "echo 'drop schema topo_rein_sysdata_rbh');"  >> /tmp/trein.sql
-echo "echo 'drop schema topo_rein_sysdata_rop');"  >> /tmp/trein.sql
-echo "echo 'drop schema topo_rein_sysdata_ran');"  >> /tmp/trein.sql
-echo "echo 'drop schema topo_rein_sysdata_rtr');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_rvr');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_rso');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_rhs');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_rhv');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_rvi');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_rbh');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_rop');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_ran');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_rtr');"  >> /tmp/trein.sql
 
-echo "echo 'drop schema topo_rein_sysdata_rav');"  >> /tmp/trein.sql
-echo "echo 'drop schema topo_rein_sysdata_reo');"  >> /tmp/trein.sql
-echo "echo 'drop schema topo_rein_sysdata_rks');"  >> /tmp/trein.sql
-echo "echo 'drop schema topo_rein_sysdata_rko');"  >> /tmp/trein.sql
-echo "echo 'drop schema topo_rein_sysdata_rdg');"  >> /tmp/trein.sql
-echo "echo 'drop schema topo_rein_sysdata_reb');"  >> /tmp/trein.sql
-echo "echo 'drop schema topo_rein_sysdata_rro');"  >> /tmp/trein.sql
-echo "echo 'drop schema topo_rein_sysdata_rsi');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_rav');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_reo');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_rks');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_rko');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_rdg');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_reb');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_rro');"  >> /tmp/trein.sql
+echo "select topology.droptopology('topo_rein_sysdata_rsi');"  >> /tmp/trein.sql
 
 # added delete to handle case old schema exit
 echo 'drop schema topo_rein_sysdata cascade;' >> /tmp/trein.sql 
