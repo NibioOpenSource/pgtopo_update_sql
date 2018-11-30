@@ -4,10 +4,10 @@ dist: trusty
 language: sql
 
 addons:
-  postgresql: "9.6"
+  postgresql: "10"
   apt:
     packages:
-    - postgresql-9.6-postgis-2.3
+    - postgresql-10-postgis-2.5
     - postgis
 
 script:
