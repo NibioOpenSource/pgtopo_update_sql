@@ -12,6 +12,9 @@ addons:
     - postgresql-10-postgis-2.4-scripts
     - postgresql-client-10
 
+global:
+    - PGPORT=5433
+
 script:
   - echo "select version()" | psql template1
   - make check RUNTESTFLAGS=-v
