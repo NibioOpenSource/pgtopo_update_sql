@@ -1,10 +1,11 @@
 #POSTGIS_SCRIPT_DIR ?= `pg_config --sharedir`/contrib/postgis-2.3
 POSTGIS_SCRIPT_DIR ?=/usr/share/postgresql/9.6/contrib/postgis-2.3
 
-check: 00-regress
+check: loader 00-regress
 	POSTGIS_REGRESS_DB=nibio_reg ./run_test.pl --spatial_ref_sys --topology $(RUNTESTFLAGS) topo_update 
 
 loader:
+	find / -name shp2pgsql 2>/dev/null # debug 
 	export PATH=$(PATH):`pg_config --bindir`; \
 	which shp2pgsql pgsql2shp > /dev/null || \
     { echo "shp2pgsql and pgsql2shp must be in your PATH" && exit 1; }; \
