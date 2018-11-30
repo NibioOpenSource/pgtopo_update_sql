@@ -6,7 +6,8 @@ check: loader 00-regress
 
 loader:
 	find / -name shp2pgsql 2>/dev/null # debug 
-	pwd # debug
+	ls # debug
+	
 	export PATH=$(PATH):`pg_config --bindir`; \
 	export PATH=$(PATH):/usr/bin; \
 	which shp2pgsql pgsql2shp > /dev/null || \
@@ -18,8 +19,8 @@ loader:
 00-regress:
 	find /usr/share/postgresql -name postgis.sql # debug 
 	find /usr/share/postgresql -name shp2pgsql # debug 
-	
 	ls $(POSTGIS_SCRIPT_DIR) # debug
+	
 	@test -f $(POSTGIS_SCRIPT_DIR)/postgis.sql || \
     { echo "No postgis.sql file found in $(POSTGIS_SCRIPT_DIR)," \
            "please tweak \$$POSTGIS_SCRIPT_DIR" && exit 1; }
