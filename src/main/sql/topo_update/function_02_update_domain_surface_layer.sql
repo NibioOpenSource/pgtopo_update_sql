@@ -303,7 +303,30 @@ BEGIN
   IF (SELECT count(*) FROM old_rows_attributes)::int > 0 THEN
   
  	 	RAISE NOTICE 'topo_update.update_domain_surface_layer num rows in old attrbuttes: %', (SELECT count(*) FROM old_rows_attributes)::int;
-	
+
+ 	 	-- Update other attribttus 
+
+	    command_string := format(
+	    'UPDATE %I.%I a
+		SET 
+		felles_egenskaper.forstedatafangstdato = (c.felles_egenskaper).forstedatafangstdato 
+		FROM new_rows_added_in_org_table b, 
+		old_rows_attributes c
+		WHERE 
+	    a.id = b.id AND                           
+	    ST_Intersects(c.foo_geo,ST_pointOnSurface(a.%I::geometry))',
+	    surface_topo_info.layer_schema_name,
+	    surface_topo_info.layer_table_name,
+	    surface_topo_info.layer_feature_column
+	    );
+		RAISE NOTICE 'topo_update.update_domain_surface_layer command_string %', command_string;
+		EXECUTE command_string;
+		
+		GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
+
+		RAISE NOTICE 'topo_update.update_domain_surface_layer no old attribute values found  %',  num_rows_affected;
+
+        -- Update other attribttus 
   		SELECT
 	  	array_agg(quote_ident(update_column)) AS update_fields,
 	  	array_agg('c.'||quote_ident(update_column)) as update_fields_t

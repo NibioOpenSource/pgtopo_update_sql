@@ -1520,10 +1520,18 @@ AND rl.column_name = 'reinbeitebruker_id'))
 
 -- a user have explicit access to selected table
 OR
+(
 reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
 WHERE rl.session_id = current_setting('pgtopo_update.session_id')
 AND rl.table_name = 'topo_rein.reindrift_anlegg_linje'
 AND rl.column_name = 'reinbeitebruker_id'))
+AND
+anleggstype::varchar  = 
+ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
+WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+AND rl.table_name = 'topo_rein.reindrift_anlegg_linje'
+AND rl.column_name = 'anleggstype')
+)
 
 )
 WITH CHECK
@@ -1543,10 +1551,18 @@ AND rl.column_name = 'reinbeitebruker_id'))
 
 -- a user have explicit access to selected table
 OR
+(
 reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
 WHERE rl.session_id = current_setting('pgtopo_update.session_id')
 AND rl.table_name = 'topo_rein.reindrift_anlegg_linje'
 AND rl.column_name = 'reinbeitebruker_id'))
+AND
+anleggstype::varchar  = 
+ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
+WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+AND rl.table_name = 'topo_rein.reindrift_anlegg_linje'
+AND rl.column_name = 'anleggstype')
+)
 
 )
 ;
@@ -4504,11 +4520,18 @@ CASE
 	THEN true
 
 	-- a user have explicit access to selected table
-	WHEN reinbeitebruker_id = 
+	WHEN
+	reinbeitebruker_id = 
 	ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
 	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
 	AND rl.table_name = 'topo_rein.reindrift_anlegg_linje'
 	AND rl.column_name = 'reinbeitebruker_id')
+	AND
+	anleggstype::varchar  = 
+	ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.table_name = 'topo_rein.reindrift_anlegg_linje'
+	AND rl.column_name = 'anleggstype')
 	THEN true
 
 	WHEN  reinbeitebruker_id is null
