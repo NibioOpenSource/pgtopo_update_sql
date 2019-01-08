@@ -1,6 +1,5 @@
 SET pgtopo_update.session_id ='session_id';
-SET pgtopo_update.session_id ='session_id';
-SET pgtopo_update.draw_line_opr = '1'
+SET pgtopo_update.draw_line_opr = '1';
 
 -- Repeat all tests with the new function names.
 --moved to anonther area because this behaves differrent og postgres 9.3 and 9.5, if it's a bug or not depends how it's defined the code to work.
@@ -117,7 +116,13 @@ SELECT '55_6', count(id) FROM (SELECT 1 AS id FROM topo_update.create_surface_ed
 SELECT '55_7', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade status, (felles_egenskaper).verifiseringsdato, (felles_egenskaper).forstedatafangstdato  from topo_rein.arstidsbeite_var_flate WHERE id > (select max(id)-2 FROM topo_rein.arstidsbeite_var_flate) order by id;
 SELECT '55_8', id, grense, ST_Length(ST_transform(grense::geometry,32633))::integer  from topo_rein.arstidsbeite_var_grense WHERE id > (select max(id)-2 FROM topo_rein.arstidsbeite_var_grense) order by id;
 
+-- Crete surface 
+SELECT '55_1', count(id) FROM (SELECT 1 AS id FROM topo_update.create_surface_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[518043.16996098636,7834780.601250791],[518196.14160128165,7825585.128504733],[528206.0093870214,7829364.882725497],[517603.88101841486,7834041.287307017]],"crs":{"type":"name","properties":{"name":"EPSG:25835"}}},"properties":{"reinbeitebruker_id":"ZD","fellesegenskaper.opphav":null,"fellesegenskaper.kvalitet.synbarhet":null,"fellesegenskaper.kvalitet.noyaktighet":null,"fellesegenskaper.kvalitet.maalemetode":82,"fellesegenskaper.oppdateringsdato":null,"fellesegenskaper.verifiseringsdato":"2019-01-08","fellesegenskaper.forstedatafangstdato":"2019-01-08"}}','topo_rein', 'arstidsbeite_host_flate', 'omrade', 'arstidsbeite_host_grense','grense',  1e-10)) AS R;
+SELECT '55_2', topo_update.apply_attr_on_topo_line('{"properties":{"id":2,"reinbeitebruker_id":"ZH","reindrift_sesongomrade_kode":5}}','topo_rein', 'arstidsbeite_host_flate', 'omrade');
+SELECT '55_3', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade  from topo_rein.arstidsbeite_host_flate where id= (select max(id) from topo_rein.arstidsbeite_host_flate);
+-- Extend this surface
+SELECT '55_4', count(id) FROM (SELECT 1 AS id FROM topo_update.create_surface_edge_domain_obj('{"type":"Feature","geometry":{"type":"LineString","coordinates":[[519275.98297216033,7831985.975850177],[524826.2885011948,7840479.82762988],[524661.168141182,7830498.936046706]],"crs":{"type":"name","properties":{"name":"EPSG:25835"}}},"properties":{"reinbeitebruker_id":"ZD","fellesegenskaper.opphav":null,"fellesegenskaper.kvalitet.synbarhet":null,"fellesegenskaper.kvalitet.noyaktighet":null,"fellesegenskaper.kvalitet.maalemetode":82,"fellesegenskaper.oppdateringsdato":null,"fellesegenskaper.verifiseringsdato":"2019-01-08","fellesegenskaper.forstedatafangstdato":"2019-01-08"}}','topo_rein', 'arstidsbeite_host_flate', 'omrade', 'arstidsbeite_host_grense','grense',  1e-10)) AS R;
+SELECT '55_5', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade  from topo_rein.arstidsbeite_host_flate where id= (select (max(id)-1) from topo_rein.arstidsbeite_host_flate);
+SELECT '55_6', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade  from topo_rein.arstidsbeite_host_flate where id= (select max(id) from topo_rein.arstidsbeite_host_flate);
 
---drop table sl_lop.topo1;
---create table sl_lop.topo1 as (SELECT '32_2', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade::geometry, status, (felles_egenskaper).verifiseringsdato, (felles_egenskaper).forstedatafangstdato  from topo_rein.arstidsbeite_var_flate order by id);
 
