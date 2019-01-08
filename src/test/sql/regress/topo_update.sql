@@ -1,4 +1,7 @@
 SET pgtopo_update.session_id ='session_id';
+SET pgtopo_update.session_id ='session_id';
+SET pgtopo_update.draw_line_opr = '1'
+
 -- Repeat all tests with the new function names.
 --moved to anonther area because this behaves differrent og postgres 9.3 and 9.5, if it's a bug or not depends how it's defined the code to work.
 --Is it valid to have lines in topology that is just by any domein object, may it should thats nice wai to keep the history
