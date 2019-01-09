@@ -5,7 +5,7 @@
 -- DROP FUNCTION topo_update.update_domain_surface_layer(_new_topo_objects regclass) cascade;
 
 
-CREATE OR REPLACE FUNCTION topo_update.update_domain_surface_layer(surface_topo_info topo_update.input_meta_info, border_topo_info topo_update.input_meta_info, valid_user_geometry geometry,  _new_topo_objects regclass) 
+CREATE OR REPLACE FUNCTION topo_update.update_domain_surface_layer(surface_topo_info topo_update.input_meta_info, border_topo_info topo_update.input_meta_info, json_input_structure topo_update.json_input_structure,  _new_topo_objects regclass) 
 RETURNS SETOF topo_update.topogeometry_def AS $$
 DECLARE
 
@@ -69,8 +69,8 @@ BEGIN
 
 	-- check if this is closed polygon drawn by the user 
 	-- if it's a closed polygon the only surface inside this polygon should be affected
-	IF St_IsClosed(valid_user_geometry) THEN
-		valid_closed_user_geometry = ST_MakePolygon(valid_user_geometry);
+	IF St_IsClosed(json_input_structure.input_geo) THEN
+		valid_closed_user_geometry = ST_MakePolygon(json_input_structure.input_geo);
 	END IF;
 
 	-- get the data into a new tmp table
