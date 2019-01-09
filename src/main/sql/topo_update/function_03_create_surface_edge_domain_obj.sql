@@ -77,6 +77,11 @@ BEGIN
 	geo_in := json_input_structure.input_geo;
 	
 	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj The input as it used before check/fixed %',  ST_AsText(geo_in);
+	
+	RAISE NOTICE 'The JSON client_json_feature for create_surface_edge_domain_obj %',  client_json_feature;
+	RAISE NOTICE 'The JSON server_json_feature for create_surface_edge_domain_obj %',  server_json_feature;
+
+	
 
 	-- Only used for debug
 	IF add_debug_tables = 1 THEN
@@ -142,22 +147,22 @@ BEGIN
 	
 	-- Create temporary table to hold the new data for the border objects. We here use the same table structure as the restult table.
 	command_string := topo_update.create_temp_tbl_as(
-	  'ttt2_new_topo_rows_in_org_table',
+	  'ttt2_new_topo_rows_in_org_border_table',
 	  format('SELECT * FROM %I.%I LIMIT 0',
 	         border_topo_info.layer_schema_name,
 	         border_topo_info.layer_table_name));
 	EXECUTE command_string;
 
   	-- Insert a single row into border temp table using the columns from json input that match column names in the temp table craeted
-	INSERT INTO ttt2_new_topo_rows_in_org_table
-	SELECT * FROM json_populate_record(null::ttt2_new_topo_rows_in_org_table,json_input_structure.json_properties);
+	INSERT INTO ttt2_new_topo_rows_in_org_border_table
+	SELECT * FROM json_populate_record(null::ttt2_new_topo_rows_in_org_border_table,json_input_structure.json_properties);
 	
 	-- TODO add a test to be sure that only a single row is inserted,
 
-	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Added all attributes to ttt2_new_topo_rows_in_org_table';
+	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Added all attributes to ttt2_new_topo_rows_in_org_border_table';
 
 	-- Update the single rows in border line temp table with TopoGeometry and felles egenskaper
-	command_string := format('UPDATE ttt2_new_topo_rows_in_org_table
+	command_string := format('UPDATE ttt2_new_topo_rows_in_org_border_table
     SET %I = %L,
 	 felles_egenskaper = %L',
   	border_topo_info.layer_feature_column, new_border_data,json_input_structure.sosi_felles_egenskaper);
@@ -168,20 +173,20 @@ BEGIN
 	-- Find name of columns with not-null values from the temp table
 	-- We need this list of column names to crete a SQL to update the orignal row with new values.
 	SELECT array_agg(quote_ident(key))
-	  FROM ttt2_new_topo_rows_in_org_table t, json_each_text(to_json((t)))
+	  FROM ttt2_new_topo_rows_in_org_border_table t, json_each_text(to_json((t)))
 	WHERE value IS NOT NULL
 	  INTO not_null_fields;
 
-	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Extract name of not-null fields: %', not_null_fields;
+	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj extract name of not-null fields for border table : %', not_null_fields;
 
 	-- Copy data from from temp table in to actual table and
 	-- update temp table with actual data stored in actual table. 
 	-- We will then get values for id's and default values back in to the temp table.
 	command_string := format(
 	    'WITH inserted AS ( INSERT INTO %I.%I (%s) SELECT %s FROM
-		ttt2_new_topo_rows_in_org_table RETURNING * ), deleted AS ( DELETE
-		FROM ttt2_new_topo_rows_in_org_table ) INSERT INTO
-		ttt2_new_topo_rows_in_org_table SELECT * FROM inserted ',
+		ttt2_new_topo_rows_in_org_border_table RETURNING * ), deleted AS ( DELETE
+		FROM ttt2_new_topo_rows_in_org_border_table ) INSERT INTO
+		ttt2_new_topo_rows_in_org_border_table SELECT * FROM inserted ',
 	    border_topo_info.layer_schema_name,
 	    border_topo_info.layer_table_name,
 	    array_to_string(not_null_fields, ','),
@@ -200,7 +205,7 @@ BEGIN
 
 	-- Insert new line objects created
 	INSERT INTO create_surface_edge_domain_obj_r1_r(id,id_type)
-	SELECT id, 'L' as id_type FROM ttt2_new_topo_rows_in_org_table;
+	SELECT id, 'L' as id_type FROM ttt2_new_topo_rows_in_org_border_table;
 	
 	-- ##############################################################
 	-- We are now done with border line objects and we can start to work on the surface objects
