@@ -304,8 +304,7 @@ BEGIN
   
  	 	RAISE NOTICE 'topo_update.update_domain_surface_layer num rows in old attrbuttes: %', (SELECT count(*) FROM old_rows_attributes)::int;
 
- 	 	-- Update other attribttus 
-
+ 	 	-- Update felles_egenskaper attribttus 
 	    command_string := format(
 	    'UPDATE %I.%I a
 		SET 
@@ -323,7 +322,6 @@ BEGIN
 		EXECUTE command_string;
 		
 		GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-
 		RAISE NOTICE 'topo_update.update_domain_surface_layer no old attribute values found  %',  num_rows_affected;
 
         -- Update other attribttus 
@@ -357,11 +355,9 @@ BEGIN
 	    array_to_string(update_fields_t, ','),
 	    surface_topo_info.layer_feature_column
 	    );
-		RAISE NOTICE 'topo_update.update_domain_surface_layer command_string %', command_string;
-		EXECUTE command_string;
+	    EXECUTE command_string;
 		
 		GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-
 		RAISE NOTICE 'topo_update.update_domain_surface_layer no old attribute values found  %',  num_rows_affected;
 
 	
