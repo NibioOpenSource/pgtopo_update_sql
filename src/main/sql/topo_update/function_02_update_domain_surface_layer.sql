@@ -268,7 +268,7 @@ BEGIN
 	command_string :=  format('CREATE TEMP TABLE new_rows_added_in_org_table AS (SELECT * FROM %I.%I limit 0);
 	WITH inserted AS (
 	INSERT INTO  %I.%I(%I,felles_egenskaper)
-	SELECT new.surface_topo, new.felles_egenskaper_flate as felles_egenskaper
+	SELECT new.surface_topo, new.felles_egenskaper as felles_egenskaper
 	FROM new_surface_data new
 	WHERE NOT EXISTS ( SELECT f.id FROM %I.%I f WHERE (new.surface_topo).id = (f.%I).id )
 	returning *

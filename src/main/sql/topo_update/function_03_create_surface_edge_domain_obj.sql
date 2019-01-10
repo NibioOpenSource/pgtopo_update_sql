@@ -72,13 +72,11 @@ BEGIN
 
 	-- save a copy of the input geometry before modfied, used for logging later.
 	org_geo_in := json_input_structure.input_geo;
-	
-	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj The input as it used before check/fixed %',  ST_AsText(json_input_structure.input_geo);
-	
-	RAISE NOTICE 'The JSON client_json_feature for create_surface_edge_domain_obj %',  client_json_feature;
-	RAISE NOTICE 'The JSON server_json_feature for create_surface_edge_domain_obj %',  server_json_feature;
 
-	
+	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj client_json_feature %',  client_json_feature;
+	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj server_json_feature %',  server_json_feature;
+	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj The input as it used before check/fixed %',  ST_AsText(json_input_structure.input_geo);
+	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj json_input_structure %',  json_input_structure;
 
 	-- Only used for debug
 	IF add_debug_tables = 1 THEN
@@ -133,7 +131,8 @@ BEGIN
 	END IF;
 
 	IF add_debug_tables = 1 THEN
-		INSERT INTO topo_rein.create_surface_edge_domain_obj_t0(json_input_structure.input_geo,IsSimple,IsClosed) VALUES(json_input_structure.input_geo,St_IsSimple(json_input_structure.input_geo),St_IsClosed(json_input_structure.input_geo));
+		INSERT INTO topo_rein.create_surface_edge_domain_obj_t0(json_input_structure.input_geo,IsSimple,IsClosed) 
+		VALUES(json_input_structure.input_geo,St_IsSimple(json_input_structure.input_geo),St_IsClosed(json_input_structure.input_geo));
 	END IF;
 
 	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj The input as it used after check/fixed %',  ST_AsText(json_input_structure.input_geo);
@@ -156,7 +155,7 @@ BEGIN
 	
 	-- TODO add a test to be sure that only a single row is inserted,
 
-	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Added all attributes to ttt2_new_topo_rows_in_org_border_table';
+	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj added json_input_structure.json_properties % to ttt2_new_topo_rows_in_org_border_table', json_input_structure.json_properties;
 
 	-- Update the single rows in border line temp table with TopoGeometry and felles egenskaper
 	command_string := format('UPDATE ttt2_new_topo_rows_in_org_border_table
@@ -167,6 +166,9 @@ BEGIN
 
   	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Set felles_egenskaper field';
 
+  	
+  	
+  	
 	-- Find name of columns with not-null values from the temp table
 	-- We need this list of column names to crete a SQL to update the orignal row with new values.
 	SELECT array_agg(quote_ident(key))
@@ -209,12 +211,24 @@ BEGIN
 	-- The new faces are already created so we new find them and relate our domain objects
 	-- ##############################################################
 	
+		-- Add new collumns for default values	
+--	alter table new_surface_data_for_edge add column reinbeitebruker_id varchar(3);
+--	update new_surface_data_for_edge set reinbeitebruker_id = 'ZD';
+
+
+--select '{"reindrift_sesongomrade_kode":1,"fellesegenskaper.forstedatafangstdato":"2018-11-20","fellesegenskaper.verifiseringsdato":"2018-11-22","reinbeitebruker_id":"ZX"}'::json->>'reinbeitebruker_id'::text;
+--select NULLIF('{"reindrift_sesongomrade_kode":1,"fellesegenskaper.forstedatafangstdato":"2018-11-20","fellesegenskaper.verifiseringsdato":"2018-11-22","reinbeitebruker_id":""}'::json->>'reinbeitebruker_id'::text,'');
+--create temp table aa as select NULLIF('{"reindrift_sesongomrade_kode":1,"fellesegenskaper.forstedatafangstdato":"2018-11-20","fellesegenskaper.verifiseringsdato":"2018-11-22"}'::json->>'reinbeitebruker_id'::text,'') as bb;
+	
 	-- Create a new temp table to hold topo surface objects that has a relation to the edge added by the user .
 	DROP TABLE IF EXISTS new_surface_data_for_edge; 
 	-- find out if any old topo objects overlaps with this new objects using the relation table
 	-- by using the surface objects owned by the both the new objects and the exting one
 	CREATE TEMP TABLE new_surface_data_for_edge AS 
-	(SELECT topo::topogeometry AS surface_topo, json_input_structure.sosi_felles_egenskaper_flate AS felles_egenskaper_flate 
+	(SELECT 
+	topo::topogeometry AS surface_topo, 
+	json_input_structure.sosi_felles_egenskaper_flate AS felles_egenskaper,
+	NULLIF (json_input_structure.json_properties->>'reinbeitebruker_id'::text,'') as reinbeitebruker_id
 	FROM topo_update.create_edge_surfaces(surface_topo_info,border_topo_info,new_border_data,json_input_structure.input_geo,json_input_structure.sosi_felles_egenskaper_flate));
 	-- We now have a list with all surfaces that intersect the line that is drwan by the user. 
 	-- In this list there may areas that overlaps so we need to clean up some values
