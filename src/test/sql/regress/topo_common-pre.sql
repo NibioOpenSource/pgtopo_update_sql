@@ -890,65 +890,6 @@ CREATE INDEX topo_rein_arstidsbeite_host_flate_geo_relation_id_idx ON topo_rein.
 COMMENT ON INDEX topo_rein.topo_rein_arstidsbeite_host_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
 
--- add row level security
-ALTER TABLE topo_rein.arstidsbeite_host_flate ENABLE ROW LEVEL SECURITY;
-
--- Give all users select rights  
--- Is another way to do this
-CREATE POLICY topo_rein_arstidsbeite_host_flate_select_policy ON topo_rein.arstidsbeite_host_flate FOR SELECT  USING(true);
-
--- Drp if exits
-DROP POLICY IF EXISTS topo_rein_arstidsbeite_host_flate_update_policy ON topo_rein.arstidsbeite_host_flate;
-
--- Handle update 
-CREATE POLICY topo_rein_arstidsbeite_host_flate_update_policy ON topo_rein.arstidsbeite_host_flate 
-FOR ALL                                                                                                                  
-USING
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-reinbeitebruker_id is null
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-
--- a user have explicit access to selected table
-OR
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = 'topo_rein.arstidsbeite_host_flate'
-AND rl.column_name = 'reinbeitebruker_id'))
-
-)
-WITH CHECK
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-reinbeitebruker_id is null
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-
--- a user have explicit access to selected table
-OR
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = 'topo_rein.arstidsbeite_host_flate'
-AND rl.column_name = 'reinbeitebruker_id'))
-)
-;
 select CreateTopology('topo_rein_sysdata_rhv',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
@@ -4695,3 +4636,282 @@ END AS "editable"
 from topo_rein.siidaomrade_flate al;
 
 --select * from topo_rein.siidaomrade_topojson_flate_v
+
+
+-- add row level security
+ALTER TABLE topo_rein.arstidsbeite_host_flate ENABLE ROW LEVEL SECURITY;
+
+-- Give all users select rights  
+-- Is another way to do this
+CREATE POLICY topo_rein_arstidsbeite_host_flate_select_policy ON topo_rein.arstidsbeite_host_flate FOR SELECT  USING(true);
+
+-- Drp if exits
+DROP POLICY IF EXISTS topo_rein_arstidsbeite_host_flate_update_policy ON topo_rein.arstidsbeite_host_flate;
+
+-- Handle update 
+CREATE POLICY topo_rein_arstidsbeite_host_flate_update_policy ON topo_rein.arstidsbeite_host_flate 
+FOR ALL                                                                                                                  
+USING
+(
+-- a user that edit anything
+EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
+WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+AND rl.edit_all = true)
+OR
+reinbeitebruker_id is null
+OR
+-- a user that has access to certain areas
+reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
+WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+AND rl.table_name = '*'
+AND rl.column_name = 'reinbeitebruker_id'))
+
+-- a user have explicit access to selected table
+OR
+reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
+WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+AND rl.table_name = 'topo_rein.arstidsbeite_host_flate'
+AND rl.column_name = 'reinbeitebruker_id'))
+
+-- handles insert new lines on surfaces
+OR
+current_setting('pgtopo_update.draw_line_opr') = '1'
+
+)
+WITH CHECK
+(
+-- a user that edit anything
+EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
+WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+AND rl.edit_all = true)
+OR
+reinbeitebruker_id is null
+OR
+-- a user that has access to certain areas
+reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
+WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+AND rl.table_name = '*'
+AND rl.column_name = 'reinbeitebruker_id'))
+
+-- a user have explicit access to selected table
+OR
+reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
+WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+AND rl.table_name = 'topo_rein.arstidsbeite_host_flate'
+AND rl.column_name = 'reinbeitebruker_id'))
+
+-- handles insert new lines on surfaces
+OR
+current_setting('pgtopo_update.draw_line_opr') = '1'
+
+)
+;
+
+
+/**
+ * Creates a "logging" schema with an "history" table where are stored records in JSON format
+ * 
+ * Requires PostgreSQL >= 9.3 since data is stored in JSON format
+ *
+ * Info http://www.cybertec.at/2013/12/tracking-changes-in-postgresql/ and  https://gist.github.com/cristianp6/29ce1c942448e95c2f95
+ */
+
+
+
+/* Create the table in which to store changes in tables logs */
+--drop TABLE topo_rein.data_update_log cascade;
+
+CREATE TABLE topo_rein.data_update_log (
+    id              serial,
+    action_time     timestamptz not null DEFAULT CURRENT_TIMESTAMP,
+    schema_name     text not null,
+    table_name      text not null,
+    row_id 			int not null, -- used to find row
+    reinbeitebruker_id character varying(3), -- used to select rows for logged in saksbehandler to verify
+    user_name       text null DEFAULT current_user,
+    operation       text not null,
+    json_row_data   json null,
+    change_confirmed_by_admin boolean NOT null default false
+    
+);
+
+
+/* Create view need by the update function, this view is just made to get a generic way of naming */
+--CREATE OR REPLACE VIEW topo_rein.arstidsbeite_sommer_flate_json_update_log as select * from topo_rein.arstidsbeite_sommer_topojson_flate_v ;
+
+-- create surface view
+DO
+$body$
+DECLARE
+tbl_name text;
+topo_tables text[];
+BEGIN
+foreach tbl_name IN array string_to_array('arstidsbeite_sommer,arstidsbeite_host,arstidsbeite_hostvinter,arstidsbeite_vinter,arstidsbeite_var,beitehage,oppsamlingomr',',')
+loop
+	EXECUTE format('CREATE OR REPLACE VIEW %1$s_flate_json_update_log as select * from %1$s_topojson_flate_v ;', 'topo_rein.'||tbl_name);
+END loop;
+END
+$body$;
+
+-- create line view
+DO
+$body$
+DECLARE
+tbl_name text;
+topo_tables text[];
+BEGIN
+foreach tbl_name IN array string_to_array('reindrift_anlegg',',')
+loop
+	EXECUTE format('CREATE OR REPLACE VIEW %1$s_linje_json_update_log as select * from %1$s_topojson_linje_v ;', 'topo_rein.'||tbl_name);
+END loop;
+END
+$body$;
+
+-- create point view
+DO
+$body$
+DECLARE
+tbl_name text;
+topo_tables text[];
+BEGIN
+foreach tbl_name IN array string_to_array('reindrift_anlegg',',')
+loop
+	EXECUTE format('CREATE OR REPLACE VIEW %1$s_punkt_json_update_log as select * from %1$s_topojson_punkt_v ;', 'topo_rein.'||tbl_name);
+END loop;
+END
+$body$;
+
+
+/* Create a function that convert to json if possible */
+CREATE OR REPLACE FUNCTION topo_rein.data_update_log_get_json_row_data(query text, srid_out int, maxdecimaldigits int, simplify_patteren int)
+RETURNS text AS
+$$
+DECLARE
+  json_result text;
+BEGIN
+  BEGIN	
+   json_result := topo_rein.query_to_topojson(query, srid_out, maxdecimaldigits, simplify_patteren)::json;
+  EXCEPTION WHEN OTHERS THEN
+  	RAISE NOTICE 'Failed to ake json for %', query;
+
+  END;
+  RETURN json_result;
+
+END;
+$$ LANGUAGE 'plpgsql' VOLATILE;
+
+
+
+/* Create the functions used for trigger insert after  */
+CREATE OR REPLACE FUNCTION topo_rein.change_trigger_insert_after() RETURNS trigger AS $$
+    BEGIN
+        IF    (TG_OP = 'INSERT') THEN
+            INSERT INTO topo_rein.data_update_log (table_name, schema_name, row_id, reinbeitebruker_id, operation, json_row_data)
+                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.id, NEW.reinbeitebruker_id, TG_OP||'_AFTER', 
+                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,32633,0,0)::json
+                );
+            RETURN NEW;
+        END IF;
+        RETURN NULL;
+    END;
+$$ LANGUAGE 'plpgsql' SECURITY DEFINER;
+
+/* Create the functions used for trigger update before  */
+CREATE OR REPLACE FUNCTION topo_rein.change_trigger_update_before() RETURNS trigger AS $$
+    BEGIN
+		IF (TG_OP = 'UPDATE') THEN
+            INSERT INTO topo_rein.data_update_log (table_name, schema_name, row_id, reinbeitebruker_id, operation, json_row_data)
+                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.id, NEW.reinbeitebruker_id, TG_OP||'_BEFORE', 
+                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||OLD.id,32633,0,0)::json
+                );
+            RETURN NEW;
+        END IF;
+        RETURN NULL;
+    END;
+$$ LANGUAGE 'plpgsql' SECURITY DEFINER;
+
+/* Create the functions used for trigger update after  */
+CREATE OR REPLACE FUNCTION topo_rein.change_trigger_update_after() RETURNS trigger AS $$
+    BEGIN
+		IF (TG_OP = 'UPDATE') THEN
+            INSERT INTO topo_rein.data_update_log (table_name, schema_name, row_id, reinbeitebruker_id, operation, json_row_data)
+                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.id, NEW.reinbeitebruker_id, TG_OP||'_AFTER', 
+                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,32633,0,0)::json
+                );
+            RETURN NEW;
+        END IF;
+        RETURN NULL;
+    END;
+$$ LANGUAGE 'plpgsql' SECURITY DEFINER;
+
+/* Create the triggers */
+
+DO
+$body$
+DECLARE
+tbl_name text;
+topo_tables text[];
+BEGIN
+foreach tbl_name IN array string_to_array('arstidsbeite_sommer_flate,arstidsbeite_host_flate,arstidsbeite_hostvinter_flate,arstidsbeite_vinter_flate,arstidsbeite_var_flate,beitehage_flate,oppsamlingomr_flate,reindrift_anlegg_linje,reindrift_anlegg_punkt',',')
+loop
+
+EXECUTE format('DROP TRIGGER IF EXISTS table_change_trigger_update_after ON %1$s;
+     CREATE TRIGGER table_change_trigger_update_after                                            
+     AFTER INSERT ON %1$s       
+     FOR EACH ROW EXECUTE PROCEDURE topo_rein.change_trigger_update_before()', 'topo_rein.'||tbl_name);           
+
+EXECUTE format('DROP TRIGGER IF EXISTS table_change_trigger_update_before ON %1$s;
+     CREATE TRIGGER table_change_trigger_update_before                                            
+     BEFORE UPDATE ON %1$s        
+     FOR EACH ROW EXECUTE PROCEDURE topo_rein.change_trigger_update_before()', 'topo_rein.'||tbl_name);             
+
+EXECUTE format('DROP TRIGGER IF EXISTS table_change_trigger_update_after ON %1$s;
+     CREATE TRIGGER table_change_trigger_update_after                                            
+     AFTER UPDATE ON %1$s       
+     FOR EACH ROW EXECUTE PROCEDURE topo_rein.change_trigger_update_after()', 'topo_rein.'||tbl_name);           
+     
+END loop;
+END
+$body$;
+
+
+-- Create view to show changes before and after for each single row
+CREATE OR REPLACE VIEW topo_rein.data_update_log_new_v AS (
+SELECT 
+g.schema_name , g.table_name, l1.row_id as data_row_id,
+
+l1.id as id_before,
+l1.reinbeitebruker_id as reinbeitebruker_id_before ,
+l1.user_name as user_name_before,
+l1.json_row_data as json_before,
+l2.id as id_after,
+l2.reinbeitebruker_id as reinbeitebruker_id_after ,
+l2.user_name as user_name_after,
+l2.json_row_data as json_after 
+from 
+(
+ SELECT 
+ schema_name , table_name , min(id) as data_update_log_id_before, max(id) as data_update_log_id_after 
+ from topo_rein.data_update_log 
+ where change_confirmed_by_admin = false
+ and operation in ('UPDATE_BEFORE','UPDATE_AFTER')
+ group by schema_name , table_name , row_id
+) g,
+topo_rein.data_update_log l1,
+topo_rein.data_update_log l2
+where l1.id = g.data_update_log_id_before
+and  l2.id = g.data_update_log_id_after
+);
+
+
+-- Used for tesing          
+--TRUNCATE table topo_rein.data_update_log;
+--SELECT * FROM topo_rein.data_update_log;
+--SET pgtopo_update.session_id ='session_id';
+--SET pgtopo_update.draw_line_opr = '1';
+--SET client_min_messages to 'debug';
+
+--SELECT '31', topo_update.apply_attr_on_topo_line('{"properties":{"id":2,"status":1,"reinbeitebruker_id":"ZH","reindrift_sesongomrade_kode":4}}','topo_rein', 'arstidsbeite_sommer_flate', 'omrade');
+--SELECT '32', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status  from topo_rein.arstidsbeite_sommer_flate;
+
+
