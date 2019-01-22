@@ -71,8 +71,8 @@ cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_siidaomrade.sql >> /t
 
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/view*.sql >> /tmp/trein.sql
 
-cat ~/dev/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/set_rls_rules.sql >> /tmp/trein.sql
-cat ~/dev/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/set_trigger_update_change_log.sql >> /tmp/trein.sql
+cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/set_rls_rules.sql >> /tmp/trein.sql
+cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/set_trigger_update_change_log.sql >> /tmp/trein.sql
 
 
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/roles_tables.sql  >> /tmp/trein.sql 
