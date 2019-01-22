@@ -4728,7 +4728,7 @@ CREATE TABLE topo_rein.data_update_log (
     table_name      text not null,
     row_id 			int not null, -- used to find row
     reinbeitebruker_id character varying(3), -- used to select rows for logged in saksbehandler to verify
-    user_name       text null DEFAULT current_user,
+    saksbehandler   text,
     operation       text not null,
     json_row_data   json null,
     change_confirmed_by_admin boolean NOT null default false
@@ -4737,7 +4737,8 @@ CREATE TABLE topo_rein.data_update_log (
 
 
 /* Create view need by the update function, this view is just made to get a generic way of naming */
---CREATE OR REPLACE VIEW topo_rein.arstidsbeite_sommer_flate_json_update_log as select * from topo_rein.arstidsbeite_sommer_topojson_flate_v ;
+--CREATE OR REPLACE VIEW topo_rein.arstidsbeite_sommer_flate_json_update_log as select v1.*,v2.saksbehandler 
+--from topo_rein.arstidsbeite_sommer_topojson_flate_v v1, topo_rein.arstidsbeite_sommer_flate v2 where v1.id = v2.id;
 
 -- create surface view
 DO
@@ -4748,12 +4749,13 @@ topo_tables text[];
 BEGIN
 foreach tbl_name IN array string_to_array('arstidsbeite_sommer,arstidsbeite_host,arstidsbeite_hostvinter,arstidsbeite_vinter,arstidsbeite_var,beitehage,oppsamlingomr',',')
 loop
-	EXECUTE format('CREATE OR REPLACE VIEW %1$s_flate_json_update_log as select * from %1$s_topojson_flate_v ;', 'topo_rein.'||tbl_name);
+	EXECUTE format('DROP VIEW IF EXISTS %1$s_flate_json_update_log; CREATE OR REPLACE VIEW %1$s_flate_json_update_log as select v1.*,v2.saksbehandler from %1$s_topojson_flate_v v1, %1$s_flate v2 where v1.id = v2.id', 'topo_rein.'||tbl_name);
 END loop;
 END
 $body$;
 
 -- create line view
+-- what about trekklei ?????
 DO
 $body$
 DECLARE
@@ -4762,7 +4764,7 @@ topo_tables text[];
 BEGIN
 foreach tbl_name IN array string_to_array('reindrift_anlegg',',')
 loop
-	EXECUTE format('CREATE OR REPLACE VIEW %1$s_linje_json_update_log as select * from %1$s_topojson_linje_v ;', 'topo_rein.'||tbl_name);
+	EXECUTE format('DROP VIEW IF EXISTS %1$s_linje_json_update_log; CREATE OR REPLACE VIEW %1$s_linje_json_update_log as select v1.*,v2.saksbehandler from %1$s_topojson_linje_v v1, %1$s_linje v2 where v1.id = v2.id', 'topo_rein.'||tbl_name);
 END loop;
 END
 $body$;
@@ -4776,7 +4778,7 @@ topo_tables text[];
 BEGIN
 foreach tbl_name IN array string_to_array('reindrift_anlegg',',')
 loop
-	EXECUTE format('CREATE OR REPLACE VIEW %1$s_punkt_json_update_log as select * from %1$s_topojson_punkt_v ;', 'topo_rein.'||tbl_name);
+	EXECUTE format('DROP VIEW IF EXISTS %1$s_punkt_json_update_log; CREATE OR REPLACE VIEW %1$s_punkt_json_update_log as select v1.*,v2.saksbehandler from %1$s_topojson_punkt_v v1, %1$s_punkt v2 where v1.id = v2.id', 'topo_rein.'||tbl_name);
 END loop;
 END
 $body$;
@@ -4806,8 +4808,8 @@ $$ LANGUAGE 'plpgsql' VOLATILE;
 CREATE OR REPLACE FUNCTION topo_rein.change_trigger_insert_after() RETURNS trigger AS $$
     BEGIN
         IF    (TG_OP = 'INSERT') THEN
-            INSERT INTO topo_rein.data_update_log (table_name, schema_name, row_id, reinbeitebruker_id, operation, json_row_data)
-                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.id, NEW.reinbeitebruker_id, TG_OP||'_AFTER', 
+            INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, reinbeitebruker_id, operation, json_row_data)
+                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.saksbehandler, NEW.id, NEW.reinbeitebruker_id, TG_OP||'_AFTER', 
                 topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,32633,0,0)::json
                 );
             RETURN NEW;
@@ -4820,8 +4822,8 @@ $$ LANGUAGE 'plpgsql' SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION topo_rein.change_trigger_update_before() RETURNS trigger AS $$
     BEGIN
 		IF (TG_OP = 'UPDATE') THEN
-            INSERT INTO topo_rein.data_update_log (table_name, schema_name, row_id, reinbeitebruker_id, operation, json_row_data)
-                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.id, NEW.reinbeitebruker_id, TG_OP||'_BEFORE', 
+            INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, reinbeitebruker_id, operation, json_row_data)
+                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, OLD.saksbehandler, OLD.id, OLD.reinbeitebruker_id, TG_OP||'_BEFORE', 
                 topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||OLD.id,32633,0,0)::json
                 );
             RETURN NEW;
@@ -4834,8 +4836,8 @@ $$ LANGUAGE 'plpgsql' SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION topo_rein.change_trigger_update_after() RETURNS trigger AS $$
     BEGIN
 		IF (TG_OP = 'UPDATE') THEN
-            INSERT INTO topo_rein.data_update_log (table_name, schema_name, row_id, reinbeitebruker_id, operation, json_row_data)
-                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.id, NEW.reinbeitebruker_id, TG_OP||'_AFTER', 
+            INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, reinbeitebruker_id, operation, json_row_data)
+                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.saksbehandler, NEW.id, NEW.reinbeitebruker_id, TG_OP||'_AFTER', 
                 topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,32633,0,0)::json
                 );
             RETURN NEW;
@@ -4882,11 +4884,11 @@ g.schema_name , g.table_name, l1.row_id as data_row_id,
 
 l1.id as id_before,
 l1.reinbeitebruker_id as reinbeitebruker_id_before ,
-l1.user_name as user_name_before,
+l1.saksbehandler as saksbehandler_before,
 l1.json_row_data as json_before,
 l2.id as id_after,
 l2.reinbeitebruker_id as reinbeitebruker_id_after ,
-l2.user_name as user_name_after,
+l2.saksbehandler as saksbehandler_after,
 l2.json_row_data as json_after 
 from 
 (
