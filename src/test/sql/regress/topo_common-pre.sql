@@ -4805,7 +4805,7 @@ $$ LANGUAGE 'plpgsql' VOLATILE;
 
 
 /* Create the functions used for trigger insert after  */
-CREATE OR REPLACE FUNCTION topo_rein.change_trigger_insert_after() RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION topo_rein.table_change_trigger_insert_after() RETURNS trigger AS $$
     BEGIN
         IF    (TG_OP = 'INSERT') THEN
             INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, reinbeitebruker_id, operation, json_row_data)
@@ -4857,10 +4857,10 @@ BEGIN
 foreach tbl_name IN array string_to_array('arstidsbeite_sommer_flate,arstidsbeite_host_flate,arstidsbeite_hostvinter_flate,arstidsbeite_vinter_flate,arstidsbeite_var_flate,beitehage_flate,oppsamlingomr_flate,reindrift_anlegg_linje,reindrift_anlegg_punkt',',')
 loop
 
-EXECUTE format('DROP TRIGGER IF EXISTS table_change_trigger_update_after ON %1$s;
-     CREATE TRIGGER table_change_trigger_update_after                                            
+EXECUTE format('DROP TRIGGER IF EXISTS table_change_trigger_insert_after ON %1$s;
+     CREATE TRIGGER table_change_trigger_insert_after                                            
      AFTER INSERT ON %1$s       
-     FOR EACH ROW EXECUTE PROCEDURE topo_rein.change_trigger_update_before()', 'topo_rein.'||tbl_name);           
+     FOR EACH ROW EXECUTE PROCEDURE topo_rein.table_change_trigger_insert_after()', 'topo_rein.'||tbl_name);           
 
 EXECUTE format('DROP TRIGGER IF EXISTS table_change_trigger_update_before ON %1$s;
      CREATE TRIGGER table_change_trigger_update_before                                            
@@ -4881,6 +4881,7 @@ $body$;
 CREATE OR REPLACE VIEW topo_rein.data_update_log_new_v AS (
 SELECT 
 g.schema_name , g.table_name, l1.row_id as data_row_id,
+-- TODO test that it's ok tha we get srid from json
 
 l1.id as id_before,
 l1.reinbeitebruker_id as reinbeitebruker_id_before ,
