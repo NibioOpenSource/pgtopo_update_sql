@@ -4722,12 +4722,20 @@ current_setting('pgtopo_update.draw_line_opr') = '1'
 --drop TABLE topo_rein.data_update_log cascade;
 
 CREATE TABLE topo_rein.data_update_log (
-    id              serial,
+    id              serial primary key not null,
     action_time     timestamptz not null DEFAULT CURRENT_TIMESTAMP,
     schema_name     text not null,
-    table_name      text not null,
-    row_id 			int not null, -- used to find row
+    table_name      text not null, 
+    row_id 			int not null, -- used to find row for the table in the schema name and table name
     reinbeitebruker_id character varying(3), -- used to select rows for logged in saksbehandler to verify
+    
+	-- This is flag used indicate the status of this record. The rules for how to use this flag is not decided yet.
+	-- Here is a list of the current states.
+	-- -1 recjected by user
+	-- 0: Ukjent (uknown)
+	-- 1: Godkjent 
+	-- 10: Endret
+    status 			int,	
     saksbehandler   text,
     operation       text not null,
     json_row_data   json null,
@@ -4808,8 +4816,8 @@ $$ LANGUAGE 'plpgsql' VOLATILE;
 CREATE OR REPLACE FUNCTION topo_rein.table_change_trigger_insert_after() RETURNS trigger AS $$
     BEGIN
         IF    (TG_OP = 'INSERT') THEN
-            INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, reinbeitebruker_id, operation, json_row_data)
-                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.saksbehandler, NEW.id, NEW.reinbeitebruker_id, TG_OP||'_AFTER', 
+            INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
+                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.saksbehandler, NEW.id, NEW.status, NEW.reinbeitebruker_id, TG_OP||'_AFTER', 
                 topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,32633,0,0)::json
                 );
             RETURN NEW;
@@ -4822,8 +4830,8 @@ $$ LANGUAGE 'plpgsql' SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION topo_rein.change_trigger_update_before() RETURNS trigger AS $$
     BEGIN
 		IF (TG_OP = 'UPDATE') THEN
-            INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, reinbeitebruker_id, operation, json_row_data)
-                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, OLD.saksbehandler, OLD.id, OLD.reinbeitebruker_id, TG_OP||'_BEFORE', 
+            INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
+                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, OLD.saksbehandler, OLD.id, OLD.status, OLD.reinbeitebruker_id, TG_OP||'_BEFORE', 
                 topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||OLD.id,32633,0,0)::json
                 );
             RETURN NEW;
@@ -4836,8 +4844,8 @@ $$ LANGUAGE 'plpgsql' SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION topo_rein.change_trigger_update_after() RETURNS trigger AS $$
     BEGIN
 		IF (TG_OP = 'UPDATE') THEN
-            INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, reinbeitebruker_id, operation, json_row_data)
-                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.saksbehandler, NEW.id, NEW.reinbeitebruker_id, TG_OP||'_AFTER', 
+            INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
+                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.saksbehandler, NEW.id, NEW.status, NEW.reinbeitebruker_id, TG_OP||'_AFTER', 
                 topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,32633,0,0)::json
                 );
             RETURN NEW;
@@ -4877,6 +4885,8 @@ END
 $body$;
 
 
+-- this function that used to select 
+
 -- Create view to show changes before and after for each single row
 CREATE OR REPLACE VIEW topo_rein.data_update_log_new_v AS (
 SELECT 
@@ -4893,17 +4903,22 @@ l2.saksbehandler as saksbehandler_after,
 l2.json_row_data as json_after 
 from 
 (
+ -- only select does with status 10 and that not have been checked before
+ -- group by the table and the row id
  SELECT 
  schema_name , table_name , min(id) as data_update_log_id_before, max(id) as data_update_log_id_after 
  from topo_rein.data_update_log 
  where change_confirmed_by_admin = false
- and operation in ('UPDATE_BEFORE','UPDATE_AFTER')
+-- and operation in ('UPDATE_BEFORE','UPDATE_AFTER')
+ and status in (10,0)
  group by schema_name , table_name , row_id
 ) g,
 topo_rein.data_update_log l1,
 topo_rein.data_update_log l2
-where l1.id = g.data_update_log_id_before
+where data_update_log_id_before != data_update_log_id_after
+and l1.id = g.data_update_log_id_before
 and  l2.id = g.data_update_log_id_after
+
 );
 
 
