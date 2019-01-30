@@ -42,7 +42,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-select topo_update.layer_accept_update(0,0,'eee');
+--select topo_update.layer_accept_update(0,0,'eee');
 
 
 
