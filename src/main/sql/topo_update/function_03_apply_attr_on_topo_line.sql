@@ -30,13 +30,14 @@ update_fields_t text[];
 -- holde the computed value for json input reday to use
 json_input_structure topo_update.json_input_structure;  
 
+use_default_dates boolean = false;
 BEGIN
 
 	-- get meta data
 	topo_info := topo_update.make_input_meta_info(layer_schema, layer_table , layer_column );
 	
 	-- parse the input values
-	json_input_structure := topo_update.handle_input_json_props(json_feature::json,server_json_feature::json,4258);
+	json_input_structure := topo_update.handle_input_json_props(json_feature::json,server_json_feature::json,4258,use_default_dates);
 
 	
 	RAISE NOTICE 'topo_update.apply_attr_on_topo_line json_input_structure %', json_input_structure;
