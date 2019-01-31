@@ -1,6 +1,5 @@
 
 -- update attribute values for given topo object
--- TODO make it a better name since this is used boh for surface objects and line object
 
 CREATE OR REPLACE FUNCTION topo_update.apply_attr_on_topo_line(json_feature text,
   layer_schema text, layer_table text, layer_column text,server_json_feature text default null) 
