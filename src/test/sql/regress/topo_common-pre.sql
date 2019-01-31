@@ -4888,16 +4888,21 @@ $body$;
 -- this function that used to select 
 
 -- Create view to show changes before and after for each single row
+
+--DROP VIEW topo_rein.data_update_log_new_v;
+ 
 CREATE OR REPLACE VIEW topo_rein.data_update_log_new_v AS (
 SELECT 
 g.schema_name , g.table_name, l1.row_id as data_row_id,
 -- TODO test that it's ok tha we get srid from json
 
 l1.id as id_before,
+l1.operation as operation_berfore,
 l1.reinbeitebruker_id as reinbeitebruker_id_before ,
 l1.saksbehandler as saksbehandler_before,
 l1.json_row_data as json_before,
 l2.id as id_after,
+l2.operation as operation_after,
 l2.reinbeitebruker_id as reinbeitebruker_id_after ,
 l2.saksbehandler as saksbehandler_after,
 l2.json_row_data as json_after 
