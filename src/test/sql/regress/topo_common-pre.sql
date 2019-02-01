@@ -4914,15 +4914,16 @@ from
  schema_name , table_name , min(id) as data_update_log_id_before, max(id) as data_update_log_id_after 
  from topo_rein.data_update_log 
  where change_confirmed_by_admin = false
--- and operation in ('UPDATE_BEFORE','UPDATE_AFTER')
- and status in (10,0)
+--and operation in ('UPDATE_BEFORE','UPDATE_AFTER')
+--and status in (10,0)
  group by schema_name , table_name , row_id
 ) g,
 topo_rein.data_update_log l1,
 topo_rein.data_update_log l2
 where data_update_log_id_before != data_update_log_id_after
 and l1.id = g.data_update_log_id_before
-and  l2.id = g.data_update_log_id_after
+and l2.status in (10,0)
+and l2.id = g.data_update_log_id_after
 
 );
 
