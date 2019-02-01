@@ -53,10 +53,12 @@ BEGIN
 	where s.id = _data_update_log_id_before and s.change_confirmed_by_admin = false;	
 
 	-- update status variables and saksbehandler
-	command_string := format('update %I.%I set status = 1, saksbehandler = %L, slette_status_kode = %L where id = %L',
-	this_schema_name, this_table_name, _saksbehandler, this_slette_status_kode, this_data_row_id);
-	RAISE NOTICE 'command_string %' , command_string;
-	EXECUTE command_string;
+	IF (this_slette_status_kode is not null) THEN
+		command_string := format('update %I.%I set status = 1, saksbehandler = %L, slette_status_kode = %L where id = %L',
+		this_schema_name, this_table_name, _saksbehandler, this_slette_status_kode, this_data_row_id);
+		RAISE NOTICE 'command_string %' , command_string;
+		EXECUTE command_string;
+	END IF;
 
 
 	update topo_rein.data_update_log s
