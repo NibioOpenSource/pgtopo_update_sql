@@ -449,69 +449,6 @@ CREATE INDEX topo_rein_sysdata_rvr_edge_simple_geo_idx ON topo_rein.arstidsbeite
 
 --COMMENT ON INDEX topo_rein.topo_rein_sysdata_rvr_edge_simple_geo_idx IS 'A index created to avoid building topo when the data is used for wms like mapserver which do no use the topo geometry';
 
--- add row level security
-ALTER TABLE topo_rein.arstidsbeite_var_flate ENABLE ROW LEVEL SECURITY;
-
--- Give all users select rights  
--- Is another way to do this
-CREATE POLICY topo_rein_arstidsbeite_var_flate_select_policy ON topo_rein.arstidsbeite_var_flate FOR SELECT  USING(true);
-
--- Handle update 
-DROP POLICY IF EXISTS topo_rein_arstidsbeite_var_flate_update_policy ON topo_rein.arstidsbeite_var_flate ;
-
-CREATE POLICY topo_rein_arstidsbeite_var_flate_update_policy ON topo_rein.arstidsbeite_var_flate 
-FOR ALL                                                                                                                  
-USING
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-
-OR
-reinbeitebruker_id is null
-
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-
--- a user have explicit access to selected table
-OR
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = 'topo_rein.arstidsbeite_var_flate'
-AND rl.column_name = 'reinbeitebruker_id'))
-
-)
-WITH CHECK
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-
-OR
-reinbeitebruker_id is null
-
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-
--- a user have explicit access to selected table
-OR
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = 'topo_rein.arstidsbeite_var_flate'
-AND rl.column_name = 'reinbeitebruker_id'))
-
-)
-;
 select CreateTopology('topo_rein_sysdata_rso',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
@@ -670,68 +607,6 @@ CREATE INDEX topo_rein_arstidsbeite_sommer_flate_geo_relation_id_idx ON topo_rei
 
 COMMENT ON INDEX topo_rein.topo_rein_arstidsbeite_sommer_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
--- add row level security
-ALTER TABLE topo_rein.arstidsbeite_sommer_flate ENABLE ROW LEVEL SECURITY;
-
--- Give all users select rights  
--- Is another way to do this
-CREATE POLICY topo_rein_arstidsbeite_sommer_flate_select_policy ON topo_rein.arstidsbeite_sommer_flate FOR SELECT  USING(true);
-
--- Drp if exits
-DROP POLICY IF EXISTS topo_rein_arstidsbeite_sommer_flate_update_policy ON topo_rein.arstidsbeite_sommer_flate;
-
--- Handle update 
-CREATE POLICY topo_rein_arstidsbeite_sommer_flate_update_policy ON topo_rein.arstidsbeite_sommer_flate 
-FOR ALL                                                                                                                  
-USING
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-
-OR
-reinbeitebruker_id is null
-
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-
--- a user have explicit access to selected table
-OR
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = 'topo_rein.arstidsbeite_sommer_flate'
-AND rl.column_name = 'reinbeitebruker_id'))
-
-)
-WITH CHECK
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-reinbeitebruker_id is null
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
--- a user have explicit access to selected table
-
-OR
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = 'topo_rein.arstidsbeite_sommer_flate'
-AND rl.column_name = 'reinbeitebruker_id'))
-
-)
-;
 select CreateTopology('topo_rein_sysdata_rhs',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
@@ -1049,68 +924,6 @@ CREATE INDEX topo_rein_arstidsbeite_hostvinter_flate_geo_relation_id_idx ON topo
 
 COMMENT ON INDEX topo_rein.topo_rein_arstidsbeite_hostvinter_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
--- add row level security
-ALTER TABLE topo_rein.arstidsbeite_hostvinter_flate ENABLE ROW LEVEL SECURITY;
-
--- Give all users select rights  
--- Is another way to do this
-CREATE POLICY topo_rein_arstidsbeite_hostvinter_flate_select_policy ON topo_rein.arstidsbeite_hostvinter_flate FOR SELECT  USING(true);
-
--- Drp if exits
-DROP POLICY IF EXISTS topo_rein_arstidsbeite_hostvinter_flate_update_policy ON topo_rein.arstidsbeite_hostvinter_flate ;
-
--- Handle update 
-CREATE POLICY topo_rein_arstidsbeite_hostvinter_flate_update_policy ON topo_rein.arstidsbeite_hostvinter_flate 
-FOR ALL                                                                                                                  
-USING
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-
-OR
-reinbeitebruker_id is null
-
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-
--- a user have explicit access to selected table
-OR
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = 'topo_rein.arstidsbeite_hostvinter_flate'
-AND rl.column_name = 'reinbeitebruker_id'))
-
-)
-WITH CHECK
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-reinbeitebruker_id is null
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-
--- a user have explicit access to selected table
-OR
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = 'topo_rein.arstidsbeite_hostvinter_flate'
-AND rl.column_name = 'reinbeitebruker_id'))
-
-)
-;
 select CreateTopology('topo_rein_sysdata_rvi',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
@@ -1267,66 +1080,6 @@ CREATE INDEX topo_rein_arstidsbeite_vinter_flate_geo_relation_id_idx ON topo_rei
 
 COMMENT ON INDEX topo_rein.topo_rein_arstidsbeite_vinter_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
--- add row level security
-ALTER TABLE topo_rein.arstidsbeite_vinter_flate ENABLE ROW LEVEL SECURITY;
-
--- Give all users select rights  
--- Is another way to do this
-CREATE POLICY topo_rein_arstidsbeite_vinter_flate_select_policy ON topo_rein.arstidsbeite_vinter_flate FOR SELECT  USING(true);
-
--- Drp if exits
-DROP POLICY IF EXISTS topo_rein_arstidsbeite_vinter_flate_update_policy ON topo_rein.arstidsbeite_vinter_flate;
-
--- Handle update 
-CREATE POLICY topo_rein_arstidsbeite_vinter_flate_update_policy ON topo_rein.arstidsbeite_vinter_flate 
-FOR ALL                                                                                                                  
-USING
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-reinbeitebruker_id is null
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-
--- a user have explicit access to selected table
-OR
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = 'topo_rein.arstidsbeite_vinter_flate'
-AND rl.column_name = 'reinbeitebruker_id'))
-
-)
-WITH CHECK
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-reinbeitebruker_id is null
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-
--- a user have explicit access to selected table
-OR
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = 'topo_rein.arstidsbeite_vinter_flate'
-AND rl.column_name = 'reinbeitebruker_id'))
-
-)
-;
 
 -- Should we have one table for all årstidsbeite thems or 5 different tables as today ?
 -- We go for the solution with 5 tables now because then it's probably more easy to handle non overlap rules
@@ -1432,81 +1185,6 @@ SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata_ran', 'topo_rein', 'rei
 CREATE INDEX topo_rein_reindrift_anlegg_linje_geo_relation_id_idx ON topo_rein.reindrift_anlegg_linje(topo_rein.get_relation_id(linje));
 
 
--- add row level security
-ALTER TABLE topo_rein.reindrift_anlegg_linje ENABLE ROW LEVEL SECURITY;
-
--- Give all users select rights
--- Is another way to do this
-CREATE POLICY topo_rein_reindrift_anlegg_linje_select_policy ON topo_rein.reindrift_anlegg_linje FOR SELECT  USING(true);
-
--- Handle update
-DROP POLICY if EXISTS topo_rein_reindrift_anlegg_linje_update_policy ON topo_rein.reindrift_anlegg_linje;
-
-CREATE POLICY topo_rein_reindrift_anlegg_linje_update_policy ON topo_rein.reindrift_anlegg_linje
-FOR ALL
-USING
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-reinbeitebruker_id is null
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-
--- a user have explicit access to selected table
-OR
-(
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = 'topo_rein.reindrift_anlegg_linje'
-AND rl.column_name = 'reinbeitebruker_id'))
-AND
-anleggstype::varchar  = 
-ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = 'topo_rein.reindrift_anlegg_linje'
-AND rl.column_name = 'anleggstype')
-)
-
-)
-WITH CHECK
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-reinbeitebruker_id is null
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-
--- a user have explicit access to selected table
-OR
-(
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = 'topo_rein.reindrift_anlegg_linje'
-AND rl.column_name = 'reinbeitebruker_id'))
-AND
-anleggstype::varchar  = 
-ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = 'topo_rein.reindrift_anlegg_linje'
-AND rl.column_name = 'anleggstype')
-)
-
-)
-;
 
 -- Should we have one table for all årstidsbeite thems or 5 different tables as today ?
 -- We go for the solution with 5 tables now because then it's probably more easy to handle non overlap rules
@@ -1609,69 +1287,6 @@ SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata_ran', 'topo_rein', 'rei
 -- create function basded index to get performance
 CREATE INDEX topo_rein_reindrift_anlegg_punkt_geo_relation_id_idx ON topo_rein.reindrift_anlegg_punkt(topo_rein.get_relation_id(punkt));
 
--- add row level security
-ALTER TABLE topo_rein.reindrift_anlegg_punkt ENABLE ROW LEVEL SECURITY;
-
--- Give all users select rights
--- Is another way to do this
-CREATE POLICY topo_rein_reindrift_anlegg_punkt_select_policy ON topo_rein.reindrift_anlegg_punkt FOR SELECT  USING(true);
-
-DROP POLICY if EXISTS topo_rein_reindrift_anlegg_punkt_update_policy ON topo_rein.reindrift_anlegg_punkt;
-
--- Handle update
-CREATE POLICY topo_rein_reindrift_anlegg_punkt_update_policy ON topo_rein.reindrift_anlegg_punkt
-FOR ALL
-USING
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-
-OR
-reinbeitebruker_id is null
-
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-
--- a user have explicit access to selected table
-OR
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = 'topo_rein.reindrift_anlegg_punkt'
-AND rl.column_name = 'reinbeitebruker_id'))
-
-)
-WITH CHECK
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-
-OR
-reinbeitebruker_id is null
-
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-
--- a user have explicit access to selected table
-OR
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = 'topo_rein.reindrift_anlegg_punkt'
-AND rl.column_name = 'reinbeitebruker_id'))
-
-)
-;
 select CreateTopology('topo_rein_sysdata_rtr',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
@@ -1793,6 +1408,9 @@ WHERE rl.session_id = current_setting('pgtopo_update.session_id')
 AND rl.table_name = 'topo_rein.rein_trekklei_linje'
 AND rl.column_name = 'reinbeitebruker_id'))
 
+OR
+current_setting('pgtopo_update.draw_line_opr') = '1'
+
 )
 WITH CHECK
 (
@@ -1815,6 +1433,9 @@ reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping r
 WHERE rl.session_id = current_setting('pgtopo_update.session_id')
 AND rl.table_name = 'topo_rein.rein_trekklei_linje'
 AND rl.column_name = 'reinbeitebruker_id'))
+
+OR
+current_setting('pgtopo_update.draw_line_opr') = '1'
 
 )
 ;
@@ -1967,65 +1588,6 @@ CREATE INDEX topo_rein_beitehage_flate_geo_relation_id_idx ON topo_rein.beitehag
 
 COMMENT ON INDEX topo_rein.topo_rein_beitehage_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
--- add row level security
-ALTER TABLE topo_rein.beitehage_flate ENABLE ROW LEVEL SECURITY;
-
--- Give all users select rights
--- Is another way to do this
-CREATE POLICY topo_rein_beitehage_flate_select_policy ON topo_rein.beitehage_flate FOR SELECT  USING(true);
-
-DROP POLICY if EXISTS topo_rein_beitehage_flate_update_policy ON topo_rein.beitehage_flate;
-
--- Handle update
-CREATE POLICY topo_rein_beitehage_flate_update_policy ON topo_rein.beitehage_flate
-FOR ALL
-USING
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-reinbeitebruker_id is null
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-
--- a user have explicit access to selected table
-OR
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = 'topo_rein.beitehage_flate'
-AND rl.column_name = 'reinbeitebruker_id'))
-
-)
-WITH CHECK
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-reinbeitebruker_id is null
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-
--- a user have explicit access to selected table
-OR
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = 'topo_rein.beitehage_flate'
-AND rl.column_name = 'reinbeitebruker_id'))
-
-)
-;
 select CreateTopology('topo_rein_sysdata_rop',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
@@ -2175,65 +1737,6 @@ CREATE INDEX topo_rein_oppsamlingomr_flate_geo_relation_id_idx ON topo_rein.opps
 
 COMMENT ON INDEX topo_rein.topo_rein_oppsamlingomr_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
--- add row level security
-ALTER TABLE topo_rein.oppsamlingomr_flate ENABLE ROW LEVEL SECURITY;
-
--- Give all users select rights  
--- Is another way to do this
-CREATE POLICY topo_rein_oppsamlingomr_flate_select_policy ON topo_rein.oppsamlingomr_flate FOR SELECT  USING(true);
-
-DROP POLICY if EXISTS topo_rein_oppsamlingomr_flate_update_policy ON topo_rein.oppsamlingomr_flate;
-
--- Handle update 
-CREATE POLICY topo_rein_oppsamlingomr_flate_update_policy ON topo_rein.oppsamlingomr_flate 
-FOR ALL                                                                                                                  
-USING
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-reinbeitebruker_id is null
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-
--- a user have explicit access to selected table
-OR
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = 'topo_rein.oppsamlingomr_flate'
-AND rl.column_name = 'reinbeitebruker_id'))
-
-)
-WITH CHECK
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-reinbeitebruker_id is null
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-
--- a user have explicit access to selected table
-OR
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = 'topo_rein.oppsamlingomr_flate'
-AND rl.column_name = 'reinbeitebruker_id'))
-
-)
-;
 select CreateTopology('topo_rein_sysdata_rav',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
@@ -2375,47 +1878,6 @@ CREATE INDEX topo_rein_avtaleomrade_flate_geo_relation_id_idx ON topo_rein.avtal
 
 COMMENT ON INDEX topo_rein.topo_rein_avtaleomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
--- add row level security
-ALTER TABLE topo_rein.avtaleomrade_flate ENABLE ROW LEVEL SECURITY;
-
--- Give all users select rights
--- Is another way to do this
-CREATE POLICY topo_rein_avtaleomrade_flate_select_policy ON topo_rein.avtaleomrade_flate FOR SELECT  USING(true);
-
--- Handle update
-CREATE POLICY topo_rein_avtaleomrade_flate_update_policy ON topo_rein.avtaleomrade_flate
-FOR ALL
-USING
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-reinbeitebruker_id is null
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-)
-WITH CHECK
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-reinbeitebruker_id is null
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-)
-;
 select CreateTopology('topo_rein_sysdata_reo',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
@@ -2558,47 +2020,6 @@ CREATE INDEX topo_rein_ekspropriasjonsomrade_flate_geo_relation_id_idx ON topo_r
 
 COMMENT ON INDEX topo_rein.topo_rein_ekspropriasjonsomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
--- add row level security
-ALTER TABLE topo_rein.ekspropriasjonsomrade_flate ENABLE ROW LEVEL SECURITY;
-
--- Give all users select rights
--- Is another way to do this
-CREATE POLICY topo_rein_ekspropriasjonsomrade_flate_select_policy ON topo_rein.ekspropriasjonsomrade_flate FOR SELECT  USING(true);
-
--- Handle update
-CREATE POLICY topo_rein_ekspropriasjonsomrade_flate_update_policy ON topo_rein.ekspropriasjonsomrade_flate
-FOR ALL
-USING
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-reinbeitebruker_id is null
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-)
-WITH CHECK
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-reinbeitebruker_id is null
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-)
-;
 select CreateTopology('topo_rein_sysdata_rks',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
@@ -2740,47 +2161,6 @@ CREATE INDEX topo_rein_konsesjonsomrade_flate_geo_relation_id_idx ON topo_rein.k
 
 COMMENT ON INDEX topo_rein.topo_rein_konsesjonsomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
--- add row level security
-ALTER TABLE topo_rein.konsesjonsomrade_flate ENABLE ROW LEVEL SECURITY;
-
--- Give all users select rights
--- Is another way to do this
-CREATE POLICY topo_rein_konsesjonsomrade_flate_select_policy ON topo_rein.konsesjonsomrade_flate FOR SELECT  USING(true);
-
--- Handle update
-CREATE POLICY topo_rein_konsesjonsomrade_flate_update_policy ON topo_rein.konsesjonsomrade_flate
-FOR ALL
-USING
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-reinbeitebruker_id is null
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-)
-WITH CHECK
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-reinbeitebruker_id is null
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-)
-;
 select CreateTopology('topo_rein_sysdata_rko',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
@@ -2914,41 +2294,6 @@ CREATE INDEX topo_rein_konvensjonsomrade_flate_geo_relation_id_idx ON topo_rein.
 
 COMMENT ON INDEX topo_rein.topo_rein_konvensjonsomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
--- add row level security
-ALTER TABLE topo_rein.konvensjonsomrade_flate ENABLE ROW LEVEL SECURITY;
-
--- Give all users select rights
--- Is another way to do this
-CREATE POLICY topo_rein_konvensjonsomrade_flate_select_policy ON topo_rein.konvensjonsomrade_flate FOR SELECT  USING(true);
-
--- Handle update
-CREATE POLICY topo_rein_konvensjonsomrade_flate_update_policy ON topo_rein.konvensjonsomrade_flate
-FOR ALL
-USING
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-NOT EXISTS (
-  SELECT * FROM INFORMATION_SCHEMA.COLUMNS
-  WHERE TABLE_SCHEMA = 'topo_rein' AND TABLE_NAME='konvensjonsomrade_flate' AND COLUMN_NAME='reinbeitebruker_id'
-)
-)
-WITH CHECK
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-NOT EXISTS (
-  SELECT * FROM INFORMATION_SCHEMA.COLUMNS
-  WHERE TABLE_SCHEMA = 'topo_rein' AND TABLE_NAME='konvensjonsomrade_flate' AND COLUMN_NAME='reinbeitebruker_id'
-)
-)
-;
 select CreateTopology('topo_rein_sysdata_rdg',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
@@ -3096,47 +2441,6 @@ CREATE INDEX topo_rein_reinbeitedistrikt_flate_geo_relation_id_idx ON topo_rein.
 
 COMMENT ON INDEX topo_rein.topo_rein_reinbeitedistrikt_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
--- add row level security
-ALTER TABLE topo_rein.reinbeitedistrikt_flate ENABLE ROW LEVEL SECURITY;
-
--- Give all users select rights
--- Is another way to do this
-CREATE POLICY topo_rein_reinbeitedistrikt_flate_select_policy ON topo_rein.reinbeitedistrikt_flate FOR SELECT  USING(true);
-
--- Handle update
-CREATE POLICY topo_rein_reinbeitedistrikt_flate_update_policy ON topo_rein.reinbeitedistrikt_flate
-FOR ALL
-USING
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-reinbeitebruker_id is null
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-)
-WITH CHECK
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-reinbeitebruker_id is null
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-)
-;
 select CreateTopology('topo_rein_sysdata_reb',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
@@ -3310,45 +2614,6 @@ CREATE INDEX topo_rein_reinbeiteomrade_flate_geo_relation_id_idx ON topo_rein.re
 
 COMMENT ON INDEX topo_rein.topo_rein_reinbeiteomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
--- add row level security
-ALTER TABLE topo_rein.reinbeiteomrade_flate ENABLE ROW LEVEL SECURITY;
-
--- Give all users select rights
--- Is another way to do this
-CREATE POLICY topo_rein_reinbeiteomrade_flate_select_policy ON topo_rein.reinbeiteomrade_flate FOR SELECT USING(true);
-
--- Handle update
-CREATE POLICY topo_rein_reinbeiteomrade_flate_update_policy ON topo_rein.reinbeiteomrade_flate
-FOR ALL
-USING
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
--- OR
--- reinbeitebruker_id is null
-OR
-NOT EXISTS (
-  SELECT * FROM INFORMATION_SCHEMA.COLUMNS
-  WHERE TABLE_SCHEMA = 'topo_rein' AND TABLE_NAME='reinbeiteomrade_flate' AND COLUMN_NAME='reinbeitebruker_id'
-)
-)
-WITH CHECK
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
--- OR
--- reinbeitebruker_id is null
-OR
-NOT EXISTS (
-  SELECT * FROM INFORMATION_SCHEMA.COLUMNS
-  WHERE TABLE_SCHEMA = 'topo_rein' AND TABLE_NAME='reinbeiteomrade_flate' AND COLUMN_NAME='reinbeitebruker_id'
-)
-)
-;
 select CreateTopology('topo_rein_sysdata_rro',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
@@ -3492,41 +2757,6 @@ CREATE INDEX topo_rein_restriksjonsomrade_flate_geo_relation_id_idx ON topo_rein
 
 COMMENT ON INDEX topo_rein.topo_rein_restriksjonsomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
--- add row level security
-ALTER TABLE topo_rein.restriksjonsomrade_flate ENABLE ROW LEVEL SECURITY;
-
--- Give all users select rights
--- Is another way to do this
-CREATE POLICY topo_rein_restriksjonsomrade_flate_select_policy ON topo_rein.restriksjonsomrade_flate FOR SELECT  USING(true);
-
--- Handle update
-CREATE POLICY topo_rein_restriksjonsomrade_flate_update_policy ON topo_rein.restriksjonsomrade_flate
-FOR ALL
-USING
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-NOT EXISTS (
-  SELECT * FROM INFORMATION_SCHEMA.COLUMNS
-  WHERE TABLE_SCHEMA = 'topo_rein' AND TABLE_NAME='restriksjonsomrade_flate' AND COLUMN_NAME='reinbeitebruker_id'
-)
-)
-WITH CHECK
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-NOT EXISTS (
-  SELECT * FROM INFORMATION_SCHEMA.COLUMNS
-  WHERE TABLE_SCHEMA = 'topo_rein' AND TABLE_NAME='restriksjonsomrade_flate' AND COLUMN_NAME='reinbeitebruker_id'
-)
-)
-;
 DROP TABLE IF EXISTS topo_rein.restriksjonsomrade_linje cascade;
 CREATE TABLE topo_rein.restriksjonsomrade_linje(
 
@@ -3566,41 +2796,6 @@ CREATE INDEX topo_rein_restriksjonsomrade_linje_geo_relation_id_idx ON topo_rein
 
 COMMENT ON INDEX topo_rein.topo_rein_restriksjonsomrade_linje_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
--- add row level security
-ALTER TABLE topo_rein.restriksjonsomrade_linje ENABLE ROW LEVEL SECURITY;
-
--- Give all users select rights
--- Is another way to do this
-CREATE POLICY topo_rein_restriksjonsomrade_linje_select_policy ON topo_rein.restriksjonsomrade_linje FOR SELECT  USING(true);
-
--- Handle update
-CREATE POLICY topo_rein_restriksjonsomrade_linje_update_policy ON topo_rein.restriksjonsomrade_linje
-FOR ALL
-USING
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-NOT EXISTS (
-  SELECT * FROM INFORMATION_SCHEMA.COLUMNS
-  WHERE TABLE_SCHEMA = 'topo_rein' AND TABLE_NAME='restriksjonsomrade_linje' AND COLUMN_NAME='reinbeitebruker_id'
-)
-)
-WITH CHECK
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-NOT EXISTS (
-  SELECT * FROM INFORMATION_SCHEMA.COLUMNS
-  WHERE TABLE_SCHEMA = 'topo_rein' AND TABLE_NAME='restriksjonsomrade_linje' AND COLUMN_NAME='reinbeitebruker_id'
-)
-)
-;
 select CreateTopology('topo_rein_sysdata_rsi',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
@@ -3747,46 +2942,6 @@ COMMENT ON COLUMN topo_rein.siidaomrade_flate.felles_egenskaper IS 'Sosi common 
 CREATE INDEX topo_rein_siidaomrade_flate_geo_relation_id_idx ON topo_rein.siidaomrade_flate(topo_rein.get_relation_id(omrade));
 
 COMMENT ON INDEX topo_rein.topo_rein_siidaomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
-
--- add row level security
-ALTER TABLE topo_rein.siidaomrade_flate ENABLE ROW LEVEL SECURITY;
-
--- Give all users select rights
--- Is another way to do this
-CREATE POLICY topo_rein_siidaomrade_flate_select_policy ON topo_rein.siidaomrade_flate FOR SELECT  USING(true);
-
--- Handle update
-CREATE POLICY topo_rein_siidaomrade_flate_update_policy ON topo_rein.siidaomrade_flate
-FOR ALL
-USING
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
--- OR
--- reinbeitebruker_id is null
-OR
-NOT EXISTS (
-  SELECT * FROM INFORMATION_SCHEMA.COLUMNS
-  WHERE TABLE_SCHEMA = 'topo_rein' AND TABLE_NAME='siidaomrade_flate' AND COLUMN_NAME='reinbeitebruker_id'
-)
-)
-WITH CHECK
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
--- OR
--- reinbeitebruker_id is null
-OR
-NOT EXISTS (
-  SELECT * FROM INFORMATION_SCHEMA.COLUMNS
-  WHERE TABLE_SCHEMA = 'topo_rein' AND TABLE_NAME='siidaomrade_flate' AND COLUMN_NAME='reinbeitebruker_id'
-)
-)
-;
 -- DROP VIEW topo_rein.arstidsbeite_host_flate_v cascade ;
 
 
@@ -4307,8 +3462,8 @@ reinbeitebruker_id,
 (al.felles_egenskaper).verifiseringsdato AS "fellesegenskaper.verifiseringsdato",
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
-((al.felles_egenskaper).kvalitet).maalemetode AS "fellesegenskaper.maalemetode",
-((al.felles_egenskaper).kvalitet).noyaktighet AS "fellesegenskaper.noyaktighet",
+((al.felles_egenskaper).kvalitet).maalemetode AS "fellesegenskaper.kvalitet.maalemetode",
+((al.felles_egenskaper).kvalitet).noyaktighet AS "fellesegenskaper.kvalitet.noyaktighet",
 linje,
 alle_reinbeitebr_id, 
 status,
@@ -4475,6 +3630,24 @@ CASE
 	AND rl.column_name = 'anleggstype')
 	THEN true
 
+	WHEN
+	reinbeitebruker_id = 
+	ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.table_name = 'topo_rein.reindrift_anlegg_linje'
+	AND rl.column_name = 'reinbeitebruker_id')
+	AND
+	(
+	anleggstype is null
+	OR 
+	anleggstype::varchar  = 
+	ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
+	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	AND rl.table_name = 'topo_rein.reindrift_anlegg_linje'
+	AND rl.column_name = 'anleggstype')
+	)
+	THEN true
+
 	WHEN  reinbeitebruker_id is null
 	THEN true
 
@@ -4501,8 +3674,8 @@ anleggstype,
 (al.felles_egenskaper).verifiseringsdato AS "fellesegenskaper.verifiseringsdato",
 (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
 (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav",
-((al.felles_egenskaper).kvalitet).maalemetode AS "fellesegenskaper.maalemetode",
-((al.felles_egenskaper).kvalitet).noyaktighet AS "fellesegenskaper.noyaktighet",
+((al.felles_egenskaper).kvalitet).maalemetode AS "fellesegenskaper.kvalitet.maalemetode",
+((al.felles_egenskaper).kvalitet).noyaktighet AS "fellesegenskaper.kvalitet.noyaktighet",
 punkt,
 -- alle_reinbeitebr_id,
 status,
@@ -4637,75 +3810,111 @@ from topo_rein.siidaomrade_flate al;
 
 --select * from topo_rein.siidaomrade_topojson_flate_v
 
+-- create surface view
+DO
+$body$
+DECLARE
+tbl_name text;
+schema_name text = 'topo_rein';
+topo_tables text[];
+cmd_text text;
+BEGIN
+foreach tbl_name IN array string_to_array('arstidsbeite_sommer_flate,arstidsbeite_host_flate,arstidsbeite_hostvinter_flate,arstidsbeite_vinter_flate,arstidsbeite_var_flate,beitehage_flate,oppsamlingomr_flate,reindrift_anlegg_linje,rein_trekklei_linje,reindrift_anlegg_punkt',',')
+loop
+	cmd_text = format('-- add row level security
+	ALTER TABLE %3$s ENABLE ROW LEVEL SECURITY;
+	
+	-- Drop if exits
+	DROP POLICY IF EXISTS %2$s_select_policy ON %3$s;
 
--- add row level security
-ALTER TABLE topo_rein.arstidsbeite_host_flate ENABLE ROW LEVEL SECURITY;
-
--- Give all users select rights  
--- Is another way to do this
-CREATE POLICY topo_rein_arstidsbeite_host_flate_select_policy ON topo_rein.arstidsbeite_host_flate FOR SELECT  USING(true);
-
--- Drp if exits
-DROP POLICY IF EXISTS topo_rein_arstidsbeite_host_flate_update_policy ON topo_rein.arstidsbeite_host_flate;
-
--- Handle update 
-CREATE POLICY topo_rein_arstidsbeite_host_flate_update_policy ON topo_rein.arstidsbeite_host_flate 
-FOR ALL                                                                                                                  
-USING
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-reinbeitebruker_id is null
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-
--- a user have explicit access to selected table
-OR
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = 'topo_rein.arstidsbeite_host_flate'
-AND rl.column_name = 'reinbeitebruker_id'))
-
--- handles insert new lines on surfaces
-OR
-current_setting('pgtopo_update.draw_line_opr') = '1'
-
-)
-WITH CHECK
-(
--- a user that edit anything
-EXISTS (SELECT 1 FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.edit_all = true)
-OR
-reinbeitebruker_id is null
-OR
--- a user that has access to certain areas
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = '*'
-AND rl.column_name = 'reinbeitebruker_id'))
-
--- a user have explicit access to selected table
-OR
-reinbeitebruker_id = ANY((SELECT  column_value FROM topo_rein.rls_role_mapping rl
-WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-AND rl.table_name = 'topo_rein.arstidsbeite_host_flate'
-AND rl.column_name = 'reinbeitebruker_id'))
-
--- handles insert new lines on surfaces
-OR
-current_setting('pgtopo_update.draw_line_opr') = '1'
-
-)
+	-- Give all users select rights , Is it another way to do this
+	CREATE POLICY %2$s_select_policy ON %3$s FOR SELECT  USING(true);
+	
+	-- Drop if exits
+	DROP POLICY IF EXISTS %2$s_update_policy ON %3$s;
+	
+	-- Handle update 
+	CREATE POLICY %2$s_update_policy ON %3$s 
+	FOR ALL                                                                                                                  
+	USING
+	(
+		-- a user that edit anything
+		EXISTS (SELECT 1 FROM %8$s rl
+		WHERE rl.session_id = current_setting(%4$L)
+		AND rl.edit_all = true)
+		OR
+	
+		reinbeitebruker_id is null
+	
+		OR
+		-- a user that has access to certain areas
+		reinbeitebruker_id = ANY((SELECT  column_value FROM %8$s rl
+		WHERE rl.session_id = current_setting(%4$L)
+		AND rl.table_name = %6$L
+		AND rl.column_name = %5$L))
+		
+		-- a user have explicit access to selected table
+		OR
+		reinbeitebruker_id = ANY((SELECT  column_value FROM %8$s rl
+		WHERE rl.session_id = current_setting(%4$L)
+		AND rl.table_name = %3$L
+		AND rl.column_name = %5$L))
+		
+		-- handles insert new lines on surfaces
+		OR
+		current_setting(%7$L) = %9$L
+	)
+	WITH CHECK
+	(
+		-- a user that edit anything
+		EXISTS (SELECT 1 FROM %8$s rl
+		WHERE rl.session_id = current_setting(%4$L)
+		AND rl.edit_all = true)
+		OR
+	
+		reinbeitebruker_id is null
+	
+		OR
+		-- a user that has access to certain areas
+		reinbeitebruker_id = ANY((SELECT  column_value FROM %8$s rl
+		WHERE rl.session_id = current_setting(%4$L)
+		AND rl.table_name = %6$L
+		AND rl.column_name = %5$L))
+		
+		-- a user have explicit access to selected table
+		OR
+		reinbeitebruker_id = ANY((SELECT  column_value FROM %8$s rl
+		WHERE rl.session_id = current_setting(%4$L)
+		AND rl.table_name = %3$L
+		AND rl.column_name = %5$L))
+		
+		-- handles insert new lines on surfaces
+		OR
+		current_setting(%7$L) = %9$L
+	)
 ;
+', 
+	tbl_name,
+	schema_name||'_'||tbl_name,
+	schema_name||'.'||tbl_name,
+	'pgtopo_update.session_id',
+	'reinbeitebruker_id',
+	'*',
+	'pgtopo_update.draw_line_opr',
+	'topo_rein.rls_role_mapping',
+	1
+	);
+	
+	RAISE NOTICE 'Set rowlevel security for %', schema_name||'.'||tbl_name;
+	--RAISE NOTICE 'cmd_text %', cmd_text;
+	
+	execute cmd_text;
+
+
+END loop;
+END
+$body$;
+
 
 
 /**
@@ -4739,7 +3948,12 @@ CREATE TABLE topo_rein.data_update_log (
     saksbehandler   text,
     operation       text not null,
     json_row_data   json null,
-    change_confirmed_by_admin boolean NOT null default false
+    change_confirmed_by_admin boolean NOT null default false,
+    
+    -- this is used when a object is split in two or more parts 
+    -- this object will not bi visiable in any lists any more 
+    removed_by_splitt_operation boolean NOT null default false
+
     
 );
 
@@ -4770,7 +3984,7 @@ DECLARE
 tbl_name text;
 topo_tables text[];
 BEGIN
-foreach tbl_name IN array string_to_array('reindrift_anlegg',',')
+foreach tbl_name IN array string_to_array('reindrift_anlegg,rein_trekklei',',')
 loop
 	EXECUTE format('DROP VIEW IF EXISTS %1$s_linje_json_update_log; CREATE OR REPLACE VIEW %1$s_linje_json_update_log as select v1.*,v2.saksbehandler from %1$s_topojson_linje_v v1, %1$s_linje v2 where v1.id = v2.id', 'topo_rein.'||tbl_name);
 END loop;
@@ -4818,7 +4032,7 @@ CREATE OR REPLACE FUNCTION topo_rein.table_change_trigger_insert_after() RETURNS
         IF    (TG_OP = 'INSERT') THEN
             INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
                 VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.saksbehandler, NEW.id, NEW.status, NEW.reinbeitebruker_id, TG_OP||'_AFTER', 
-                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,32633,0,0)::json
+                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,4258,8,0)::json
                 );
             RETURN NEW;
         END IF;
@@ -4832,7 +4046,7 @@ CREATE OR REPLACE FUNCTION topo_rein.change_trigger_update_before() RETURNS trig
 		IF (TG_OP = 'UPDATE') THEN
             INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
                 VALUES (TG_RELNAME, TG_TABLE_SCHEMA, OLD.saksbehandler, OLD.id, OLD.status, OLD.reinbeitebruker_id, TG_OP||'_BEFORE', 
-                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||OLD.id,32633,0,0)::json
+                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||OLD.id,4258,8,0)::json
                 );
             RETURN NEW;
         END IF;
@@ -4846,9 +4060,25 @@ CREATE OR REPLACE FUNCTION topo_rein.change_trigger_update_after() RETURNS trigg
 		IF (TG_OP = 'UPDATE') THEN
             INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
                 VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.saksbehandler, NEW.id, NEW.status, NEW.reinbeitebruker_id, TG_OP||'_AFTER', 
-                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,32633,0,0)::json
+                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,4258,8,0)::json
                 );
             RETURN NEW;
+        END IF;
+        RETURN NULL;
+    END;
+$$ LANGUAGE 'plpgsql' SECURITY DEFINER;
+
+/* Create the functions used for trigger delete after  */
+CREATE OR REPLACE FUNCTION topo_rein.change_trigger_delete_after() RETURNS trigger AS $$
+    BEGIN
+		IF (TG_OP = 'DELETE') THEN
+            INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
+                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, OLD.saksbehandler, OLD.id, OLD.status, OLD.reinbeitebruker_id, TG_OP||'_AFTER', 
+                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||OLD.id,4258,8,0)::json
+                );
+            UPDATE topo_rein.data_update_log set  removed_by_splitt_operation = true
+            WHERE table_name = TG_RELNAME AND schema_name = TG_TABLE_SCHEMA AND row_id =  OLD.id;
+            RETURN OLD;
         END IF;
         RETURN NULL;
     END;
@@ -4879,7 +4109,12 @@ EXECUTE format('DROP TRIGGER IF EXISTS table_change_trigger_update_after ON %1$s
      CREATE TRIGGER table_change_trigger_update_after                                            
      AFTER UPDATE ON %1$s       
      FOR EACH ROW EXECUTE PROCEDURE topo_rein.change_trigger_update_after()', 'topo_rein.'||tbl_name);           
-     
+
+EXECUTE format('DROP TRIGGER IF EXISTS table_change_trigger_delete_after ON %1$s;
+     CREATE TRIGGER table_change_trigger_delete_after                                            
+     AFTER DELETE ON %1$s       
+     FOR EACH ROW EXECUTE PROCEDURE topo_rein.change_trigger_delete_after()', 'topo_rein.'||tbl_name);           
+
 END loop;
 END
 $body$;
@@ -4889,43 +4124,141 @@ $body$;
 
 -- Create view to show changes before and after for each single row
 
+
+-- the problem we have is to differ from a object created from nothing or if it's created by a splitting a exting object.
+
+-- if it's a new object it should show up in the list as new object, so the user can select to delete it
+
+-- if it's splitting of a exting object it's should not show up in the list until it's changed 
+
+-- When we create a new object from nothing it's not narked is any way, but it will have an insert and update and a delete the same timestamp. 
+
 --DROP VIEW topo_rein.data_update_log_new_v;
  
+
+
 CREATE OR REPLACE VIEW topo_rein.data_update_log_new_v AS (
-SELECT 
-g.schema_name , g.table_name, l1.row_id as data_row_id,
--- TODO test that it's ok tha we get srid from json
+select * from (
+	select 
+	CASE WHEN (max_operation_after = 'UPDATE_AFTER')
+	THEN
+		'READY'
+	ELSE
+		'NOT_READY'
+	END AS data_row_state,
+	g.schema_name, 
+	g.table_name,
+	g.min_data_row_id_before as data_row_id,
+	
+	g.min_id_before as id_before,
+	g.min_operation_before as operation_before,
+	g.min_reinbeitebruker_id_before as reinbeitebruker_id_before ,
+	g.min_saksbehandler_before as saksbehandler_before,
+	CASE WHEN (min_operation_before = 'INSERT_AFTER' and max_operation_before = 'INSERT_AFTER')
+	THEN
+		g.min_json_row_data_before
+	ELSE
+		g.max_json_row_data_before
+	END AS json_before,
 
-l1.id as id_before,
-l1.operation as operation_berfore,
-l1.reinbeitebruker_id as reinbeitebruker_id_before ,
-l1.saksbehandler as saksbehandler_before,
-l1.json_row_data as json_before,
-l2.id as id_after,
-l2.operation as operation_after,
-l2.reinbeitebruker_id as reinbeitebruker_id_after ,
-l2.saksbehandler as saksbehandler_after,
-l2.json_row_data as json_after 
-from 
-(
- -- only select does with status 10 and that not have been checked before
- -- group by the table and the row id
- SELECT 
- schema_name , table_name , min(id) as data_update_log_id_before, max(id) as data_update_log_id_after 
- from topo_rein.data_update_log 
- where change_confirmed_by_admin = false
---and operation in ('UPDATE_BEFORE','UPDATE_AFTER')
---and status in (10,0)
- group by schema_name , table_name , row_id
-) g,
-topo_rein.data_update_log l1,
-topo_rein.data_update_log l2
-where data_update_log_id_before != data_update_log_id_after
-and l1.id = g.data_update_log_id_before
-and l2.status in (10,0)
-and l2.id = g.data_update_log_id_after
+--	g.max_id_before as id_before,
+--	g.max_operation_before as operation_before,
+--	g.max_reinbeitebruker_id_before as reinbeitebruker_id_before ,
+--	g.max_saksbehandler_before as saksbehandler_before,
+--	g.max_json_row_data_before as json_before,
 
-);
+	g.max_id_after as id_after,
+	g.max_operation_after as operation_after,
+	g.max_reinbeitebruker_id_after as reinbeitebruker_id_after ,
+	g.max_saksbehandler_after as saksbehandler_after,
+	g.max_json_row_data_after as json_after
+	
+	--l2.id as id_after,
+	--l2.operation as operation_after,
+	--l2.reinbeitebruker_id as reinbeitebruker_id_after ,
+	--l2.saksbehandler as saksbehandler_after,
+	--l2.json_row_data as json_after
+	from (
+		SELECT 
+		l1_min_id.schema_name, 
+		l1_min_id.table_name, 
+		
+		l1_min_id.id as min_id_before,
+		l1_min_id.row_id as min_data_row_id_before,
+		l1_min_id.operation as min_operation_before,
+		l1_min_id.action_time as min_action_time_before,
+		l1_min_id.reinbeitebruker_id as min_reinbeitebruker_id_before,
+		l1_min_id.saksbehandler as min_saksbehandler_before,
+		l1_min_id.json_row_data as min_json_row_data_before,
+		
+		l1_max_id.id as max_id_before,
+		l1_max_id.row_id as max_data_row_id_before,
+		l1_max_id.operation as max_operation_before,
+		l1_max_id.action_time as max_action_time_before,
+		l1_max_id.reinbeitebruker_id as max_reinbeitebruker_id_before,
+		l1_max_id.saksbehandler as max_saksbehandler_before,
+		l1_max_id.json_row_data as max_json_row_data_before,
+		
+		l2_max_id.id as max_id_after,
+		l2_max_id.row_id as max_data_row_id_after,
+		l2_max_id.operation as max_operation_after,
+		l2_max_id.action_time as max_action_time_after,
+		l2_max_id.reinbeitebruker_id as max_reinbeitebruker_id_after,
+		l2_max_id.saksbehandler as max_saksbehandler_after,
+		l2_max_id.json_row_data as max_json_row_data_after
+
+		
+		from (
+			select schema_name , table_name , row_id, 
+			min(data_update_log_id_before) as min_data_update_log_id_before, -- get the first changed row at the oldest available change time
+			max(data_update_log_id_before) as max_data_update_log_id_before, -- get the last changed row at the oldest available change time
+			max(data_update_log_id_after) as max_data_update_log_id_after -- get the last changed row at time two,the latest change time
+			from (
+				select 
+				l1.id as data_update_log_id_before, first_action_time, 
+				l2.id as data_update_log_id_after, latest_action_time, 
+				g.schema_name , g.table_name , g.row_id
+				from (
+				-- only select does with status 10 and that not have been checked before
+				-- group by the table and the row id
+				SELECT distinct
+					schema_name , table_name , row_id ,
+					min(action_time) as first_action_time, -- the time oldest available change
+					max(action_time) as latest_action_time  -- the time latest avaiable change
+					from topo_rein.data_update_log 
+					where change_confirmed_by_admin = false and
+					json_row_data is not null and
+					removed_by_splitt_operation = false
+					-- and saksbehandler is not null
+					-- and operation in ('UPDATE_BEFORE','UPDATE_AFTER')
+					 --and status in (10,0)
+					group by schema_name , table_name , row_id
+				) as g,
+				topo_rein.data_update_log l1,
+				topo_rein.data_update_log l2
+				where l1.action_time = g.first_action_time and l1.row_id = g.row_id
+				and l2.status in (10,0)
+				and l2.action_time = g.latest_action_time  and l2.row_id = g.row_id
+			) as g
+			group by schema_name , table_name , row_id
+		) g,
+		topo_rein.data_update_log l1_min_id,
+		topo_rein.data_update_log l1_max_id,
+		topo_rein.data_update_log l2_max_id
+		where l1_min_id.id = g.min_data_update_log_id_before
+		and l1_max_id.id = g.max_data_update_log_id_before
+		and l2_max_id.id = g.max_data_update_log_id_after
+		order by l1_min_id.schema_name , l1_min_id.table_name , max_id_after desc
+	) as g
+) as g	
+where data_row_state = 'READY'
+)
+;
+
+--select topo_update.layer_accept_update(id_after,'lop') from topo_rein.data_update_log_new_v;
+
+--select topo_update.layer_reject_update(id_before,'lop') from topo_rein.data_update_log_new_v;
+
 
 
 -- Used for tesing          
@@ -4937,5 +4270,4 @@ and l2.id = g.data_update_log_id_after
 
 --SELECT '31', topo_update.apply_attr_on_topo_line('{"properties":{"id":2,"status":1,"reinbeitebruker_id":"ZH","reindrift_sesongomrade_kode":4}}','topo_rein', 'arstidsbeite_sommer_flate', 'omrade');
 --SELECT '32', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status  from topo_rein.arstidsbeite_sommer_flate;
-
 
