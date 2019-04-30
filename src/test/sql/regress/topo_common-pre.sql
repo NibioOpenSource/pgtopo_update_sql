@@ -4151,6 +4151,7 @@ select * from (
 	g.min_data_row_id_before as data_row_id,
 	
 	g.min_id_before as id_before,
+	g.max_action_time_before as date_before,
 	g.min_operation_before as operation_before,
 	g.min_reinbeitebruker_id_before as reinbeitebruker_id_before ,
 	g.min_saksbehandler_before as saksbehandler_before,
@@ -4168,6 +4169,7 @@ select * from (
 --	g.max_json_row_data_before as json_before,
 
 	g.max_id_after as id_after,
+	g.max_action_time_after as date_after,
 	g.max_operation_after as operation_after,
 	g.max_reinbeitebruker_id_after as reinbeitebruker_id_after ,
 	g.max_saksbehandler_after as saksbehandler_after,
