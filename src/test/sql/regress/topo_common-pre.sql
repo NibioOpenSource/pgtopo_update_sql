@@ -4024,14 +4024,40 @@ BEGIN
 END;
 $$ LANGUAGE 'plpgsql' VOLATILE;
 
+-- Clean up old function name if exists
+DROP FUNCTION IF EXISTS topo_rein.table_change_trigger_insert_after cascade;
+DROP FUNCTION IF EXISTS topo_rein.change_trigger_update_before cascade;
+DROP FUNCTION IF EXISTS topo_rein.change_trigger_update_after cascade;
+DROP FUNCTION IF EXISTS topo_rein.change_trigger_delete_after cascade;
 
 
-/* Create the functions used for trigger insert after  */
-CREATE OR REPLACE FUNCTION topo_rein.table_change_trigger_insert_after() RETURNS trigger AS $$
+
+/* 
+ * Create the functions used for trigger insert after, this handles cases where an insert is followed by a update, berfore the object is valid  
+ * This is used for lines and surfaces 
+ */
+CREATE OR REPLACE FUNCTION topo_rein.change_iu_trigger_insert_after() RETURNS trigger AS $$
     BEGIN
         IF    (TG_OP = 'INSERT') THEN
             INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
                 VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.saksbehandler, NEW.id, NEW.status, NEW.reinbeitebruker_id, TG_OP||'_AFTER', 
+                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,4258,8,0)::json
+                );
+            RETURN NEW;
+        END IF;
+        RETURN NULL;
+    END;
+$$ LANGUAGE 'plpgsql' SECURITY DEFINER;
+
+/* 
+ * Create the functions used for trigger insert after, this handles cases where an insert creates a valid object  
+ * This is used for points 
+ */
+CREATE OR REPLACE FUNCTION topo_rein.change_i_trigger_insert_after() RETURNS trigger AS $$
+    BEGIN
+        IF    (TG_OP = 'INSERT') THEN
+            INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
+                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.saksbehandler, NEW.id, NEW.status, NEW.reinbeitebruker_id, TG_OP||'_AFTER_VALID', 
                 topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,4258,8,0)::json
                 );
             RETURN NEW;
@@ -4084,7 +4110,7 @@ CREATE OR REPLACE FUNCTION topo_rein.change_trigger_delete_after() RETURNS trigg
     END;
 $$ LANGUAGE 'plpgsql' SECURITY DEFINER;
 
-/* Create the triggers */
+/* Create the triggers surfaces and lines */
 
 DO
 $body$
@@ -4092,13 +4118,13 @@ DECLARE
 tbl_name text;
 topo_tables text[];
 BEGIN
-foreach tbl_name IN array string_to_array('arstidsbeite_sommer_flate,arstidsbeite_host_flate,arstidsbeite_hostvinter_flate,arstidsbeite_vinter_flate,arstidsbeite_var_flate,beitehage_flate,oppsamlingomr_flate,reindrift_anlegg_linje,reindrift_anlegg_punkt',',')
+foreach tbl_name IN array string_to_array('arstidsbeite_sommer_flate,arstidsbeite_host_flate,arstidsbeite_hostvinter_flate,arstidsbeite_vinter_flate,arstidsbeite_var_flate,beitehage_flate,oppsamlingomr_flate,reindrift_anlegg_linje',',')
 loop
 
-EXECUTE format('DROP TRIGGER IF EXISTS table_change_trigger_insert_after ON %1$s;
-     CREATE TRIGGER table_change_trigger_insert_after                                            
+EXECUTE format('DROP TRIGGER IF EXISTS table_change_iu_trigger_insert_after ON %1$s;
+     CREATE TRIGGER table_change_iu_trigger_insert_after                                            
      AFTER INSERT ON %1$s       
-     FOR EACH ROW EXECUTE PROCEDURE topo_rein.table_change_trigger_insert_after()', 'topo_rein.'||tbl_name);           
+     FOR EACH ROW EXECUTE PROCEDURE topo_rein.change_iu_trigger_insert_after()', 'topo_rein.'||tbl_name);           
 
 EXECUTE format('DROP TRIGGER IF EXISTS table_change_trigger_update_before ON %1$s;
      CREATE TRIGGER table_change_trigger_update_before                                            
@@ -4120,6 +4146,41 @@ END
 $body$;
 
 
+/* Create the triggers surfaces of type point */
+
+DO
+$body$
+DECLARE
+tbl_name text;
+topo_tables text[];
+BEGIN
+foreach tbl_name IN array string_to_array('reindrift_anlegg_punkt',',')
+loop
+
+EXECUTE format('DROP TRIGGER IF EXISTS table_change_i_trigger_insert_after ON %1$s;
+     CREATE TRIGGER table_change_i_trigger_insert_after                                            
+     AFTER INSERT ON %1$s       
+     FOR EACH ROW EXECUTE PROCEDURE topo_rein.change_i_trigger_insert_after()', 'topo_rein.'||tbl_name);           
+
+EXECUTE format('DROP TRIGGER IF EXISTS table_change_trigger_update_before ON %1$s;
+     CREATE TRIGGER table_change_trigger_update_before                                            
+     BEFORE UPDATE ON %1$s        
+     FOR EACH ROW EXECUTE PROCEDURE topo_rein.change_trigger_update_before()', 'topo_rein.'||tbl_name);             
+
+EXECUTE format('DROP TRIGGER IF EXISTS table_change_trigger_update_after ON %1$s;
+     CREATE TRIGGER table_change_trigger_update_after                                            
+     AFTER UPDATE ON %1$s       
+     FOR EACH ROW EXECUTE PROCEDURE topo_rein.change_trigger_update_after()', 'topo_rein.'||tbl_name);           
+
+EXECUTE format('DROP TRIGGER IF EXISTS table_change_trigger_delete_after ON %1$s;
+     CREATE TRIGGER table_change_trigger_delete_after                                            
+     AFTER DELETE ON %1$s       
+     FOR EACH ROW EXECUTE PROCEDURE topo_rein.change_trigger_delete_after()', 'topo_rein.'||tbl_name);           
+
+END loop;
+END
+$body$;
+
 -- this function that used to select 
 
 -- Create view to show changes before and after for each single row
@@ -4140,7 +4201,7 @@ $body$;
 CREATE OR REPLACE VIEW topo_rein.data_update_log_new_v AS (
 select * from (
 	select 
-	CASE WHEN (max_operation_after = 'UPDATE_AFTER')
+	CASE WHEN (max_operation_after IN ('UPDATE_AFTER','INSERT_AFTER_VALID'))
 	THEN
 		'READY'
 	ELSE
