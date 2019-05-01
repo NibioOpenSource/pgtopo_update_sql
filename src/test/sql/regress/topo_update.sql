@@ -63,6 +63,17 @@ SELECT '13', count(id) FROM (SELECT 1 AS id FROM topo_update.create_line_edge_do
 SELECT '13_status_after', id, status, reinbeitebruker_id, reindriftsanleggstype, ST_length(ST_Transform(t.linje::geometry(MultiLineString,4258), 25833))::int , ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_linje t ORDER BY id;
 SELECT '14', count(id) FROM (SELECT 1 AS id FROM topo_update.create_line_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[5.70182,58.55131],[5.70368,58.55134],[5.70403,58.553751]]}}','topo_rein', 'reindrift_anlegg_linje', 'linje', 1e-10)) AS R;
 SELECT '14_status_after', id, status, reinbeitebruker_id, reindriftsanleggstype, ST_length(ST_Transform(t.linje::geometry(MultiLineString,4258), 25833))::int , ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_linje t ORDER BY id;
+-- Check that new data_update_log_new_v has values top accept for reindrift_anlegg_linje
+select '14_data_update_log_new_v', id_before, id_after, schema_name, data_row_id, table_name, operation_before, operation_after, data_row_state, 
+(json_after->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_status ,
+(json_after->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_slette_status_kode 
+from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_linje' order by  date_after;
+SELECT '14_status_before_accept', id, status, reinbeitebruker_id, reindriftsanleggstype, ST_length(ST_Transform(t.linje::geometry(MultiLineString,4258), 25833))::int , ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_linje t ORDER BY id;
+-- There should be no more row to accept for reindrift_anlegg_linje
+--SELECT '14_layer_accept_update', * from  topo_update.layer_accept_update(19,'lop');
+-- Status should now have changhed reindrift_anlegg_linje
+SELECT '14_status_after_accept', id, status, reinbeitebruker_id, reindriftsanleggstype, ST_length(ST_Transform(t.linje::geometry(MultiLineString,4258), 25833))::int , ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_linje t ORDER BY id;
+-- There should be no more row to accept for reindrift_anlegg_linje
 
 SELECT '15', t.id,  ST_length(t.linje) l1, ST_Length(t.linje::geometry(MultiLineString,4258)), ST_Srid(t.linje::geometry(MultiLineString,4258)) from topo_rein.reindrift_anlegg_linje t order by id;
 SELECT '16', count(id) FROM (SELECT 1 AS id FROM topo_update.create_line_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[5.70182,58.55131],[5.70368,58.55134],[5.70403,58.553751],[5.705207,58.552386]]},"properties":{"Fellesegenskaper.Kvalitet.Maalemetode":82,"fellesegenskaper.forstedatafangstdato":"2016-01-01"}}','topo_rein', 'reindrift_anlegg_linje', 'linje', 1e-10)) AS R;;
