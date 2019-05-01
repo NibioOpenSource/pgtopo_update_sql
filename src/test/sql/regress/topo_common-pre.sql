@@ -3929,7 +3929,7 @@ $body$;
 
 /* Create the table in which to store changes in tables logs */
 --drop TABLE topo_rein.data_update_log cascade;
-
+ 
 CREATE TABLE topo_rein.data_update_log (
     id              serial primary key not null,
     action_time     timestamptz not null DEFAULT CURRENT_TIMESTAMP,
@@ -4025,10 +4025,10 @@ END;
 $$ LANGUAGE 'plpgsql' VOLATILE;
 
 -- Clean up old function name if exists
-DROP FUNCTION IF EXISTS topo_rein.table_change_trigger_insert_after cascade;
-DROP FUNCTION IF EXISTS topo_rein.change_trigger_update_before cascade;
-DROP FUNCTION IF EXISTS topo_rein.change_trigger_update_after cascade;
-DROP FUNCTION IF EXISTS topo_rein.change_trigger_delete_after cascade;
+DROP FUNCTION IF EXISTS topo_rein.table_change_trigger_insert_after() cascade;
+DROP FUNCTION IF EXISTS topo_rein.change_trigger_update_before() cascade;
+DROP FUNCTION IF EXISTS topo_rein.change_trigger_update_after() cascade;
+DROP FUNCTION IF EXISTS topo_rein.change_trigger_delete_after() cascade;
 
 
 
