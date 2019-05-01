@@ -21,12 +21,9 @@ select '3_data_update_log', id, schema_name,  table_name, operation, status,
 (json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_slette_status_kode 
 from topo_rein.data_update_log where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_var_flate' order by  id  desc limit 1;
 -- Check that new data_update_log_new_v has no values since no update has be done yet, there is zero rows here because the added row has not reached a valid state yet
-select '3_data_update_log_new_v', id_before, id_after, schema_name,  table_name, operation_before, operation_after, data_row_state, 
-(json_after->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_status ,
-(json_after->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_slette_status_kode 
-from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_var_flate' order by  date_after  desc limit 1;
+select '3_data_update_log_new_v', count(*) from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_var_flate';
 
--- ======= Create a new line in layer reindrift_anlegg_linje and update it,   ======= --
+-- ======= Create line object in layer reindrift_anlegg_linje and update it,   ======= --
 SELECT '4', count(id) FROM (SELECT 1 AS id FROM  topo_update.create_line_edge_domain_obj('{"type":"Feature","properties":{"fellesegenskaper.verifiseringsdato":null,"fellesegenskaper.oppdateringsdato":null,"fellesegenskaper.opphav":"Reindriftsforvaltningen"},"geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[5.70182,58.55131],[5.70368,58.55134],[5.70403,58.553751]]}}','topo_rein', 'reindrift_anlegg_linje', 'linje', 1e-10)) AS R;
 SELECT '04_01', count(*) FROM topo_rein.reindrift_anlegg_linje WHERE id = (select max(id) FROM topo_rein.reindrift_anlegg_linje) AND (felles_egenskaper).oppdateringsdato = current_date AND (felles_egenskaper).forstedatafangstdato = current_date AND (felles_egenskaper).verifiseringsdato = current_date;
 SELECT '04_02', topo_update.apply_attr_on_topo_line('{"properties":{"id":1,"reinbeitebruker_id":"ZH","fellesegenskaper.forstedatafangstdato":"2001-01-22","fellesegenskaper.verifiseringsdato":null,"slette_status_kode":0}}','topo_rein', 'reindrift_anlegg_linje', 'linje','{"properties":{"status":"0","saksbehandler":"imi@nibio.no","reinbeitebruker_id":null,"fellesegenskaper.opphav":"NIBIO_TULL","fellesegenskaper.kvalitet.maalemetode":"82"}}');
@@ -47,8 +44,6 @@ SELECT '04_03_layer_accept_update', * from  topo_update.layer_accept_update(4,'l
 SELECT '04_03_after_accept', status, id, ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_linje WHERE id = (select max(id) FROM topo_rein.reindrift_anlegg_linje) AND (felles_egenskaper).oppdateringsdato = current_date;
 -- There should be no more row to accept
 select '04_03_rows_after_accept', count(*) from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_linje';
-
-
 SELECT '5', SUM(ST_Length(geom)), count(*) from topo_rein_sysdata_rvr.edge_data;
 SELECT '6', SUM(ST_Length(linje::geometry)), count(*) from topo_rein.reindrift_anlegg_linje;
 SELECT '7', count(id) FROM (SELECT 1 AS id FROM  topo_update.create_line_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[5.700371,58.552619],[5.705207,58.552386]]}}','topo_rein', 'reindrift_anlegg_linje', 'linje', 1e-10)) AS R;
@@ -65,6 +60,9 @@ SELECT '16_01', (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_a
 SELECT '17', count(id) FROM (SELECT 1 AS id FROM topo_update.create_line_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[5.70513,58.55249],[5.70638,58.54978]]},"properties":{"Fellesegenskaper.Kvalitet.Maalemetode":82,"fellesegenskaper.forstedatafangstdato":"2016-01-01"}}','topo_rein', 'reindrift_anlegg_linje', 'linje', 1e-10)) AS R;
 SELECT '17_01', (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_linje WHERE id = (select max(id) FROM topo_rein.reindrift_anlegg_linje) AND (felles_egenskaper).oppdateringsdato = current_date;
 SELECT '18', t.id,  ST_length(t.linje) l1, ST_Length(t.linje::geometry(MultiLineString,4258)), ST_Srid(t.linje::geometry(MultiLineString,4258)) from topo_rein.reindrift_anlegg_linje t order by id;
+
+-- ======= Work on a surface object in layer topo_rein.arstidsbeite_var_flate and update it,   ======= --
+
 SELECT '19', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade  from topo_rein.arstidsbeite_var_flate;
 UPDATE topo_rein.arstidsbeite_var_flate set felles_egenskaper = '(2001-01-22,,"(,,)",2016-09-03,Landbruksdirektoratet,2015-01-01,,"(,)")' where id = 1;
 SELECT '20_01', felles_egenskaper FROM topo_rein.arstidsbeite_var_flate WHERE id = 1;
@@ -73,6 +71,7 @@ SELECT '20_03', (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).ve
 SELECT '20_04', topo_update.apply_attr_on_topo_line('{"properties":{"id":1,"reinbeitebruker_id":"ZH","fellesegenskaper.verifiseringsdato":"2015-01-01","slette_status_kode":0}}','topo_rein', 'arstidsbeite_var_flate', 'omrade','{"properties":{"status":"0","saksbehandler":"imi@nibio.no","reinbeitebruker_id":null,"fellesegenskaper.opphav":"NIBIO"}}');
 SELECT '20_05', (felles_egenskaper).verifiseringsdato FROM topo_rein.arstidsbeite_var_flate WHERE id = 1 AND (felles_egenskaper).oppdateringsdato = current_date;
 SELECT '21', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade  from topo_rein.arstidsbeite_var_flate;
+
 -- Create point with all values set 
 SELECT '22', count(id) FROM (SELECT 1 AS id FROM topo_update.create_point_point_domain_obj('{"type": "Feature","properties":{"fellesegenskaper.forstedatafangstdato":"2015-10-11","fellesegenskaper.verifiseringsdato":null,"fellesegenskaper.oppdateringsdato":null,"fellesegenskaper.opphav":"Reindriftsforvaltningen"},"geometry":{"type":"Point","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[5.70182,58.55131]}}','topo_rein', 'reindrift_anlegg_punkt', 'punkt', 1e-10,'{"properties":{"saksbehandler":"user1","reinbeitebruker_id":"XA","reindriftsanleggstype":10,"fellesegenskaper.opphav":"opphav ØÆÅøå"}}')) AS R;
 -- Check values for created point in is correct
