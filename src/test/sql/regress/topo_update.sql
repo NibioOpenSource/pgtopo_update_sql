@@ -45,12 +45,13 @@ SELECT '04_03_layer_accept_update', * from  topo_update.layer_accept_update(4,'l
 SELECT '04_03_status_after_accept', id, status, ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_linje WHERE id = (select max(id) FROM topo_rein.reindrift_anlegg_linje) AND (felles_egenskaper).oppdateringsdato = current_date;
 -- There should be no more row to accept for reindrift_anlegg_linje
 select '04_03_rows_after_accept', count(*) from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_linje';
-SELECT '5', SUM(ST_Length(geom)), count(*) from topo_rein_sysdata_rvr.edge_data;
-SELECT '6', SUM(ST_Length(linje::geometry)), count(*) from topo_rein.reindrift_anlegg_linje;
--- Do more update on reindrift_anlegg_linje
+
+-- ======= Create a new line that intersetcs with the object in layer reindrift_anlegg_linje and update it,   ======= --
+SELECT '5', SUM(ST_Length(ST_Transform(geom::geometry(LineString,4258), 25833)))::int, count(*) from topo_rein_sysdata_ran.edge_data;
+SELECT '6', SUM(ST_Length(ST_Transform(linje::geometry(MultiLineString,4258), 25833)))::int, count(*) from topo_rein.reindrift_anlegg_linje;
 SELECT '7', count(id) FROM (SELECT 1 AS id FROM  topo_update.create_line_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[5.700371,58.552619],[5.705207,58.552386]]}}','topo_rein', 'reindrift_anlegg_linje', 'linje', 1e-10)) AS R;
-SELECT '8', SUM(ST_Length(geom)), count(*) from topo_rein_sysdata.edge_data;
-SELECT '9', SUM(ST_Length(linje::geometry)), count(*) from topo_rein.reindrift_anlegg_linje;
+SELECT '8', SUM(ST_Length(ST_Transform(geom::geometry(LineString,4258), 25833)))::int, count(*) from topo_rein_sysdata_ran.edge_data;
+SELECT '9', SUM(ST_Length(ST_Transform(linje::geometry(MultiLineString,4258), 25833)))::int, count(*) from topo_rein.reindrift_anlegg_linje;
 SELECT '10', count(id) FROM (SELECT 1 AS id FROM topo_update.create_line_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[15.9657743158,68.5173276573],[15.967341771,68.5175244919],[15.9707442177,68.5176731338],[15.973023534,68.5173234018],[15.9742820186,68.516710382],[15.9747133486,68.5160684285],[15.974409086,68.5153971067],[15.9733312891,68.5142292209],[15.9727112129,68.5130578708],[15.970050698,68.5124466358],[15.9661982366,68.5122599406],[15.9640955173,68.5121580206]]},"properties":{"reinbeitebruker_id":"XA","reindriftsanleggstype":4,"felles_egenskaper.forstedatafangstdato":null,"felles_egenskaper.verifiseringsdato":"2015-01-01","felles_egenskaper.oppdateringsdato":null,"felles_egenskaper.opphav":"Reindriftsforvaltningen","felles_egenskaper.kvalitet.maalemetode":82}}','topo_rein', 'reindrift_anlegg_linje', 'linje', 1e-10)) AS R;
 SELECT '11', SUM(ST_Length(geom)), count(*) from topo_rein_sysdata.edge_data;
 SELECT '12', t.id,  ST_length(t.linje) l1, ST_Length(t.linje::geometry(MultiLineString,4258)), ST_Srid(t.linje::geometry(MultiLineString,4258)) from topo_rein.reindrift_anlegg_linje t;
