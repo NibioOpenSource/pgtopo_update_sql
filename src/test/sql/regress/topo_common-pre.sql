@@ -4278,16 +4278,16 @@ select * from (
 			max(data_update_log_id_after) as max_data_update_log_id_after -- get the last changed row at time two,the latest change time
 			from (
 				select 
-				l1.id as data_update_log_id_before, first_action_time, 
-				l2.id as data_update_log_id_after, latest_action_time, 
+				l1.id as data_update_log_id_before, first_action_id, 
+				l2.id as data_update_log_id_after, latest_action_id, 
 				g.schema_name , g.table_name , g.row_id
 				from (
 				-- only select does with status 10 and that not have been checked before
 				-- group by the table and the row id
 				SELECT distinct
 					schema_name , table_name , row_id ,
-					min(action_time) as first_action_time, -- the time oldest available change
-					max(action_time) as latest_action_time  -- the time latest avaiable change
+					min(id) as first_action_id, -- the time oldest available change
+					max(id) as latest_action_id  -- the time latest avaiable change
 					from topo_rein.data_update_log 
 					where change_confirmed_by_admin = false and
 					json_row_data is not null and
@@ -4299,9 +4299,9 @@ select * from (
 				) as g,
 				topo_rein.data_update_log l1,
 				topo_rein.data_update_log l2
-				where l1.action_time = g.first_action_time and l1.row_id = g.row_id
+				where l1.id = g.first_action_id and l1.row_id = g.row_id
 				and l2.status in (10,0)
-				and l2.action_time = g.latest_action_time  and l2.row_id = g.row_id
+				and l2.id = g.latest_action_id  and l2.row_id = g.row_id
 			) as g
 			group by schema_name , table_name , row_id
 		) g,
