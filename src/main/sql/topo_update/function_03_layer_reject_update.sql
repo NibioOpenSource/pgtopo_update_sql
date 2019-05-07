@@ -7,6 +7,7 @@
 
 drop function if exists topo_update.layer_reject_update(_data_update_log_id_before int, _saksbehandler varchar ) ;
 
+
 CREATE OR REPLACE FUNCTION topo_update.layer_reject_update(_data_update_log_id_before int, _saksbehandler varchar ) 
 RETURNS int AS $$DECLARE
 
@@ -30,35 +31,19 @@ BEGIN
 	from topo_rein.data_update_log s
 	where s.id = _data_update_log_id_before and s.change_confirmed_by_admin = false;
 	
-	-- check if the first row was insert oprasjon 
-	select 1 
-	into this_slette_status_kode
-	from topo_rein.data_update_log s
-	where s.id = _data_update_log_id_before and s.change_confirmed_by_admin = false and s.operation = 'INSERT_AFTER';
-	
-	--maybe null
-	IF this_slette_status_kode != 1 THEN
-		this_slette_status_kode = 0;
-	END IF;
-
-
-	
+		
 	-- update attributtes to old values
-	perform topo_update.apply_attr_on_topo_line(
+	perform topo_update.apply_attr_on_topo_layer(
 	'{"properties":'||((s.json_row_data::json->'objects'->'collection'->'geometries'->>0)::json->'properties')::text||'}',
 	s.schema_name::text, 
-	s.table_name::text, 
-	'omrade'::text)
+	s.table_name::text)
 	from topo_rein.data_update_log s
 	where s.id = _data_update_log_id_before and s.change_confirmed_by_admin = false;	
 
-	-- update status variables and saksbehandler
-	IF (this_slette_status_kode is not null) THEN
-		command_string := format('update %I.%I set status = 1, saksbehandler = %L, slette_status_kode = %L where id = %L',
-		this_schema_name, this_table_name, _saksbehandler, this_slette_status_kode, this_data_row_id);
+	command_string := format('update %I.%I set status = -1, saksbehandler = %L where id = %L',
+		this_schema_name, this_table_name, _saksbehandler , this_data_row_id);
 		RAISE NOTICE 'command_string %' , command_string;
 		EXECUTE command_string;
-	END IF;
 
 
 	update topo_rein.data_update_log s

@@ -138,15 +138,19 @@ SELECT '23', id, reinbeitebruker_id, punkt, (felles_egenskaper).opphav, saksbeha
 select '23_03_data_update_log', id, schema_name,  table_name, operation, status, 
 (json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_status ,
 (json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_slette_status_kode 
-from topo_rein.data_update_log where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_punkt' order by  id  desc limit 1;
+--json_row_data#>'{objects,collection,geometries,0,properties,slette_status_kode}',
+--json_row_data#>'{objects,collection,geometries,0,properties}'
+from topo_rein.data_update_log where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_punkt' order by  id  desc limit 2;
 -- Check that new data_update_log_new_v has values top accept for reindrift_anlegg_punkt
 select '23_03_data_update_log_new_v', id_before, id_after, schema_name,  table_name, operation_before, operation_after, data_row_state, 
-(json_after->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_status ,
-(json_after->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_slette_status_kode 
+(json_before->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_before_status ,
+(json_before->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_before_slette_status_kode ,
+(json_after->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_after_status ,
+(json_after->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_after_slette_status_kode 
 from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_punkt' order by  date_after  desc limit 1;
 SELECT '23_03_status_before_accept', id, status, punkt::geometry, ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_punkt WHERE id = (select max(id) FROM topo_rein.reindrift_anlegg_punkt) AND (felles_egenskaper).oppdateringsdato = current_date;
 -- Accept the changes reindrift_anlegg_punkt
-SELECT '23_03_layer_accept_update', * from  topo_update.layer_accept_update(34,'lop');
+SELECT '23_03_layer_accept_update', * from  topo_update.layer_accept_update(35,'lop');
 -- Status should now have changhed reindrift_anlegg_punkt
 SELECT '23_03_status_after_accept', id, status, punkt::geometry, ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_punkt WHERE id = (select max(id) FROM topo_rein.reindrift_anlegg_punkt) AND (felles_egenskaper).oppdateringsdato = current_date;
 -- There should be no more row to accept for reindrift_anlegg_punkt
@@ -245,4 +249,29 @@ SELECT '55_5', count(id) FROM (SELECT 1 AS id FROM topo_update.create_surface_ed
 SELECT '55_6', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade  from topo_rein.arstidsbeite_host_flate where id= (select (max(id)-1) from topo_rein.arstidsbeite_host_flate);
 SELECT '55_7', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade  from topo_rein.arstidsbeite_host_flate where id= (select max(id) from topo_rein.arstidsbeite_host_flate);
 
+
+
+-- Create point with all values set and eject it
+SELECT '58', count(id) FROM (SELECT 1 AS id FROM topo_update.create_point_point_domain_obj('{"type": "Feature","properties":{"fellesegenskaper.forstedatafangstdato":"2015-10-11","fellesegenskaper.verifiseringsdato":null,"fellesegenskaper.oppdateringsdato":null,"fellesegenskaper.opphav":"Reindriftsforvaltningen"},"geometry":{"type":"Point","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[5.70182,58.55131]}}','topo_rein', 'reindrift_anlegg_punkt', 'punkt', 1e-10,'{"properties":{"saksbehandler":"user1","reinbeitebruker_id":"XA","reindriftsanleggstype":10,"fellesegenskaper.opphav":"opphav ØÆÅøå"}}')) AS R;
+-- Check that update log has values for reindrift_anlegg_punkt since the object in reindrift_anlegg_punkt has reached a valid state
+select '58_03_data_update_log', id, schema_name,  table_name, operation, status, 
+(json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_status ,
+(json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_slette_status_kode 
+--json_row_data#>'{objects,collection,geometries,0,properties,slette_status_kode}',
+--json_row_data#>'{objects,collection,geometries,0,properties}'
+from topo_rein.data_update_log where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_punkt' order by  id  desc limit 2;
+-- Check that new data_update_log_new_v has values top accept for reindrift_anlegg_punkt
+select '58_03_data_update_log_new_v', id_before, id_after, schema_name,  table_name, operation_before, operation_after, data_row_state, 
+(json_before->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_before_status ,
+(json_before->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_before_slette_status_kode ,
+(json_after->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_after_status ,
+(json_after->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_after_slette_status_kode 
+from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_punkt' order by  date_after  desc limit 1;
+SELECT '58_03_status_before_reject', id, status, slette_status_kode, punkt::geometry, ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_punkt WHERE id = (select max(id) FROM topo_rein.reindrift_anlegg_punkt) AND (felles_egenskaper).oppdateringsdato = current_date;
+-- Reject the changes reindrift_anlegg_punkt
+SELECT '58_03_layer_reject_update', * from  topo_update.layer_reject_update(134,'lop');
+-- Status and slette_status_kode should now have changhed reindrift_anlegg_punkt
+SELECT '58_03_status_after_rejct', id, status, slette_status_kode, punkt::geometry, ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_punkt WHERE id = (select max(id) FROM topo_rein.reindrift_anlegg_punkt) AND (felles_egenskaper).oppdateringsdato = current_date;
+-- There should be no more row to accept for reindrift_anlegg_punkt
+select '58_03_rows_after_reject', count(*) from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_punkt';
 

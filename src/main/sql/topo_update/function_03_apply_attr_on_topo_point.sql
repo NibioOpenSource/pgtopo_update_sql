@@ -1,4 +1,4 @@
-
+-- TODO rename and use topo_update.apply_attr_on_topo_layer
 
 -- update attribute values for given topo object
 CREATE OR REPLACE FUNCTION topo_update.apply_attr_on_topo_point(json_feature text,
@@ -44,8 +44,8 @@ BEGIN
 	RAISE NOTICE 'geo_point from json %',  ST_AsEWKT(geo_point);
 
 	-- update attributtes by common proc
-	num_rows_affected := topo_update.apply_attr_on_topo_line(json_feature,
- 	point_topo_info.layer_schema_name, point_topo_info.layer_table_name, point_topo_info.layer_feature_column,server_json_feature) ;
+	num_rows_affected := topo_update.apply_attr_on_topo_layer(json_feature,
+ 	point_topo_info.layer_schema_name, point_topo_info.layer_table_name,server_json_feature) ;
 
  	
 	RAISE NOTICE 'geo_point %',  ST_AsEWKT(geo_point);

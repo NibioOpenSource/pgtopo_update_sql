@@ -4053,17 +4053,30 @@ $$ LANGUAGE 'plpgsql' SECURITY DEFINER;
  * This is used for points 
  */
 CREATE OR REPLACE FUNCTION topo_rein.change_i_trigger_insert_after() RETURNS trigger AS $$
+	DECLARE
     BEGIN
-        IF    (TG_OP = 'INSERT') THEN
+        IF (TG_OP = 'INSERT') THEN
+
+           INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
+                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.saksbehandler, NEW.id, NEW.status, NEW.reinbeitebruker_id, TG_OP||'_BEFORE_VALID', 
+                -- set slette status to 1 insert of points, because if deleted rejected object should be larked as deleted
+                jsonb_set(
+                topo_rein.data_update_log_get_json_row_data(
+                'select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,4258,8,0)::jsonb,
+                '{objects,collection,geometries,0,properties,slette_status_kode}','1')
+               );
+ 
             INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
                 VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.saksbehandler, NEW.id, NEW.status, NEW.reinbeitebruker_id, TG_OP||'_AFTER_VALID', 
                 topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,4258,8,0)::json
                 );
+                
             RETURN NEW;
         END IF;
         RETURN NULL;
     END;
 $$ LANGUAGE 'plpgsql' SECURITY DEFINER;
+
 
 /* Create the functions used for trigger update before  */
 CREATE OR REPLACE FUNCTION topo_rein.change_trigger_update_before() RETURNS trigger AS $$
@@ -4155,6 +4168,7 @@ topo_tables text[];
 BEGIN
 foreach tbl_name IN array string_to_array('reindrift_anlegg_punkt',',')
 loop
+
 
 EXECUTE format('DROP TRIGGER IF EXISTS table_change_i_trigger_insert_after ON %1$s;
      CREATE TRIGGER table_change_i_trigger_insert_after                                            

@@ -103,10 +103,11 @@
 22|1
 22_01|1||2015-10-11|2015-10-11
 23|1|XA|(1,2,1,1)|opphav ØÆÅøå|user1
-23_03_data_update_log|34|topo_rein|reindrift_anlegg_punkt|INSERT_AFTER_VALID|0|0|0
-23_03_data_update_log_new_v|34|34|topo_rein|reindrift_anlegg_punkt|INSERT_AFTER_VALID|INSERT_AFTER_VALID|READY|0|0
+23_03_data_update_log|35|topo_rein|reindrift_anlegg_punkt|INSERT_AFTER_VALID|0|0|0
+23_03_data_update_log|34|topo_rein|reindrift_anlegg_punkt|INSERT_BEFORE_VALID|0|0|1
+23_03_data_update_log_new_v|34|35|topo_rein|reindrift_anlegg_punkt|INSERT_BEFORE_VALID|INSERT_AFTER_VALID|READY|0|1|0|0
 23_03_status_before_accept|1|0|0104000020A210000001000000010100000002B7EEE6A9CE164098FA795391464D40||2015-10-11|2015-10-11
-23_03_layer_accept_update|3
+23_03_layer_accept_update|4
 23_03_status_after_accept|1|1|0104000020A210000001000000010100000002B7EEE6A9CE164098FA795391464D40||2015-10-11|2015-10-11
 23_03_rows_after_accept|0
 24_01|(2001-01-22,,"(,,)",2016-09-03,Landbruksdirektoratet,2015-01-01,,"(,)")
@@ -165,3 +166,11 @@
 55_5|1
 55_6|2|ZH|5|(5,2,2,3)
 55_7|3|ZD|5|(5,2,3,3)
+58|1
+58_03_data_update_log|135|topo_rein|reindrift_anlegg_punkt|INSERT_AFTER_VALID|0|0|0
+58_03_data_update_log|134|topo_rein|reindrift_anlegg_punkt|INSERT_BEFORE_VALID|0|0|1
+58_03_data_update_log_new_v|134|135|topo_rein|reindrift_anlegg_punkt|INSERT_BEFORE_VALID|INSERT_AFTER_VALID|READY|0|1|0|0
+58_03_status_before_reject|2|0|0|0104000020A210000001000000010100000002B7EEE6A9CE164098FA795391464D40||2015-10-11|2015-10-11
+58_03_layer_reject_update|21
+58_03_status_after_rejct|2|-1|1|0104000020A210000001000000010100000002B7EEE6A9CE164098FA795391464D40||2015-10-11|2015-10-11
+58_03_rows_after_reject|0
