@@ -32,7 +32,7 @@ SELECT '04_03', status, id, ((felles_egenskaper).kvalitet).maalemetode, (felles_
 select '04_03_data_update_log', id, schema_name,  table_name, operation, status, 
 (json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_status ,
 (json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_slette_status_kode 
-from topo_rein.data_update_log where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_linje' order by  id  desc limit 1;
+from topo_rein.data_update_log where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_linje' order by  id  desc limit 3;
 -- Check that new data_update_log_new_v has values top accept for reindrift_anlegg_linje
 select '04_03_data_update_log_new_v', id_before, id_after, schema_name,  table_name, operation_before, operation_after, data_row_state, 
 (json_after->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_status ,

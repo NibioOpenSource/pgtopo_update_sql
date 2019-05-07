@@ -9,6 +9,7 @@
 04_02|1
 04_03|0|1|82|2001-01-22|2001-01-22
 04_03_data_update_log|2|topo_rein|reindrift_anlegg_linje|UPDATE_AFTER|0|0|0
+04_03_data_update_log|1|topo_rein|reindrift_anlegg_linje|UPDATE_BEFORE|0||
 04_03_data_update_log_new_v|1|2|topo_rein|reindrift_anlegg_linje|UPDATE_BEFORE|UPDATE_AFTER|READY|0|0
 04_03_status_before_accept|1|0|379|82|2001-01-22|2001-01-22
 04_03_layer_accept_update|4
@@ -49,6 +50,7 @@
 14_status_after|6|0|||167|
 14_status_after|7|0|||379|
 14_set_attr|1
+14_data_update_log_new_v|8|11|topo_rein|6|reindrift_anlegg_linje|UPDATE_BEFORE|UPDATE_AFTER|READY||
 14_data_update_log_new_v|12|13|topo_rein|7|reindrift_anlegg_linje|UPDATE_BEFORE|UPDATE_AFTER|READY|0|0
 14_status_before_accept|2|0|||284|
 14_status_before_accept|3|1|ZH||167|82

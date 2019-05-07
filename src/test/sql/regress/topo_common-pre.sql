@@ -4006,18 +4006,41 @@ $body$;
 
 
 /* Create a function that convert to json if possible */
-CREATE OR REPLACE FUNCTION topo_rein.data_update_log_get_json_row_data(query text, srid_out int, maxdecimaldigits int, simplify_patteren int)
+DROP FUNCTION IF EXISTS topo_rein.data_update_log_get_json_row_data(query text, srid_out int, maxdecimaldigits int, simplify_patteren int) cascade;
+DROP FUNCTION IF EXISTS topo_rein.data_update_log_get_json_row_data(query text, srid_out int, maxdecimaldigits int, simplify_patteren int, only_valid boolean) cascade;
+
+
+/* Create a function that convert to json if possible */
+CREATE OR REPLACE FUNCTION topo_rein.data_update_log_get_json_row_data(query text, srid_out int, maxdecimaldigits int, simplify_patteren int, only_valid boolean)
 RETURNS text AS
 $$
 DECLARE
   json_result text;
+  reinbeitebruker_id_value text;
 BEGIN
-  BEGIN	
+ BEGIN	
    json_result := topo_rein.query_to_topojson(query, srid_out, maxdecimaldigits, simplify_patteren)::json;
+  
+  RAISE NOTICE 'json_result in %', json_result;
+   
+   
+   
+   IF only_valid and json_result is not null THEN
+   		reinbeitebruker_id_value :=  (json_result::jsonb#>'{objects,collection,geometries,0,properties,reinbeitebruker_id}')::text;
+  		RAISE NOTICE 'json_result reinbeitebruker_id  "%"',reinbeitebruker_id_value;
+   		
+  		IF reinbeitebruker_id_value = 'null' THEN
+   			json_result := '{}';
+   		END IF;
+   END IF;
+   
   EXCEPTION WHEN OTHERS THEN
+  	json_result := '{}';
   	RAISE NOTICE 'Failed to ake json for %', query;
-
   END;
+  
+  RAISE NOTICE 'json_result out %', json_result;
+
   RETURN json_result;
 
 END;
@@ -4045,13 +4068,13 @@ CREATE OR REPLACE FUNCTION topo_rein.change_i_trigger_insert_after() RETURNS tri
                 -- set slette status to 1 insert of points, because if deleted rejected object should be larked as deleted
                 jsonb_set(
                 topo_rein.data_update_log_get_json_row_data(
-                'select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,4258,8,0)::jsonb,
+                'select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,4258,8,0,false)::jsonb,
                 '{objects,collection,geometries,0,properties,slette_status_kode}','1')
                );
  
             INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
                 VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.saksbehandler, NEW.id, NEW.status, NEW.reinbeitebruker_id, TG_OP||'_AFTER_VALID', 
-                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,4258,8,0)::json
+                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,4258,8,0,false)::json
                 );
                 
             RETURN NEW;
@@ -4068,7 +4091,7 @@ CREATE OR REPLACE FUNCTION topo_rein.change_trigger_update_before() RETURNS trig
 		IF (TG_OP = 'UPDATE') THEN
             INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
                 VALUES (TG_RELNAME, TG_TABLE_SCHEMA, OLD.saksbehandler, OLD.id, OLD.status, OLD.reinbeitebruker_id, TG_OP||'_BEFORE', 
-                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||OLD.id,4258,8,0)::json
+                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||OLD.id,4258,8,0,true)::json
                 );
             RETURN NEW;
         END IF;
@@ -4082,7 +4105,7 @@ CREATE OR REPLACE FUNCTION topo_rein.change_trigger_update_after() RETURNS trigg
 		IF (TG_OP = 'UPDATE') THEN
             INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
                 VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.saksbehandler, NEW.id, NEW.status, NEW.reinbeitebruker_id, TG_OP||'_AFTER', 
-                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,4258,8,0)::json
+                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,4258,8,0,true)::json
                 );
             RETURN NEW;
         END IF;
@@ -4096,7 +4119,7 @@ CREATE OR REPLACE FUNCTION topo_rein.change_trigger_delete_after() RETURNS trigg
 		IF (TG_OP = 'DELETE') THEN
             INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
                 VALUES (TG_RELNAME, TG_TABLE_SCHEMA, OLD.saksbehandler, OLD.id, OLD.status, OLD.reinbeitebruker_id, TG_OP||'_AFTER', 
-                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||OLD.id,4258,8,0)::json
+                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||OLD.id,4258,8,0,true)::json
                 );
             UPDATE topo_rein.data_update_log set  removed_by_splitt_operation = true
             WHERE table_name = TG_RELNAME AND schema_name = TG_TABLE_SCHEMA AND row_id =  OLD.id;
@@ -4281,21 +4304,24 @@ select * from (
 				SELECT distinct
 					schema_name , table_name , row_id ,
 					min(id) as first_action_id, -- the time oldest available change
-					max(id) as latest_action_id  -- the time latest avaiable change
+					max(id) as latest_action_id,   -- the time latest avaiable change
+					count(id) as num_action_time
 					from topo_rein.data_update_log 
 					where change_confirmed_by_admin = false and
 					json_row_data is not null and
+--					json_row_data::text <> '{}'::text and
 					removed_by_splitt_operation = false
 					-- and saksbehandler is not null
 					-- and operation in ('UPDATE_BEFORE','UPDATE_AFTER')
 					 --and status in (10,0)
-					group by schema_name , table_name , row_id
+					group by schema_name , table_name , row_id, action_time 
 				) as g,
 				topo_rein.data_update_log l1,
 				topo_rein.data_update_log l2
 				where l1.id = g.first_action_id and l1.row_id = g.row_id
 				and l2.status in (10,0)
 				and l2.id = g.latest_action_id  and l2.row_id = g.row_id
+				and num_action_time <= 2
 			) as g
 			group by schema_name , table_name , row_id
 		) g,
@@ -4311,6 +4337,8 @@ select * from (
 where data_row_state = 'READY' and id_before != id_after
 )
 ;
+
+--select * from topo_rein.data_update_log_new_v ;
 
 --select topo_update.layer_accept_update(id_after,'lop') from topo_rein.data_update_log_new_v;
 

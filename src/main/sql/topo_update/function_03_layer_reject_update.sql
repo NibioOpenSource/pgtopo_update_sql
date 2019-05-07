@@ -58,12 +58,12 @@ BEGIN
 
 	-- if this object has never been accepted before set it is reject the sett deleted to true
 	select id from topo_rein.data_update_log s
-	where row_id = this_data_row_id and change_confirmed_by_admin = true and status in (1,-1)
+	where row_id = this_data_row_id and change_confirmed_by_admin = false and json_row_data::text = '{}'::text
 	limit 1 into an_old_id;
 
 	-- this mean this is the first time acceped by admin
 	-- if rehjected it should be deleted
-	IF (an_old_id is null) THEN
+	IF (an_old_id is not null) THEN
 		command_string := format('update %I.%I set slette_status_kode = 1 where id = %L',
 		this_schema_name, this_table_name, this_data_row_id);
 		RAISE NOTICE 'command_string %' , command_string;
