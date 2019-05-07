@@ -22,7 +22,9 @@ this_table_name text;
 
 this_data_row_id int;
 
-this_slette_status_kode smallint = 0;
+an_old_id int;
+
+
 BEGIN
 
 	-- get schema name and table nam,e value
@@ -30,8 +32,7 @@ BEGIN
 	into this_schema_name, this_table_name, this_data_row_id
 	from topo_rein.data_update_log s
 	where s.id = _data_update_log_id_before and s.change_confirmed_by_admin = false;
-	
-		
+
 	-- update attributtes to old values
 	perform topo_update.apply_attr_on_topo_layer(
 	'{"properties":'||((s.json_row_data::json->'objects'->'collection'->'geometries'->>0)::json->'properties')::text||'}',
@@ -44,6 +45,22 @@ BEGIN
 		this_schema_name, this_table_name, _saksbehandler , this_data_row_id);
 		RAISE NOTICE 'command_string %' , command_string;
 		EXECUTE command_string;
+
+	-- if this object has never been accepted before set it is reject the sett deleted to true
+	select id from topo_rein.data_update_log s
+	where row_id = this_data_row_id and change_confirmed_by_admin = true
+	limit 1 into an_old_id;
+
+	-- this mean this is the first time acceped by admin
+	-- if rehjected it should be deleted
+	IF (an_old_id is null) THEN
+		command_string := format('update %I.%I set slette_status_kode = 1 where id = %L',
+		this_schema_name, this_table_name, this_data_row_id);
+		RAISE NOTICE 'command_string %' , command_string;
+		EXECUTE command_string;
+	END IF;
+
+		
 
 
 	update topo_rein.data_update_log s
