@@ -27,6 +27,8 @@ an_old_id int;
 
 BEGIN
 
+	-- TODO diable trigger whe update done by this code 
+	
 	-- get schema name and table nam,e value
 	select s.schema_name, s.table_name, s.row_id 
 	into this_schema_name, this_table_name, this_data_row_id
@@ -46,9 +48,17 @@ BEGIN
 		RAISE NOTICE 'command_string %' , command_string;
 		EXECUTE command_string;
 
+	
+	-- TODO find a better way to handle this
+	-- check if the first row was insert oprasjon 	
+	--select 1 
+	--into this_slette_status_kode
+	--from topo_rein.data_update_log s
+	--where s.id = _data_update_log_id_before and s.change_confirmed_by_admin = false and s.operation = 'INSERT_AFTER';
+
 	-- if this object has never been accepted before set it is reject the sett deleted to true
 	select id from topo_rein.data_update_log s
-	where row_id = this_data_row_id and change_confirmed_by_admin = true
+	where row_id = this_data_row_id and change_confirmed_by_admin = true and status in (1,-1)
 	limit 1 into an_old_id;
 
 	-- this mean this is the first time acceped by admin

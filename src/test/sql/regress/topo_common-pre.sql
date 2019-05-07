@@ -4032,23 +4032,6 @@ DROP FUNCTION IF EXISTS topo_rein.change_trigger_delete_after() cascade;
 
 
 /* 
- * Create the functions used for trigger insert after, this handles cases where an insert is followed by a update, berfore the object is valid  
- * This is used for lines and surfaces 
- */
-CREATE OR REPLACE FUNCTION topo_rein.change_iu_trigger_insert_after() RETURNS trigger AS $$
-    BEGIN
-        IF    (TG_OP = 'INSERT') THEN
-            INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
-                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.saksbehandler, NEW.id, NEW.status, NEW.reinbeitebruker_id, TG_OP||'_AFTER', 
-                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,4258,8,0)::json
-                );
-            RETURN NEW;
-        END IF;
-        RETURN NULL;
-    END;
-$$ LANGUAGE 'plpgsql' SECURITY DEFINER;
-
-/* 
  * Create the functions used for trigger insert after, this handles cases where an insert creates a valid object  
  * This is used for points 
  */
@@ -4081,6 +4064,7 @@ $$ LANGUAGE 'plpgsql' SECURITY DEFINER;
 /* Create the functions used for trigger update before  */
 CREATE OR REPLACE FUNCTION topo_rein.change_trigger_update_before() RETURNS trigger AS $$
     BEGIN
+	    -- no map data before they or ok
 		IF (TG_OP = 'UPDATE') THEN
             INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
                 VALUES (TG_RELNAME, TG_TABLE_SCHEMA, OLD.saksbehandler, OLD.id, OLD.status, OLD.reinbeitebruker_id, TG_OP||'_BEFORE', 
@@ -4132,11 +4116,8 @@ topo_tables text[];
 BEGIN
 foreach tbl_name IN array string_to_array('arstidsbeite_sommer_flate,arstidsbeite_host_flate,arstidsbeite_hostvinter_flate,arstidsbeite_vinter_flate,arstidsbeite_var_flate,beitehage_flate,oppsamlingomr_flate,reindrift_anlegg_linje,rein_trekklei_linje',',')
 loop
-
-EXECUTE format('DROP TRIGGER IF EXISTS table_change_iu_trigger_insert_after ON %1$s;
-     CREATE TRIGGER table_change_iu_trigger_insert_after                                            
-     AFTER INSERT ON %1$s       
-     FOR EACH ROW EXECUTE PROCEDURE topo_rein.change_iu_trigger_insert_after()', 'topo_rein.'||tbl_name);           
+-- remove olde trigger if exists
+EXECUTE format('DROP TRIGGER IF EXISTS table_change_iu_trigger_insert_after ON %1$s', 'topo_rein.'||tbl_name);           
 
 EXECUTE format('DROP TRIGGER IF EXISTS table_change_trigger_update_before ON %1$s;
      CREATE TRIGGER table_change_trigger_update_before                                            
@@ -4327,7 +4308,7 @@ select * from (
 		order by l1_min_id.schema_name , l1_min_id.table_name , max_id_after desc
 	) as g
 ) as g	
-where data_row_state = 'READY'
+where data_row_state = 'READY' and id_before != id_after
 )
 ;
 
