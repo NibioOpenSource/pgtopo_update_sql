@@ -70,7 +70,7 @@ select '14_data_update_log', id, row_id, removed_by_splitt_operation, schema_nam
 (json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_slette_status_kode 
 from topo_rein.data_update_log where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_linje' and removed_by_splitt_operation = false and change_confirmed_by_admin = false order by row_id,id asc;
 -- Check that new data_update_log_new_v has values top accept for reindrift_anlegg_linje
-select '14_data_update_log_new_v', id_before, json_before, id_after, schema_name, data_row_id, table_name, operation_before, operation_after, data_row_state, 
+select '14_data_update_log_new_v', id_before, id_after, schema_name, data_row_id, table_name, operation_before, operation_after, data_row_state, 
 (json_after->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_status ,
 (json_after->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_slette_status_kode 
 from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_linje' 

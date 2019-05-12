@@ -4094,7 +4094,7 @@ CREATE OR REPLACE FUNCTION topo_rein.change_iu_trigger_insert_after() RETURNS tr
 
            INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
                 VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.saksbehandler, NEW.id, NEW.status, NEW.reinbeitebruker_id, TG_OP||'_BEFORE_VALID', 
-                '{}'
+                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,4258,8,0,true)::json
                );
  
             RETURN NEW;
