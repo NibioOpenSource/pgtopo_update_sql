@@ -4153,7 +4153,7 @@ $$ LANGUAGE 'plpgsql' SECURITY DEFINER;
 
 /* Create the triggers surfaces and lines */
 
-DO
+DO  
 $body$
 DECLARE
 tbl_name text;
@@ -4162,8 +4162,10 @@ BEGIN
 foreach tbl_name IN array string_to_array('arstidsbeite_sommer_flate,arstidsbeite_host_flate,arstidsbeite_hostvinter_flate,arstidsbeite_vinter_flate,arstidsbeite_var_flate,beitehage_flate,oppsamlingomr_flate,reindrift_anlegg_linje,rein_trekklei_linje',',')
 loop
 
+EXECUTE format('DROP TRIGGER IF EXISTS table_change_i_trigger_insert_after ON %1$s', 'topo_rein.'||tbl_name);           
+
 EXECUTE format('DROP TRIGGER IF EXISTS table_change_iu_trigger_insert_after ON %1$s;
-     CREATE TRIGGER table_change_i_trigger_insert_after                                            
+     CREATE TRIGGER table_change_iu_trigger_insert_after                                            
      AFTER INSERT ON %1$s       
      FOR EACH ROW EXECUTE PROCEDURE topo_rein.change_iu_trigger_insert_after()', 'topo_rein.'||tbl_name);           
 
@@ -4243,13 +4245,13 @@ $body$;
 CREATE OR REPLACE VIEW topo_rein.data_update_log_new_v AS (
 select * from (
 	select 
-	'READY' as data_row_state, 
+	'READY'::text as data_row_state, 
 	g.schema_name, 
 	g.table_name,
 	g.min_data_row_id_before as data_row_id,
 	
 	g.min_id_before as id_before,
-	g.max_action_time_before as date_before,
+	g.min_action_time_before as date_before,
 	g.min_operation_before as operation_before,
 	g.min_reinbeitebruker_id_before as reinbeitebruker_id_before ,
 	g.min_saksbehandler_before as saksbehandler_before,
@@ -4276,14 +4278,6 @@ select * from (
 		l1_min_id.saksbehandler as min_saksbehandler_before,
 		l1_min_id.json_row_data as min_json_row_data_before,
 		
-		l1_max_id.id as max_id_before,
-		l1_max_id.row_id as max_data_row_id_before,
-		l1_max_id.operation as max_operation_before,
-		l1_max_id.action_time as max_action_time_before,
-		l1_max_id.reinbeitebruker_id as max_reinbeitebruker_id_before,
-		l1_max_id.saksbehandler as max_saksbehandler_before,
-		l1_max_id.json_row_data as max_json_row_data_before,
-		
 		l2_max_id.id as max_id_after,
 		l2_max_id.row_id as max_data_row_id_after,
 		l2_max_id.operation as max_operation_after,
@@ -4296,7 +4290,6 @@ select * from (
 		from (
 			select schema_name , table_name , row_id, 
 			min(data_update_log_id_before) as min_data_update_log_id_before, -- get the first changed row at the oldest available change time
-			max(data_update_log_id_before) as max_data_update_log_id_before, -- get the last changed row at the oldest available change time
 			max(data_update_log_id_after) as max_data_update_log_id_after -- get the last changed row at time two,the latest change time
 			from (
 				select 
@@ -4309,32 +4302,28 @@ select * from (
 				SELECT distinct
 					schema_name , table_name , row_id ,
 					min(id) as first_action_id, -- the time oldest available change
-					max(id) as latest_action_id,   -- the time latest avaiable change
-					count(id) as num_action_time
+					max(id) as latest_action_id   -- the time latest avaiable change
 					from topo_rein.data_update_log 
 					where change_confirmed_by_admin = false and
-					json_row_data is not null and
+--					json_row_data is not null and
 --					json_row_data::text <> '{}'::text and
 					removed_by_splitt_operation = false
 					-- and saksbehandler is not null
 					-- and operation in ('UPDATE_BEFORE','UPDATE_AFTER')
-					 --and status in (10,0)
-					group by schema_name , table_name , row_id, action_time 
+					-- and status in (10,0)
+					group by schema_name , table_name , row_id 
 				) as g,
 				topo_rein.data_update_log l1,
 				topo_rein.data_update_log l2
 				where l1.id = g.first_action_id and l1.row_id = g.row_id
-				and l2.status in (10,0)
+				-- and l2.status in (10,0)
 				and l2.id = g.latest_action_id  and l2.row_id = g.row_id
-				and num_action_time <= 2
 			) as g
 			group by schema_name , table_name , row_id
 		) g,
 		topo_rein.data_update_log l1_min_id,
-		topo_rein.data_update_log l1_max_id,
 		topo_rein.data_update_log l2_max_id
 		where l1_min_id.id = g.min_data_update_log_id_before
-		and l1_max_id.id = g.max_data_update_log_id_before
 		and l2_max_id.id = g.max_data_update_log_id_after
 		order by l1_min_id.schema_name , l1_min_id.table_name , max_id_after desc
 	) as g
