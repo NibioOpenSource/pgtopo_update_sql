@@ -4084,6 +4084,25 @@ CREATE OR REPLACE FUNCTION topo_rein.change_i_trigger_insert_after() RETURNS tri
 $$ LANGUAGE 'plpgsql' SECURITY DEFINER;
 
 
+/* 
+ * Create the functions used for trigger insert after, this is used for lines and surfaces
+ */
+CREATE OR REPLACE FUNCTION topo_rein.change_iu_trigger_insert_after() RETURNS trigger AS $$
+	DECLARE
+    BEGIN
+        IF (TG_OP = 'INSERT') THEN
+
+           INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
+                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.saksbehandler, NEW.id, NEW.status, NEW.reinbeitebruker_id, TG_OP||'_BEFORE_VALID', 
+                '{}'
+               );
+ 
+            RETURN NEW;
+        END IF;
+        RETURN NULL;
+    END;
+$$ LANGUAGE 'plpgsql' SECURITY DEFINER;
+
 /* Create the functions used for trigger update before  */
 CREATE OR REPLACE FUNCTION topo_rein.change_trigger_update_before() RETURNS trigger AS $$
     BEGIN
@@ -4103,6 +4122,9 @@ $$ LANGUAGE 'plpgsql' SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION topo_rein.change_trigger_update_after() RETURNS trigger AS $$
     BEGIN
 		IF (TG_OP = 'UPDATE') THEN
+			-- clean up current after update, since we only need one after
+			DELETE FROM topo_rein.data_update_log WHERE ROW_ID = NEW.id AND table_name = TG_RELNAME AND schema_name = TG_TABLE_SCHEMA AND operation = TG_OP||'_AFTER'; 
+		
             INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
                 VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.saksbehandler, NEW.id, NEW.status, NEW.reinbeitebruker_id, TG_OP||'_AFTER', 
                 topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,4258,8,0,true)::json
@@ -4139,8 +4161,11 @@ topo_tables text[];
 BEGIN
 foreach tbl_name IN array string_to_array('arstidsbeite_sommer_flate,arstidsbeite_host_flate,arstidsbeite_hostvinter_flate,arstidsbeite_vinter_flate,arstidsbeite_var_flate,beitehage_flate,oppsamlingomr_flate,reindrift_anlegg_linje,rein_trekklei_linje',',')
 loop
--- remove olde trigger if exists
-EXECUTE format('DROP TRIGGER IF EXISTS table_change_iu_trigger_insert_after ON %1$s', 'topo_rein.'||tbl_name);           
+
+EXECUTE format('DROP TRIGGER IF EXISTS table_change_iu_trigger_insert_after ON %1$s;
+     CREATE TRIGGER table_change_i_trigger_insert_after                                            
+     AFTER INSERT ON %1$s       
+     FOR EACH ROW EXECUTE PROCEDURE topo_rein.change_iu_trigger_insert_after()', 'topo_rein.'||tbl_name);           
 
 EXECUTE format('DROP TRIGGER IF EXISTS table_change_trigger_update_before ON %1$s;
      CREATE TRIGGER table_change_trigger_update_before                                            
@@ -4218,12 +4243,7 @@ $body$;
 CREATE OR REPLACE VIEW topo_rein.data_update_log_new_v AS (
 select * from (
 	select 
-	CASE WHEN (max_operation_after IN ('UPDATE_AFTER','INSERT_AFTER_VALID'))
-	THEN
-		'READY'
-	ELSE
-		'NOT_READY'
-	END AS data_row_state,
+	'READY' as data_row_state, 
 	g.schema_name, 
 	g.table_name,
 	g.min_data_row_id_before as data_row_id,
@@ -4233,18 +4253,8 @@ select * from (
 	g.min_operation_before as operation_before,
 	g.min_reinbeitebruker_id_before as reinbeitebruker_id_before ,
 	g.min_saksbehandler_before as saksbehandler_before,
-	CASE WHEN (min_operation_before = 'INSERT_AFTER' and max_operation_before = 'INSERT_AFTER')
-	THEN
-		g.min_json_row_data_before
-	ELSE
-		g.max_json_row_data_before
-	END AS json_before,
+	g.min_json_row_data_before as json_before,
 
---	g.max_id_before as id_before,
---	g.max_operation_before as operation_before,
---	g.max_reinbeitebruker_id_before as reinbeitebruker_id_before ,
---	g.max_saksbehandler_before as saksbehandler_before,
---	g.max_json_row_data_before as json_before,
 
 	g.max_id_after as id_after,
 	g.max_action_time_after as date_after,
@@ -4253,11 +4263,6 @@ select * from (
 	g.max_saksbehandler_after as saksbehandler_after,
 	g.max_json_row_data_after as json_after
 	
-	--l2.id as id_after,
-	--l2.operation as operation_after,
-	--l2.reinbeitebruker_id as reinbeitebruker_id_after ,
-	--l2.saksbehandler as saksbehandler_after,
-	--l2.json_row_data as json_after
 	from (
 		SELECT 
 		l1_min_id.schema_name, 
@@ -4334,7 +4339,7 @@ select * from (
 		order by l1_min_id.schema_name , l1_min_id.table_name , max_id_after desc
 	) as g
 ) as g	
-where data_row_state = 'READY' and id_before != id_after
+where id_before != id_after
 )
 ;
 
