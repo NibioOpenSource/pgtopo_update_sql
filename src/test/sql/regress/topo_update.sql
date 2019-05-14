@@ -95,16 +95,16 @@ SELECT '18', t.id, status, ST_length(t.linje) l1, ST_Length(t.linje::geometry(Mu
 
 -- ======= Continue work on a surface object in layer topo_rein.arstidsbeite_var_flate and update it,   ======= --
 SELECT '19', id, status, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade  from topo_rein.arstidsbeite_var_flate;
-UPDATE topo_rein.arstidsbeite_var_flate set felles_egenskaper = '(2001-01-22,,"(,,)",2016-09-03,Landbruksdirektoratet,2015-01-01,,"(,)")' where id = 1;
-SELECT '20_01', felles_egenskaper FROM topo_rein.arstidsbeite_var_flate WHERE id = 1;
 SELECT '20_02', topo_update.apply_attr_on_topo_line('{"properties":{"id":1,"reinbeitebruker_id":"ZH","fellesegenskaper.forstedatafangstdato":"2001-01-22","fellesegenskaper.verifiseringsdato":null,"slette_status_kode":0}}','topo_rein', 'arstidsbeite_var_flate', 'omrade','{"properties":{"status":"0","saksbehandler":"imi@nibio.no","reinbeitebruker_id":null,"fellesegenskaper.opphav":"NIBIO"}}');
 SELECT '20_03', (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.arstidsbeite_var_flate WHERE id = 1 AND (felles_egenskaper).oppdateringsdato = current_date;
-SELECT '20_04', topo_update.apply_attr_on_topo_line('{"properties":{"id":1,"reinbeitebruker_id":"ZH","fellesegenskaper.verifiseringsdato":"2015-01-01","slette_status_kode":0}}','topo_rein', 'arstidsbeite_var_flate', 'omrade','{"properties":{"status":"0","saksbehandler":"imi@nibio.no","reinbeitebruker_id":null,"fellesegenskaper.opphav":"NIBIO"}}');
+SELECT '20_04', topo_update.apply_attr_on_topo_line('{"properties":{"id":1,"reinbeitebruker_id":"ZH","reindrift_sesongomrade_kode":2,"fellesegenskaper.verifiseringsdato":"2015-01-01","slette_status_kode":0}}','topo_rein', 'arstidsbeite_var_flate', 'omrade','{"properties":{"status":"0","saksbehandler":"imi@nibio.no","reinbeitebruker_id":null,"fellesegenskaper.opphav":"NIBIO"}}');
 SELECT '20_05', (felles_egenskaper).verifiseringsdato FROM topo_rein.arstidsbeite_var_flate WHERE id = 1 AND (felles_egenskaper).oppdateringsdato = current_date;
-SELECT '21', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade  from topo_rein.arstidsbeite_var_flate;
-
-
+SELECT '21', id, status, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade  from topo_rein.arstidsbeite_var_flate;
 SELECT '21_status_after', id, status, reinbeitebruker_id, reindrift_sesongomrade_kode, ST_Area(ST_Transform(t.omrade::geometry(MultiPolygon,4258), 25833))::int , ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.arstidsbeite_var_flate t ORDER BY id;
+select '21_data_update_log', id, row_id, removed_by_splitt_operation, schema_name,  table_name, operation, status, 
+(json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_status ,
+(json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_slette_status_kode 
+from topo_rein.data_update_log e where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_var_flate' and removed_by_splitt_operation = false and change_confirmed_by_admin = false;
 -- Check that new data_update_log_new_v has values top accept for arstidsbeite_var_flate
 select '21_data_update_log_new_v', id_before, json_before, id_after, schema_name, data_row_id, table_name, operation_before, operation_after, data_row_state, 
 (json_after->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_status ,
@@ -114,16 +114,20 @@ SELECT '21_status_before_accept', id, status, reinbeitebruker_id, reindrift_seso
 -- There should be no more row to accept for arstidsbeite_var_flate
 SET session_replication_role = replica; -- disable trigger for system update
 -- Accept the changes reindrift_anlegg_linje
-SELECT '04_03_layer_accept_update', * from  topo_update.layer_accept_update(31,'lop');
+SELECT '21_layer_accept_update', * from  topo_update.layer_accept_update(12,'lop');
 SET session_replication_role = DEFAULT; --enable defalt trigger 
 -- Status should now have changhed arstidsbeite_var_flate
 SELECT '21_status_after_accept', id, status, slette_status_kode, reinbeitebruker_id, reindrift_sesongomrade_kode, ST_Area(ST_Transform(t.omrade::geometry(MultiPolygon,4258), 25833))::int , ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.arstidsbeite_var_flate t ORDER BY id;
 -- There should be no more row to accept for arstidsbeite_var_flate
 select '21_rows_after_accept', count(*) from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_var_flate';
 -- Set flag for deeee 
-SELECT '21_set_to_deleted', topo_update.apply_attr_on_topo_line('{"properties":{"id":1,"reinbeitebruker_id":"ZH","fellesegenskaper.verifiseringsdato":"2015-01-01","slette_status_kode":1}}','topo_rein', 'arstidsbeite_var_flate', 'omrade','{"properties":{"status":"0","saksbehandler":"imi@nibio.no","reinbeitebruker_id":null,"fellesegenskaper.opphav":"NIBIO"}}');
+SELECT '21_set_to_deleted', topo_update.apply_attr_on_topo_line('{"properties":{"id":1,"slette_status_kode":1}}','topo_rein', 'arstidsbeite_var_flate', 'omrade','{"properties":{"status":"10","saksbehandler":"imi@nibio.no","fellesegenskaper.opphav":"NIBIO"}}');
 -- We set slette status code to 1, to indicate that the record is valid
 SELECT '21_status_set_deleted_flag', id, status, slette_status_kode, reinbeitebruker_id, reindrift_sesongomrade_kode, ST_Area(ST_Transform(t.omrade::geometry(MultiPolygon,4258), 25833))::int , ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.arstidsbeite_var_flate t ORDER BY id;
+select '21_data_update_log_after_set_delete_flag', id, row_id, removed_by_splitt_operation, schema_name,  table_name, operation, status, 
+(json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_status ,
+(json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_slette_status_kode 
+from topo_rein.data_update_log e where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_var_flate' and removed_by_splitt_operation = false and change_confirmed_by_admin = false;
 -- Check that new data_update_log_new_v has values top accept for arstidsbeite_var_flate, in json_before the slette_status_kode should now be 0
 select '21_data_update_log_new_v_after_set_delete_flag', id_before, id_after, schema_name, data_row_id, table_name, operation_before, operation_after, data_row_state, 
 (json_before->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_before_status ,
@@ -138,7 +142,7 @@ status,
 (json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_slette_status_kode 
 from topo_rein.data_update_log where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_var_flate' and change_confirmed_by_admin is false order by  id  desc limit 3;
 
-SELECT '21_layer_accept_update', * from  topo_update.layer_accept_update(25,'lop');
+SELECT '21_layer_accept_update', * from  topo_update.layer_accept_update(14,'lop');
 
 SELECT '21_status_after_accept_flag', id, status, slette_status_kode, reinbeitebruker_id, reindrift_sesongomrade_kode, ST_Area(ST_Transform(t.omrade::geometry(MultiPolygon,4258), 25833))::int , ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.arstidsbeite_var_flate t ORDER BY id;
 
@@ -164,7 +168,7 @@ select '23_03_data_update_log_new_v', id_before, id_after, schema_name,  table_n
 from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_punkt' order by  date_after  desc limit 1;
 SELECT '23_03_status_before_accept', id, status, punkt::geometry, ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_punkt WHERE id = (select max(id) FROM topo_rein.reindrift_anlegg_punkt) AND (felles_egenskaper).oppdateringsdato = current_date;
 -- Accept the changes reindrift_anlegg_punkt
-SELECT '23_03_layer_accept_update', * from  topo_update.layer_accept_update(29,'lop');
+SELECT '23_03_layer_accept_update', * from  topo_update.layer_accept_update(16,'lop');
 -- Status should now have changhed reindrift_anlegg_punkt
 SELECT '23_03_status_after_accept', id, status, punkt::geometry, ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_punkt WHERE id = (select max(id) FROM topo_rein.reindrift_anlegg_punkt) AND (felles_egenskaper).oppdateringsdato = current_date;
 -- There should be no more row to accept for reindrift_anlegg_punkt
@@ -275,7 +279,7 @@ select '58_03_data_update_log', id, schema_name,  table_name, operation, status,
 --json_row_data#>'{objects,collection,geometries,0,properties}'
 from topo_rein.data_update_log where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_punkt' order by  id  desc limit 2;
 -- Check that new data_update_log_new_v has values top accept for reindrift_anlegg_punkt
-select '58_03_data_update_log_new_v', id_before, id_after, schema_name,  table_name, operation_before, operation_after, data_row_state, 
+select '58_03_data_update_log_new_v', id_before, json_before, id_after, schema_name,  table_name, operation_before, operation_after, data_row_state, 
 (json_before->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_before_status ,
 (json_before->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_before_slette_status_kode ,
 (json_after->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_after_status ,
@@ -283,7 +287,7 @@ select '58_03_data_update_log_new_v', id_before, id_after, schema_name,  table_n
 from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_punkt' order by  date_after  desc limit 1;
 SELECT '58_03_status_before_reject', id, status, slette_status_kode, punkt::geometry, ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_punkt WHERE id = (select max(id) FROM topo_rein.reindrift_anlegg_punkt) AND (felles_egenskaper).oppdateringsdato = current_date;
 -- Reject the changes reindrift_anlegg_punkt
-SELECT '58_03_layer_reject_update', * from  topo_update.layer_reject_update(107,'lop');
+SELECT '58_03_layer_reject_update', * from  topo_update.layer_reject_update(50,'lop');
 -- Status and slette_status_kode should now have changhed reindrift_anlegg_punkt
 SELECT '58_03_status_after_rejct', id, status, slette_status_kode, punkt::geometry, ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_punkt WHERE id = (select max(id) FROM topo_rein.reindrift_anlegg_punkt) AND (felles_egenskaper).oppdateringsdato = current_date;
 -- There should be no more row to accept for reindrift_anlegg_punkt

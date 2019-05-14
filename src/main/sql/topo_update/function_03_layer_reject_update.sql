@@ -22,6 +22,8 @@ this_table_name text;
 
 this_data_row_id int;
 
+this_json_row_data text;
+
 an_old_id int;
 
 
@@ -30,52 +32,28 @@ BEGIN
 	-- TODO diable trigger whe update done by this code 
 	
 	-- get schema name and table nam,e value
-	select s.schema_name, s.table_name, s.row_id 
-	into this_schema_name, this_table_name, this_data_row_id
+	select s.schema_name, s.table_name, s.row_id, s.json_row_data::text 
+	into this_schema_name, this_table_name, this_data_row_id, this_json_row_data
 	from topo_rein.data_update_log s
 	where s.id = _data_update_log_id_before and s.change_confirmed_by_admin = false;
 
 	-- update attributtes to old values
-	perform topo_update.apply_attr_on_topo_layer(
-	'{"properties":'||((s.json_row_data::json->'objects'->'collection'->'geometries'->>0)::json->'properties')::text||'}',
-	s.schema_name::text, 
-	s.table_name::text)
-	from topo_rein.data_update_log s
-	where s.id = _data_update_log_id_before and s.change_confirmed_by_admin = false;	
-
-	command_string := format('update %I.%I set status = -1, saksbehandler = %L where id = %L',
-		this_schema_name, this_table_name, _saksbehandler , this_data_row_id);
-		RAISE NOTICE 'command_string %' , command_string;
-		EXECUTE command_string;
-
-	
-	-- TODO find a better way to handle this
-	-- check if the first row was insert oprasjon 	
-	--select 1 
-	--into this_slette_status_kode
-	--from topo_rein.data_update_log s
-	--where s.id = _data_update_log_id_before and s.change_confirmed_by_admin = false and s.operation = 'INSERT_AFTER';
-
-	-- if this object has never been accepted before set it is reject the sett deleted to true
-	select id from topo_rein.data_update_log s
-	where row_id = this_data_row_id and change_confirmed_by_admin = false and json_row_data::text = '{}'::text
-	limit 1 into an_old_id;
-
-	-- this mean this is the first time acceped by admin
-	-- if rehjected it should be deleted
-	IF (an_old_id is not null) THEN
+	IF this_json_row_data <> '{}'::text THEN
+		perform topo_update.apply_attr_on_topo_layer(
+		'{"properties":'||((this_json_row_data::json->'objects'->'collection'->'geometries'->>0)::json->'properties')::text||'}',
+		this_schema_name, 
+		this_table_name);	
+	ELSE 
 		command_string := format('update %I.%I set slette_status_kode = 1 where id = %L',
 		this_schema_name, this_table_name, this_data_row_id);
 		RAISE NOTICE 'command_string %' , command_string;
 		EXECUTE command_string;
 	END IF;
 
-		
-
 
 	update topo_rein.data_update_log s
 	set change_confirmed_by_admin = true
-	where row_id = this_data_row_id and change_confirmed_by_admin = false;
+	where s.row_id = this_data_row_id and s.schema_name = this_schema_name and s.table_name = this_table_name and s.change_confirmed_by_admin = false;
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 	RAISE NOTICE 'Number of meta rows affected  %',  num_rows_affected;
 	

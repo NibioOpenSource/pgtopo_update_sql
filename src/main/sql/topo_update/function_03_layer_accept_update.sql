@@ -31,7 +31,7 @@ BEGIN
 
 	update topo_rein.data_update_log s
 	set change_confirmed_by_admin = true
-	where row_id = this_data_row_id and change_confirmed_by_admin = false;
+	where s.row_id = this_data_row_id and s.schema_name = this_schema_name and s.table_name = this_table_name and s.change_confirmed_by_admin = false;
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 	RAISE NOTICE 'Number of meta rows affected  %',  num_rows_affected;
 	
