@@ -4058,35 +4058,6 @@ DROP FUNCTION IF EXISTS topo_rein.change_trigger_insert_after() cascade;
 DROP FUNCTION IF EXISTS topo_rein.change_iu_trigger_insert_after() cascade;
 
 
-/* 
- * Create the functions used for trigger insert after, this handles cases where an insert creates a valid object  
- * This is used for points 
- */
-CREATE OR REPLACE FUNCTION topo_rein.change_i_trigger_insert_after() RETURNS trigger AS $$
-	DECLARE
-    BEGIN
-        IF (TG_OP = 'INSERT') THEN
-
-           INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
-                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.saksbehandler, NEW.id, NEW.status, NEW.reinbeitebruker_id, TG_OP||'_BEFORE_VALID', 
-                -- set slette status to 1 insert of points, because if deleted rejected object should be larked as deleted
-                jsonb_set(
-                topo_rein.data_update_log_get_json_row_data(
-                'select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,4258,8,0,false)::jsonb,
-                '{objects,collection,geometries,0,properties,slette_status_kode}','1')
-               );
- 
-            INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
-                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.saksbehandler, NEW.id, NEW.status, NEW.reinbeitebruker_id, TG_OP||'_AFTER_VALID', 
-                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,4258,8,0,false)::json
-                );
-                
-            RETURN NEW;
-        END IF;
-        RETURN NULL;
-    END;
-$$ LANGUAGE 'plpgsql' SECURITY DEFINER;
-
 
 /* 
  * Create the functions used for trigger insert after, this is used for lines and surfaces
@@ -4292,7 +4263,7 @@ DECLARE
 tbl_name text;
 topo_tables text[];
 BEGIN
-foreach tbl_name IN array string_to_array('arstidsbeite_sommer_flate,arstidsbeite_host_flate,arstidsbeite_hostvinter_flate,arstidsbeite_vinter_flate,arstidsbeite_var_flate,beitehage_flate,oppsamlingomr_flate,reindrift_anlegg_linje,rein_trekklei_linje',',')
+foreach tbl_name IN array string_to_array('arstidsbeite_sommer_flate,arstidsbeite_host_flate,arstidsbeite_hostvinter_flate,arstidsbeite_vinter_flate,arstidsbeite_var_flate,beitehage_flate,oppsamlingomr_flate,reindrift_anlegg_linje,rein_trekklei_linje,reindrift_anlegg_punkt',',')
 loop
 
 EXECUTE format('DROP TRIGGER IF EXISTS table_change_i_trigger_insert_after ON %1$s', 'topo_rein.'||tbl_name);           
@@ -4323,41 +4294,6 @@ END
 $body$;
 
 
-/* Create the triggers surfaces of type point */
-
-DO
-$body$
-DECLARE
-tbl_name text;
-topo_tables text[];
-BEGIN
-foreach tbl_name IN array string_to_array('reindrift_anlegg_punkt',',')
-loop
-
-
-EXECUTE format('DROP TRIGGER IF EXISTS table_change_i_trigger_insert_after ON %1$s;
-     CREATE TRIGGER table_change_i_trigger_insert_after                                            
-     AFTER INSERT ON %1$s       
-     FOR EACH ROW EXECUTE PROCEDURE topo_rein.change_i_trigger_insert_after()', 'topo_rein.'||tbl_name);           
-
-EXECUTE format('DROP TRIGGER IF EXISTS table_change_trigger_update_before ON %1$s;
-     CREATE TRIGGER table_change_trigger_update_before                                            
-     BEFORE UPDATE ON %1$s        
-     FOR EACH ROW EXECUTE PROCEDURE topo_rein.change_trigger_update_before()', 'topo_rein.'||tbl_name);             
-
-EXECUTE format('DROP TRIGGER IF EXISTS table_change_trigger_update_after ON %1$s;
-     CREATE TRIGGER table_change_trigger_update_after                                            
-     AFTER UPDATE ON %1$s       
-     FOR EACH ROW EXECUTE PROCEDURE topo_rein.change_trigger_update_after()', 'topo_rein.'||tbl_name);           
-
-EXECUTE format('DROP TRIGGER IF EXISTS table_change_trigger_delete_after ON %1$s;
-     CREATE TRIGGER table_change_trigger_delete_after                                            
-     AFTER DELETE ON %1$s       
-     FOR EACH ROW EXECUTE PROCEDURE topo_rein.change_trigger_delete_after()', 'topo_rein.'||tbl_name);           
-
-END loop;
-END
-$body$;
 
 -- this function that used to select 
 
