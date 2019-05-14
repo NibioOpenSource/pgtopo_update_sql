@@ -1166,13 +1166,14 @@ status int not null default 0,
 
 -- spesifikasjon av type teknisk anlegg som er etablert i forbindelse med utmarksbeite
 -- TODO add not null after it has been filled
-reindriftsanleggstype int CHECK ( (reindriftsanleggstype > 0 AND reindriftsanleggstype < 8) or (reindriftsanleggstype = 12)),
+anleggstype int CHECK ( (anleggstype > 0 AND anleggstype < 8) or (anleggstype = 12))
 
-anleggstype int[3] CHECK (
-  (anleggstype[0] > 0 AND anleggstype[0] < 8) or (anleggstype[0] = 12) AND
-  (anleggstype[1] > 0 AND anleggstype[1] < 8) or (anleggstype[1] = 12) AND
-  (anleggstype[2] > 0 AND anleggstype[2] < 8) or (anleggstype[2] = 12)
-)
+--failed to use
+--anleggstype int[3] CHECK (
+--  (anleggstype[0] > 0 AND anleggstype[0] < 8) or (anleggstype[0] = 12) AND
+--  (anleggstype[1] > 0 AND anleggstype[1] < 8) or (anleggstype[1] = 12) AND
+--  (anleggstype[2] > 0 AND anleggstype[2] < 8) or (anleggstype[2] = 12)
+--)
 
 );
 
@@ -1269,13 +1270,14 @@ alle_reinbeitebr_id varchar not null default '',
 status int not null default 0,
 
 -- spesifikasjon av type teknisk anlegg som er etablert i forbindelse med utmarksbeite
-reindriftsanleggstype int CHECK (reindriftsanleggstype > 9 AND reindriftsanleggstype < 21),
+anleggstype int CHECK (anleggstype > 9 AND anleggstype < 21)
 
-anleggstype int[3] CHECK (
-  (anleggstype[0] > 9 AND anleggstype[0] < 21) AND
-  (anleggstype[1] > 9 AND anleggstype[1] < 21) AND
-  (anleggstype[2] > 9 AND anleggstype[2] < 21)
-)
+--failed to use
+--anleggstype int[3] CHECK (
+--  (anleggstype[0] > 9 AND anleggstype[0] < 21) AND
+--  (anleggstype[1] > 9 AND anleggstype[1] < 21) AND
+--  (anleggstype[2] > 9 AND anleggstype[2] < 21)
+--)
 
 );
 
@@ -4051,7 +4053,9 @@ DROP FUNCTION IF EXISTS topo_rein.table_change_trigger_insert_after() cascade;
 DROP FUNCTION IF EXISTS topo_rein.change_trigger_update_before() cascade;
 DROP FUNCTION IF EXISTS topo_rein.change_trigger_update_after() cascade;
 DROP FUNCTION IF EXISTS topo_rein.change_trigger_delete_after() cascade;
-
+DROP FUNCTION IF EXISTS topo_rein.change_i_trigger_insert_after() cascade;
+DROP FUNCTION IF EXISTS topo_rein.change_trigger_insert_after() cascade;
+DROP FUNCTION IF EXISTS topo_rein.change_iu_trigger_insert_after() cascade;
 
 
 /* 
@@ -4086,52 +4090,182 @@ $$ LANGUAGE 'plpgsql' SECURITY DEFINER;
 
 /* 
  * Create the functions used for trigger insert after, this is used for lines and surfaces
+ * TODO find a better wat to solve this 
  */
-CREATE OR REPLACE FUNCTION topo_rein.change_iu_trigger_insert_after() RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION topo_rein.change_trigger_insert_after() RETURNS trigger AS $$
 	DECLARE
+	is_ready_stage boolean = false;
+	is_accpeted boolean = false;
     BEGIN
         IF (TG_OP = 'INSERT') THEN
 
-           INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
+
+            -- is_ready_stage := topo_rein.is_ready_stage('arstidsbeite_var_flate',NEW);
+            -- Check if object in ready stage 
+            -- TODO find way to move this procdure
+	        IF (TG_RELNAME IN ('arstidsbeite_sommer_flate','arstidsbeite_host_flate','arstidsbeite_hostvinter_flate','arstidsbeite_vinter_flate','arstidsbeite_var_flate')) THEN
+	        	IF (
+	        	NEW.reinbeitebruker_id is not null and 
+	        	NEW.reindrift_sesongomrade_kode is not null
+	        	) THEN
+	        		is_ready_stage := true;
+	        	END IF;
+	        ELSIF (TG_RELNAME IN ('reindrift_anlegg_linje','reindrift_anlegg_punkt')) THEN 	
+	        	IF (
+	        	NEW.reinbeitebruker_id is not null and 
+	        	NEW.anleggstype is not null
+	        	) THEN
+	        		is_ready_stage := true;
+	        	END IF;
+	        ELSIF (TG_RELNAME IN ('beitehage_flate')) THEN 	
+	        	IF (
+	        	NEW.reinbeitebruker_id is not null and 
+	        	NEW.reindriftsanleggstype is not null
+	        	) THEN
+	        		is_ready_stage := true;
+	        	END IF;
+	        ELSIF (TG_RELNAME IN ('oppsamlingomr_flate')) THEN 	
+	        	IF (
+	        	NEW.reinbeitebruker_id is not null
+	        	) THEN
+	        		is_ready_stage := true;
+	        	END IF;
+	        END IF;
+
+	        IF (NEW.status IN (1)) THEN
+	        	is_accpeted := true;
+	        END IF;
+
+	        IF (is_accpeted=false) THEN
+	           INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
                 VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.saksbehandler, NEW.id, NEW.status, NEW.reinbeitebruker_id, TG_OP||'_BEFORE_VALID', 
-                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,4258,8,0,true)::json
+                '{}'
                );
- 
-            RETURN NEW;
+	       	END IF;
+
+	        IF (is_ready_stage=true and is_accpeted=false) THEN
+	       		-- We are not in init stage
+            	INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
+                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.saksbehandler, NEW.id, NEW.status, NEW.reinbeitebruker_id, TG_OP||'_AFTER_VALID', 
+                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,4258,8,0,false)::json
+                );
+	       	END IF;
         END IF;
-        RETURN NULL;
+        RETURN NEW;
     END;
 $$ LANGUAGE 'plpgsql' SECURITY DEFINER;
 
 /* Create the functions used for trigger update before  */
 CREATE OR REPLACE FUNCTION topo_rein.change_trigger_update_before() RETURNS trigger AS $$
+	DECLARE
+	is_ready_stage boolean = false;
+	is_accpeted boolean = false;
     BEGIN
 	    -- no map data before they or ok
 		IF (TG_OP = 'UPDATE') THEN
-            INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
+            -- is_ready_stage := topo_rein.is_ready_stage('arstidsbeite_var_flate',OLD);
+            -- Check if object in ready stage 
+            -- TODO find way to move this procdure
+	        IF (TG_RELNAME IN ('arstidsbeite_sommer_flate','arstidsbeite_host_flate','arstidsbeite_hostvinter_flate','arstidsbeite_vinter_flate','arstidsbeite_var_flate')) THEN
+	        	IF (
+	        	OLD.reinbeitebruker_id is not null and 
+	        	OLD.reindrift_sesongomrade_kode is not null
+	        	) THEN
+	        		is_ready_stage := true;
+	        	END IF;
+	        ELSIF (TG_RELNAME IN ('reindrift_anlegg_linje','reindrift_anlegg_punkt')) THEN 	
+	        	IF (
+	        	OLD.reinbeitebruker_id is not null and 
+	        	OLD.anleggstype is not null
+	        	) THEN
+	        		is_ready_stage := true;
+	        	END IF;
+	        ELSIF (TG_RELNAME IN ('beitehage_flate')) THEN 	
+	        	IF (
+	        	OLD.reinbeitebruker_id is not null and 
+	        	OLD.reindriftsanleggstype is not null
+	        	) THEN
+	        		is_ready_stage := true;
+	        	END IF;
+	        ELSIF (TG_RELNAME IN ('oppsamlingomr_flate')) THEN 	
+	        	IF (
+	        	OLD.reinbeitebruker_id is not null
+	        	) THEN
+	        		is_ready_stage := true;
+	        	END IF;
+	        END IF;
+
+	        IF (OLD.status IN (1)) THEN
+	        	is_accpeted := true;
+	        END IF;
+
+	        IF (is_ready_stage=true and is_accpeted=false) THEN
+           		INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
                 VALUES (TG_RELNAME, TG_TABLE_SCHEMA, OLD.saksbehandler, OLD.id, OLD.status, OLD.reinbeitebruker_id, TG_OP||'_BEFORE', 
                 topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||OLD.id,4258,8,0,true)::json
                 );
-            RETURN NEW;
+	       	END IF;
+
         END IF;
-        RETURN NULL;
+        RETURN NEW;
     END;
 $$ LANGUAGE 'plpgsql' SECURITY DEFINER;
 
 /* Create the functions used for trigger update after  */
 CREATE OR REPLACE FUNCTION topo_rein.change_trigger_update_after() RETURNS trigger AS $$
+	DECLARE
+	is_ready_stage boolean = false;
+	is_accpeted boolean = false;
     BEGIN
 		IF (TG_OP = 'UPDATE') THEN
-			-- clean up current after update, since we only need one after
-			DELETE FROM topo_rein.data_update_log WHERE ROW_ID = NEW.id AND table_name = TG_RELNAME AND schema_name = TG_TABLE_SCHEMA AND operation = TG_OP||'_AFTER'; 
-		
-            INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
-                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.saksbehandler, NEW.id, NEW.status, NEW.reinbeitebruker_id, TG_OP||'_AFTER', 
-                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,4258,8,0,true)::json
-                );
-            RETURN NEW;
+            -- is_ready_stage := topo_rein.is_ready_stage('arstidsbeite_var_flate',NEW);
+            -- Check if object in ready stage 
+            -- TODO find way to move this procdure
+	        IF (TG_RELNAME IN ('arstidsbeite_sommer_flate','arstidsbeite_host_flate','arstidsbeite_hostvinter_flate','arstidsbeite_vinter_flate','arstidsbeite_var_flate')) THEN
+	        	IF (
+	        	NEW.reinbeitebruker_id is not null and 
+	        	NEW.reindrift_sesongomrade_kode is not null
+	        	) THEN
+	        		is_ready_stage := true;
+	        	END IF;
+	        ELSIF (TG_RELNAME IN ('reindrift_anlegg_linje','reindrift_anlegg_punkt')) THEN 	
+	        	IF (
+	        	NEW.reinbeitebruker_id is not null and 
+	        	NEW.anleggstype is not null
+	        	) THEN
+	        		is_ready_stage := true;
+	        	END IF;
+	        ELSIF (TG_RELNAME IN ('beitehage_flate')) THEN 	
+	        	IF (
+	        	NEW.reinbeitebruker_id is not null and 
+	        	NEW.reindriftsanleggstype is not null
+	        	) THEN
+	        		is_ready_stage := true;
+	        	END IF;
+	        ELSIF (TG_RELNAME IN ('oppsamlingomr_flate')) THEN 	
+	        	IF (
+	        	NEW.reinbeitebruker_id is not null
+	        	) THEN
+	        		is_ready_stage := true;
+	        	END IF;
+	        END IF;
+
+	        IF (NEW.status IN (1)) THEN
+	        	is_accpeted := true;
+	        END IF;
+	        
+	        IF (is_ready_stage=true and is_accpeted=false) THEN
+           		-- clean up current after update, since we only need one after
+				DELETE FROM topo_rein.data_update_log WHERE ROW_ID = NEW.id AND table_name = TG_RELNAME AND schema_name = TG_TABLE_SCHEMA AND operation = TG_OP||'_AFTER'; 
+			
+	            INSERT INTO topo_rein.data_update_log (table_name, schema_name, saksbehandler, row_id, status, reinbeitebruker_id, operation, json_row_data)
+	                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, NEW.saksbehandler, NEW.id, NEW.status, NEW.reinbeitebruker_id, TG_OP||'_AFTER', 
+	                topo_rein.data_update_log_get_json_row_data('select distinct a.* from '||TG_TABLE_SCHEMA||'.'||TG_RELNAME||'_json_update_log a where a.id = '||NEW.id,4258,8,0,true)::json
+	                );
+	       	END IF;
+
         END IF;
-        RETURN NULL;
+        RETURN NEW;
     END;
 $$ LANGUAGE 'plpgsql' SECURITY DEFINER;
 
@@ -4145,9 +4279,8 @@ CREATE OR REPLACE FUNCTION topo_rein.change_trigger_delete_after() RETURNS trigg
                 );
             UPDATE topo_rein.data_update_log set  removed_by_splitt_operation = true
             WHERE table_name = TG_RELNAME AND schema_name = TG_TABLE_SCHEMA AND row_id =  OLD.id;
-            RETURN OLD;
         END IF;
-        RETURN NULL;
+        RETURN NEW;
     END;
 $$ LANGUAGE 'plpgsql' SECURITY DEFINER;
 
@@ -4163,11 +4296,12 @@ foreach tbl_name IN array string_to_array('arstidsbeite_sommer_flate,arstidsbeit
 loop
 
 EXECUTE format('DROP TRIGGER IF EXISTS table_change_i_trigger_insert_after ON %1$s', 'topo_rein.'||tbl_name);           
+EXECUTE format('DROP TRIGGER IF EXISTS table_change_iu_trigger_insert_after ON %1$s', 'topo_rein.'||tbl_name);           
 
-EXECUTE format('DROP TRIGGER IF EXISTS table_change_iu_trigger_insert_after ON %1$s;
-     CREATE TRIGGER table_change_iu_trigger_insert_after                                            
+EXECUTE format('DROP TRIGGER IF EXISTS table_change_trigger_insert_after ON %1$s;
+     CREATE TRIGGER table_change_trigger_insert_after                                            
      AFTER INSERT ON %1$s       
-     FOR EACH ROW EXECUTE PROCEDURE topo_rein.change_iu_trigger_insert_after()', 'topo_rein.'||tbl_name);           
+     FOR EACH ROW EXECUTE PROCEDURE topo_rein.change_trigger_insert_after()', 'topo_rein.'||tbl_name);           
 
 EXECUTE format('DROP TRIGGER IF EXISTS table_change_trigger_update_before ON %1$s;
      CREATE TRIGGER table_change_trigger_update_before                                            
