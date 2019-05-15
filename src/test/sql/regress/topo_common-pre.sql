@@ -4007,10 +4007,6 @@ END
 $body$;
 
 
-/* Create a function that convert to json if possible */
-DROP FUNCTION IF EXISTS topo_rein.query_to_topojson(query text, srid_out int, maxdecimaldigits int, simplify_patteren int) cascade;
-DROP FUNCTION IF EXISTS topo_rein.query_to_topojson(query text, srid_out int, maxdecimaldigits int, simplify_patteren int, only_valid boolean) cascade;
-
 
 -- Clean up old function name if exists
 DROP FUNCTION IF EXISTS topo_rein.table_change_trigger_insert_after() cascade;
@@ -4021,6 +4017,11 @@ DROP FUNCTION IF EXISTS topo_rein.change_i_trigger_insert_after() cascade;
 DROP FUNCTION IF EXISTS topo_rein.change_trigger_insert_after() cascade;
 DROP FUNCTION IF EXISTS topo_rein.change_iu_trigger_insert_after() cascade;
 
+
+
+/* Create a function that convert to json if possible */
+DROP FUNCTION IF EXISTS topo_rein.data_update_log_get_json_row_data(query text, srid_out int, maxdecimaldigits int, simplify_patteren int) cascade;
+DROP FUNCTION IF EXISTS topo_rein.data_update_log_get_json_row_data(query text, srid_out int, maxdecimaldigits int, simplify_patteren int, only_valid boolean) cascade;
 
 /* Create a function that convert to json if possible */
 CREATE OR REPLACE FUNCTION topo_rein.data_update_log_get_json_row_data(query text, srid_out int, maxdecimaldigits int, simplify_patteren int)

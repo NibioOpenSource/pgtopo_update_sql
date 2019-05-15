@@ -21,7 +21,7 @@ SELECT '03_02', (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).ve
 -- Check that update log has no values for arstidsbeite_var_flate
 select '3_data_update_log', count(*) from topo_rein.data_update_log e where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_var_flate';
 -- Check that new data_update_log_new_v has no values fro arstidsbeite_var_flate since no update has be done yet, there is zero rows here because the added row has not reached a valid state yet
-select '3_data_update_log_new_v', count(*) from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_var_flate';
+select '3_data_update_log_new_v', count(*) from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_var_flate' and json_after is not null and json_after::text <> '{}'::text;
 
 -- ======= Create line object in layer reindrift_anlegg_linje and update it,   ======= --
 SELECT '4', count(id) FROM (SELECT 1 AS id FROM  topo_update.create_line_edge_domain_obj('{"type":"Feature","properties":{"fellesegenskaper.verifiseringsdato":null,"fellesegenskaper.oppdateringsdato":null,"fellesegenskaper.opphav":"Reindriftsforvaltningen"},"geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[5.70182,58.55131],[5.70368,58.55134],[5.70403,58.553751]]}}','topo_rein', 'reindrift_anlegg_linje', 'linje', 1e-10)) AS R;
@@ -39,7 +39,7 @@ from topo_rein.data_update_log where  schema_name = 'topo_rein' and table_name =
 select '04_03_data_update_log_new_v', id_before, json_before, id_after, schema_name,  table_name, operation_before, operation_after, data_row_state, 
 (json_after->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_status ,
 (json_after->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_slette_status_kode 
-from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_linje' order by  date_after desc limit 1;
+from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_linje' and json_after is not null and json_after::text <> '{}'::text order by  date_after desc limit 1;
 SELECT '04_03_status_before_accept', id, status, ST_Length(ST_Transform(linje::geometry(MultiLineString,4258), 25833))::int as length, ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_linje WHERE id = (select max(id) FROM topo_rein.reindrift_anlegg_linje) AND (felles_egenskaper).oppdateringsdato = current_date;
 SET session_replication_role = replica; -- disable trigger for system update
 -- Accept the changes reindrift_anlegg_linje
@@ -48,7 +48,7 @@ SET session_replication_role = DEFAULT; --enable defalt trigger
 -- Status should now have changhed reindrift_anlegg_linje
 SELECT '04_03_status_after_accept', id, status, ST_Length(ST_Transform(linje::geometry(MultiLineString,4258), 25833))::int as length, ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_linje WHERE id = (select max(id) FROM topo_rein.reindrift_anlegg_linje) AND (felles_egenskaper).oppdateringsdato = current_date;
 -- There should be no more row to accept for reindrift_anlegg_linje
-select '04_03_rows_after_accept', count(*) from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_linje';
+select '04_03_rows_after_accept', count(*) from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_linje' and json_after is not null and json_after::text <> '{}'::text;
 
 -- ======= Create a new line that intersetcs with the object in layer reindrift_anlegg_linje and update it,   ======= --
 SELECT '5', SUM(ST_Length(ST_Transform(geom::geometry(LineString,4258), 25833)))::int, count(*) from topo_rein_sysdata_ran.edge_data;
@@ -76,8 +76,7 @@ from topo_rein.data_update_log where  schema_name = 'topo_rein' and table_name =
 select '14_data_update_log_new_v', id_before, id_after, schema_name, data_row_id, table_name, operation_before, operation_after, data_row_state, 
 (json_after->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_status ,
 (json_after->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_slette_status_kode 
-from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_linje' 
---AND json_before::text != '{}'::text 
+from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_linje' and json_after is not null and json_after::text <> '{}'::text 
 order by  date_after;
 SELECT '14_status_before_accept', id, status, reinbeitebruker_id, anleggstype, ST_length(ST_Transform(t.linje::geometry(MultiLineString,4258), 25833))::int , ((felles_egenskaper).kvalitet).maalemetode FROM topo_rein.reindrift_anlegg_linje t WHERE (felles_egenskaper).oppdateringsdato = current_date  ORDER BY id;
 -- There should be no more row to accept for reindrift_anlegg_linje
@@ -109,7 +108,7 @@ from topo_rein.data_update_log e where  schema_name = 'topo_rein' and table_name
 select '21_data_update_log_new_v', id_before, json_before, id_after, schema_name, data_row_id, table_name, operation_before, operation_after, data_row_state, 
 (json_after->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_status ,
 (json_after->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_slette_status_kode 
-from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_var_flate' order by  date_after;
+from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_var_flate' and json_after is not null and json_after::text <> '{}'::text order by  date_after;
 SELECT '21_status_before_accept', id, status, reinbeitebruker_id, reindrift_sesongomrade_kode, ST_Area(ST_Transform(t.omrade::geometry(MultiPolygon,4258), 25833))::int , ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.arstidsbeite_var_flate t ORDER BY id;
 -- There should be no more row to accept for arstidsbeite_var_flate
 SET session_replication_role = replica; -- disable trigger for system update
@@ -119,7 +118,7 @@ SET session_replication_role = DEFAULT; --enable defalt trigger
 -- Status should now have changhed arstidsbeite_var_flate
 SELECT '21_status_after_accept', id, status, slette_status_kode, reinbeitebruker_id, reindrift_sesongomrade_kode, ST_Area(ST_Transform(t.omrade::geometry(MultiPolygon,4258), 25833))::int , ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.arstidsbeite_var_flate t ORDER BY id;
 -- There should be no more row to accept for arstidsbeite_var_flate
-select '21_rows_after_accept', count(*) from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_var_flate';
+select '21_rows_after_accept', count(*) from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_var_flate' and json_after is not null and json_after::text <> '{}'::text;
 -- Set flag for deeee 
 SELECT '21_set_to_deleted', topo_update.apply_attr_on_topo_line('{"properties":{"id":1,"slette_status_kode":1}}','topo_rein', 'arstidsbeite_var_flate', 'omrade','{"properties":{"status":"10","saksbehandler":"imi@nibio.no","fellesegenskaper.opphav":"NIBIO"}}');
 -- We set slette status code to 1, to indicate that the record is valid
@@ -134,7 +133,7 @@ select '21_data_update_log_new_v_after_set_delete_flag', id_before, id_after, sc
 (json_before->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_before_slette_status_kode ,
 (json_after->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_after_status ,
 (json_after->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_after_slette_status_kode 
-from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_var_flate' order by  date_after;
+from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_var_flate' and json_after is not null and json_after::text <> '{}'::text order by  date_after;
 -- Check that update log has values for arstidsbeite_var_flate
 select '21_data_update_log_after_delete', id, schema_name,  table_name, operation, 
 status, 
@@ -165,14 +164,14 @@ select '23_03_data_update_log_new_v', id_before, id_after, schema_name,  table_n
 (json_before->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_before_slette_status_kode ,
 (json_after->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_after_status ,
 (json_after->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_after_slette_status_kode 
-from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_punkt' order by  date_after  desc limit 1;
+from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_punkt' and json_after is not null and json_after::text <> '{}'::text order by  date_after  desc limit 1;
 SELECT '23_03_status_before_accept', id, status, punkt::geometry, ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_punkt WHERE id = (select max(id) FROM topo_rein.reindrift_anlegg_punkt) AND (felles_egenskaper).oppdateringsdato = current_date;
 -- Accept the changes reindrift_anlegg_punkt
 SELECT '23_03_layer_accept_update', * from  topo_update.layer_accept_update(16,'lop');
 -- Status should now have changhed reindrift_anlegg_punkt
 SELECT '23_03_status_after_accept', id, status, punkt::geometry, ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_punkt WHERE id = (select max(id) FROM topo_rein.reindrift_anlegg_punkt) AND (felles_egenskaper).oppdateringsdato = current_date;
 -- There should be no more row to accept for reindrift_anlegg_punkt
-select '23_03_rows_after_accept', count(*) from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_punkt';
+select '23_03_rows_after_accept', count(*) from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_punkt' and json_after is not null and json_after::text <> '{}'::text;
 
 
 
@@ -284,12 +283,13 @@ select '58_03_data_update_log_new_v', id_before, json_before, id_after, schema_n
 (json_before->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_before_slette_status_kode ,
 (json_after->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_after_status ,
 (json_after->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_after_slette_status_kode 
-from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_punkt' order by  date_after  desc limit 1;
+from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_punkt' 
+and json_after is not null and json_after::text <> '{}'::text order by  date_after  desc limit 1;
 SELECT '58_03_status_before_reject', id, status, slette_status_kode, punkt::geometry, ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_punkt WHERE id = (select max(id) FROM topo_rein.reindrift_anlegg_punkt) AND (felles_egenskaper).oppdateringsdato = current_date;
 -- Reject the changes reindrift_anlegg_punkt
 SELECT '58_03_layer_reject_update', * from  topo_update.layer_reject_update(50,'lop');
 -- Status and slette_status_kode should now have changhed reindrift_anlegg_punkt
 SELECT '58_03_status_after_rejct', id, status, slette_status_kode, punkt::geometry, ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_punkt WHERE id = (select max(id) FROM topo_rein.reindrift_anlegg_punkt) AND (felles_egenskaper).oppdateringsdato = current_date;
 -- There should be no more row to accept for reindrift_anlegg_punkt
-select '58_03_rows_after_reject', count(*) from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_punkt';
+select '58_03_rows_after_reject', count(*) from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_punkt' and json_after is not null and json_after::text <> '{}'::text;
 
