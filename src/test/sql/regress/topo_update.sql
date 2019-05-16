@@ -287,9 +287,46 @@ from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_
 and json_after is not null and json_after::text <> '{}'::text order by  date_after  desc limit 1;
 SELECT '58_03_status_before_reject', id, status, slette_status_kode, punkt::geometry, ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_punkt WHERE id = (select max(id) FROM topo_rein.reindrift_anlegg_punkt) AND (felles_egenskaper).oppdateringsdato = current_date;
 -- Reject the changes reindrift_anlegg_punkt
-SELECT '58_03_layer_reject_update', * from  topo_update.layer_reject_update(50,'lop');
+SELECT '58_03_layer_reject_update', * from  topo_update.layer_reject_update(43,'lop');
 -- Status and slette_status_kode should now have changhed reindrift_anlegg_punkt
 SELECT '58_03_status_after_rejct', id, status, slette_status_kode, punkt::geometry, ((felles_egenskaper).kvalitet).maalemetode, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.reindrift_anlegg_punkt WHERE id = (select max(id) FROM topo_rein.reindrift_anlegg_punkt) AND (felles_egenskaper).oppdateringsdato = current_date;
 -- There should be no more row to accept for reindrift_anlegg_punkt
 select '58_03_rows_after_reject', count(*) from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'reindrift_anlegg_punkt' and json_after is not null and json_after::text <> '{}'::text;
+
+-- Create  sommer surface and set attributtes
+SELECT '59_sommer_new', count(id) FROM (SELECT 1 AS id FROM topo_update.create_surface_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[568867.7728054206,7900721.05851012],[568889.0217741862,7889496.242009791],[580091.0533080081,7895859.369156453],[567627.1981289758,7898016.421485742]]}}','topo_rein', 'arstidsbeite_sommer_flate', 'omrade', 'arstidsbeite_sommer_grense','grense',  1e-10)) AS R;
+SELECT '59_sommer_set', topo_update.apply_attr_on_topo_line('{"properties":{"id":11,"status":10,"reinbeitebruker_id":"ZH","reindrift_sesongomrade_kode":4}}','topo_rein', 'arstidsbeite_sommer_flate', 'omrade');
+SELECT '59_sommer_r2', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status from topo_rein.arstidsbeite_sommer_flate order by id desc limit 1;
+
+-- Check update log after new surface
+select '59_sommer_data_update_log_c2', count(*) from topo_rein.data_update_log where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_sommer_flate';
+select '59_sommer_data_update_log_r2', id, schema_name,  table_name, row_id, operation, status, 
+(json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_status ,
+(json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_slette_status_kode 
+from topo_rein.data_update_log where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_sommer_flate' and row_id = 11 order by  id;
+select '59_data_update_log_new_v', id_before, id_after, schema_name,  table_name, operation_before, operation_after, data_row_state, 
+(json_before->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_before_status ,
+(json_before->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_before_slette_status_kode ,
+(json_after->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_after_status ,
+(json_after->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_after_slette_status_kode 
+from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_sommer_flate' and data_row_id = 11;
+
+-- Accept the changes reindrift_anlegg_linje
+
+SELECT '59_layer_accept_update', * from  topo_update.layer_accept_update(48,'lop');
+
+-- Check update log after after accpet surface
+select '59_sommer_data_update_log_c3', count(*) from topo_rein.data_update_log where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_sommer_flate' and row_id = 1 and removed_by_splitt_operation = false and change_confirmed_by_admin = false;
+SELECT '59_sommer_r3', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status from topo_rein.arstidsbeite_sommer_flate order by id desc limit 1;
+
+-- Split the created surface in two
+SELECT '59_sommer_split', count(id) FROM (SELECT 1 AS id FROM topo_update.create_surface_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[572358.582674182,7902771.102496703],[572960.1837898717,7891010.480783969]]}}','topo_rein', 'arstidsbeite_sommer_flate', 'omrade', 'arstidsbeite_sommer_grense','grense',  1e-10)) AS R;
+
+SELECT '59_sommer_r4', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status from topo_rein.arstidsbeite_sommer_flate order by id desc limit 3;
+
+select '59_sommer_data_update_log_r4', id, schema_name,  table_name, row_id, operation, status, 
+(json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_status ,
+(json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_slette_status_kode 
+from topo_rein.data_update_log 
+where schema_name = 'topo_rein' and table_name = 'arstidsbeite_sommer_flate' and  row_id > 11 and removed_by_splitt_operation = false and change_confirmed_by_admin = false order by  id;
 

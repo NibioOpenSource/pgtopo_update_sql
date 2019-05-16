@@ -4381,7 +4381,7 @@ select * from (
 		order by l1_min_id.schema_name , l1_min_id.table_name , max_id_after desc
 	) as g
 ) as g	
-where id_before != id_after
+where id_before != id_after and json_after is not null and json_after::text <> '{}'::text 
 )
 ;
 
