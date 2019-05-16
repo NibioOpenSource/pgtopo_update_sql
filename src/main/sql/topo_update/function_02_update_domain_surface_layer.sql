@@ -79,6 +79,8 @@ BEGIN
 	
 	EXECUTE format('CREATE TEMP TABLE new_surface_data AS (SELECT * FROM %s)', _new_topo_objects);
 	ALTER TABLE new_surface_data ADD COLUMN id_foo SERIAL PRIMARY KEY;
+	ALTER TABLE new_surface_data ADD COLUMN status_foo int default 0;
+
 	
 	DROP TABLE IF EXISTS old_surface_data; 
 	-- Find out if any old topo objects overlaps with this new objects using the relation table
@@ -262,13 +264,32 @@ BEGIN
 			FROM new_rows_updated_in_org_table r) ;
 	END IF;
 
+	
+	IF (SELECT count(*) FROM old_rows_attributes)::int > 0 THEN
+
+      -- Update status, value before insert attribttus 
+	
+ 	    command_string := format(
+ 	    'UPDATE new_surface_data a
+ 		SET 
+ 		status_foo = c.status
+ 		FROM old_rows_attributes c
+ 		WHERE ST_Intersects(c.foo_geo,ST_pointOnSurface(a.surface_topo::geometry))'
+ 	    );
+ 	    EXECUTE command_string;
+ 		
+ 		GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
+ 		--UPDATE new_surface_data a SET status_foo = 1 where status_foo <> 1;
+ 	
+ 	END IF;
+
 	-- insert missing rows and keep a copy in them a temp table
 	DROP TABLE IF EXISTS new_rows_added_in_org_table;
 	
 	command_string :=  format('CREATE TEMP TABLE new_rows_added_in_org_table AS (SELECT * FROM %I.%I limit 0);
 	WITH inserted AS (
-	INSERT INTO  %I.%I(%I,reinbeitebruker_id,felles_egenskaper)
-	SELECT new.surface_topo, new.reinbeitebruker_id, new.felles_egenskaper as felles_egenskaper
+	INSERT INTO  %I.%I(%I,reinbeitebruker_id,felles_egenskaper,status)
+	SELECT new.surface_topo, new.reinbeitebruker_id, new.felles_egenskaper as felles_egenskaper, new.status_foo as status
 	FROM new_surface_data new
 	WHERE NOT EXISTS ( SELECT f.id FROM %I.%I f WHERE (new.surface_topo).id = (f.%I).id )
 	returning *
