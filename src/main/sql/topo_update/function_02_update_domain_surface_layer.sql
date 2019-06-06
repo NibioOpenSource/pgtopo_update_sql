@@ -5,7 +5,7 @@
 -- DROP FUNCTION topo_update.update_domain_surface_layer(_new_topo_objects regclass) cascade;
 
 
-CREATE OR REPLACE FUNCTION topo_update.update_domain_surface_layer(surface_topo_info topo_update.input_meta_info, border_topo_info topo_update.input_meta_info, valid_user_geometry geometry,  _new_topo_objects regclass) 
+CREATE OR REPLACE FUNCTION topo_update.update_domain_surface_layer(surface_topo_info topo_update.input_meta_info, border_topo_info topo_update.input_meta_info, json_input_structure topo_update.json_input_structure,  _new_topo_objects regclass) 
 RETURNS SETOF topo_update.topogeometry_def AS $$
 DECLARE
 
@@ -69,8 +69,8 @@ BEGIN
 
 	-- check if this is closed polygon drawn by the user 
 	-- if it's a closed polygon the only surface inside this polygon should be affected
-	IF St_IsClosed(valid_user_geometry) THEN
-		valid_closed_user_geometry = ST_MakePolygon(valid_user_geometry);
+	IF St_IsClosed(json_input_structure.input_geo) THEN
+		valid_closed_user_geometry = ST_MakePolygon(json_input_structure.input_geo);
 	END IF;
 
 	-- get the data into a new tmp table
@@ -79,6 +79,8 @@ BEGIN
 	
 	EXECUTE format('CREATE TEMP TABLE new_surface_data AS (SELECT * FROM %s)', _new_topo_objects);
 	ALTER TABLE new_surface_data ADD COLUMN id_foo SERIAL PRIMARY KEY;
+	ALTER TABLE new_surface_data ADD COLUMN status_foo int default 0;
+
 	
 	DROP TABLE IF EXISTS old_surface_data; 
 	-- Find out if any old topo objects overlaps with this new objects using the relation table
@@ -262,13 +264,32 @@ BEGIN
 			FROM new_rows_updated_in_org_table r) ;
 	END IF;
 
+	
+	IF (SELECT count(*) FROM old_rows_attributes)::int > 0 THEN
+
+      -- Update status, value before insert attribttus 
+	
+ 	    command_string := format(
+ 	    'UPDATE new_surface_data a
+ 		SET 
+ 		status_foo = c.status
+ 		FROM old_rows_attributes c
+ 		WHERE ST_Intersects(c.foo_geo,ST_pointOnSurface(a.surface_topo::geometry))'
+ 	    );
+ 	    EXECUTE command_string;
+ 		
+ 		GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
+ 		--UPDATE new_surface_data a SET status_foo = 1 where status_foo <> 1;
+ 	
+ 	END IF;
+
 	-- insert missing rows and keep a copy in them a temp table
 	DROP TABLE IF EXISTS new_rows_added_in_org_table;
 	
 	command_string :=  format('CREATE TEMP TABLE new_rows_added_in_org_table AS (SELECT * FROM %I.%I limit 0);
 	WITH inserted AS (
-	INSERT INTO  %I.%I(%I,felles_egenskaper)
-	SELECT new.surface_topo, new.felles_egenskaper_flate as felles_egenskaper
+	INSERT INTO  %I.%I(%I,reinbeitebruker_id,felles_egenskaper,status)
+	SELECT new.surface_topo, new.reinbeitebruker_id, new.felles_egenskaper as felles_egenskaper, new.status_foo as status
 	FROM new_surface_data new
 	WHERE NOT EXISTS ( SELECT f.id FROM %I.%I f WHERE (new.surface_topo).id = (f.%I).id )
 	returning *
@@ -296,78 +317,6 @@ BEGIN
 		( SELECT r.id, r.omrade::geometry AS geo, 'new topo objcts' || r.omrade::text AS topo
 			FROM new_rows_added_in_org_table r) ;
 	END IF;
-
-  -- Extract name of fields with not-null values:
-  -- Extract name of fields with not-null values and append the table prefix n.:
-  -- Only update json value that exits 
-  IF (SELECT count(*) FROM old_rows_attributes)::int > 0 THEN
-  
- 	 	RAISE NOTICE 'topo_update.update_domain_surface_layer num rows in old attrbuttes: %', (SELECT count(*) FROM old_rows_attributes)::int;
-
- 	 	-- Update other attribttus 
-
-	    command_string := format(
-	    'UPDATE %I.%I a
-		SET 
-		felles_egenskaper.forstedatafangstdato = (c.felles_egenskaper).forstedatafangstdato 
-		FROM new_rows_added_in_org_table b, 
-		old_rows_attributes c
-		WHERE 
-	    a.id = b.id AND                           
-	    ST_Intersects(c.foo_geo,ST_pointOnSurface(a.%I::geometry))',
-	    surface_topo_info.layer_schema_name,
-	    surface_topo_info.layer_table_name,
-	    surface_topo_info.layer_feature_column
-	    );
-		RAISE NOTICE 'topo_update.update_domain_surface_layer command_string %', command_string;
-		EXECUTE command_string;
-		
-		GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-
-		RAISE NOTICE 'topo_update.update_domain_surface_layer no old attribute values found  %',  num_rows_affected;
-
-        -- Update other attribttus 
-  		SELECT
-	  	array_agg(quote_ident(update_column)) AS update_fields,
-	  	array_agg('c.'||quote_ident(update_column)) as update_fields_t
-		  INTO
-		  	update_fields,
-		  	update_fields_t
-		  FROM (
-		   SELECT distinct(key) AS update_column
-		   FROM old_rows_attributes t, json_each_text(to_json((t)))  
-		   WHERE key != 'id' AND key != 'foo_geo'  AND key != 'omrade' AND key != 'felles_egenskaper'  
-		  ) AS keys;
-		
-		  RAISE NOTICE 'topo_update.update_domain_surface_layer Extract name of not-null fields-c: %', update_fields_t;
-		  RAISE NOTICE 'topo_update.update_domain_surface_layer Extract name of not-null fields-c: %', update_fields;
-		
-	    command_string := format(
-	    'UPDATE %I.%I a
-		SET 
-		(%s) = (%s) 
-		FROM new_rows_added_in_org_table b, 
-		old_rows_attributes c
-		WHERE 
-	    a.id = b.id AND                           
-	    ST_Intersects(c.foo_geo,ST_pointOnSurface(a.%I::geometry))',
-	    surface_topo_info.layer_schema_name,
-	    surface_topo_info.layer_table_name,
-	    array_to_string(update_fields, ','),
-	    array_to_string(update_fields_t, ','),
-	    surface_topo_info.layer_feature_column
-	    );
-		RAISE NOTICE 'topo_update.update_domain_surface_layer command_string %', command_string;
-		EXECUTE command_string;
-		
-		GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-
-		RAISE NOTICE 'topo_update.update_domain_surface_layer no old attribute values found  %',  num_rows_affected;
-
-	
-	END IF;
-
-    
 
 	   	-- update the newly inserted rows with attribute values based from old_rows_table
     -- find the rows toubching
@@ -403,7 +352,7 @@ BEGIN
 		  FROM (
 		   SELECT distinct(key) AS update_column
 		   FROM new_rows_added_in_org_table t, json_each_text(to_json((t)))  
-		   WHERE key != 'id' AND key != 'foo_geo' AND key != 'omrade' AND key != 'felles_egenskaper' AND key != 'status'
+		   WHERE key != 'reinbeitebruker_id' AND key != 'id' AND key != 'foo_geo' AND key != 'omrade' AND key != 'felles_egenskaper' AND key != 'status'
 		  ) AS keys;
 		
 		  RAISE NOTICE 'topo_update.update_domain_surface_layer Extract name of not-null fields-a: %', update_fields_t;
@@ -427,7 +376,6 @@ BEGIN
 		%I.%I d,
 		touching_surface b
 		WHERE 
-		a.%I is null AND
 		d.id = b.id_from AND
 		a.id = b.id',
 	    surface_topo_info.layer_schema_name,
@@ -435,8 +383,7 @@ BEGIN
 	    array_to_string(update_fields, ','),
 	    array_to_string(update_fields_t, ','),
 	    surface_topo_info.layer_schema_name,
-	    surface_topo_info.layer_table_name,
-	    'reinbeitebruker_id');
+	    surface_topo_info.layer_table_name);
 		RAISE NOTICE 'topo_update.update_domain_surface_layer command_string %', command_string;
 		EXECUTE command_string;
 	
@@ -445,6 +392,75 @@ BEGIN
 		RAISE NOTICE 'topo_update.update_domain_surface_layer Number num_rows_affected  %',  num_rows_affected;
 		
 	END IF;
+
+	  -- Extract name of fields with not-null values:
+  -- Extract name of fields with not-null values and append the table prefix n.:
+  -- Only update json value that exits 
+  IF (SELECT count(*) FROM old_rows_attributes)::int > 0 THEN
+  
+ 	 	RAISE NOTICE 'topo_update.update_domain_surface_layer num rows in old attrbuttes: %', (SELECT count(*) FROM old_rows_attributes)::int;
+
+ 	 	-- Update felles_egenskaper attribttus 
+	    command_string := format(
+	    'UPDATE %I.%I a
+		SET 
+		felles_egenskaper.forstedatafangstdato = (c.felles_egenskaper).forstedatafangstdato 
+		FROM new_rows_added_in_org_table b, 
+		old_rows_attributes c
+		WHERE 
+	    a.id = b.id AND                           
+	    ST_Intersects(c.foo_geo,ST_pointOnSurface(a.%I::geometry))',
+	    surface_topo_info.layer_schema_name,
+	    surface_topo_info.layer_table_name,
+	    surface_topo_info.layer_feature_column
+	    );
+		RAISE NOTICE 'topo_update.update_domain_surface_layer command_string %', command_string;
+		EXECUTE command_string;
+		
+		GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
+		RAISE NOTICE 'topo_update.update_domain_surface_layer no old attribute values found  %',  num_rows_affected;
+
+        -- Update other attribttus 
+  		SELECT
+	  	array_agg(quote_ident(update_column)) AS update_fields,
+	  	array_agg('c.'||quote_ident(update_column)) as update_fields_t
+		  INTO
+		  	update_fields,
+		  	update_fields_t
+		  FROM (
+		   SELECT distinct(key) AS update_column
+		   FROM old_rows_attributes t, json_each_text(to_json((t)))  
+		   WHERE key != 'id' AND key != 'foo_geo'  AND key != 'omrade' AND key != 'felles_egenskaper'  
+		  ) AS keys;
+		
+		  RAISE NOTICE 'topo_update.update_domain_surface_layer Extract name of not-null fields-c: %', update_fields_t;
+		  RAISE NOTICE 'topo_update.update_domain_surface_layer Extract name of not-null fields-c: %', update_fields;
+		
+	    command_string := format(
+	    'UPDATE %I.%I a
+		SET 
+		(%s) = (%s) 
+		FROM new_rows_added_in_org_table b, 
+		old_rows_attributes c
+		WHERE 
+	    a.id = b.id AND                           
+	    ST_Intersects(c.foo_geo,ST_pointOnSurface(a.%I::geometry))',
+	    surface_topo_info.layer_schema_name,
+	    surface_topo_info.layer_table_name,
+	    array_to_string(update_fields, ','),
+	    array_to_string(update_fields_t, ','),
+	    surface_topo_info.layer_feature_column
+	    );
+	    EXECUTE command_string;
+		
+		GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
+		RAISE NOTICE 'topo_update.update_domain_surface_layer no old attribute values found  %',  num_rows_affected;
+
+	
+	END IF;
+
+    
+
 
 
 	RETURN QUERY SELECT a.surface_topo::topogeometry as t FROM new_surface_data a;

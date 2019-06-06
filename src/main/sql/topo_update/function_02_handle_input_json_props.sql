@@ -1,7 +1,23 @@
+
 -- This is a common method to parse all input data
 -- It returns a struture that is adjusted reindrift that depends on sosi felles eganskaper
 
 CREATE OR REPLACE FUNCTION  topo_update.handle_input_json_props(client_json_feature json,  server_json_feature json, srid_out int) 
+RETURNS topo_update.json_input_structure AS $$DECLARE
+
+DECLARE 
+use_default_dates boolean = true;
+BEGIN
+return  topo_update.handle_input_json_props(client_json_feature,  server_json_feature, srid_out, use_default_dates); 
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+
+
+-- This is a common method to parse all input data
+-- It returns a struture that is adjusted reindrift that depends on sosi felles eganskaper
+
+CREATE OR REPLACE FUNCTION  topo_update.handle_input_json_props(client_json_feature json,  server_json_feature json, srid_out int, use_default_dates boolean) 
 RETURNS topo_update.json_input_structure AS $$DECLARE
 
 DECLARE 
@@ -24,7 +40,7 @@ json_input_structure topo_update.json_input_structure;
 
 BEGIN
 
-	RAISE NOTICE 'client_json_feature %, server_json_feature %',  client_json_feature, server_json_feature ;
+	RAISE NOTICE 'client_json_feature %, server_json_feature % use_default_dates %',  client_json_feature, server_json_feature , use_default_dates;
 	
 	-- geth the geometry may be null
 	json_input_structure.input_geo := topo_rein.get_geom_from_json(client_json_feature::json,srid_out);
@@ -55,11 +71,12 @@ BEGIN
 	RAISE NOTICE 'felles_egenskaper_sosi point/line before  %',  simple_sosi_felles_egenskaper;
 
 	-- Here we map from simple properties to topo_rein.sosi_felles_egenskaper for line an point objects
-	json_input_structure.sosi_felles_egenskaper := topo_rein.get_rein_felles_egenskaper(simple_sosi_felles_egenskaper);
+	json_input_structure.sosi_felles_egenskaper := topo_rein.get_rein_felles_egenskaper(simple_sosi_felles_egenskaper,use_default_dates);
+	
 	RAISE NOTICE 'felles_egenskaper_sosi point/line after  %',  json_input_structure.sosi_felles_egenskaper;
 	
 	-- Here we get info for the surface objects
-   	json_input_structure.sosi_felles_egenskaper_flate := topo_rein.get_rein_felles_egenskaper_flate(simple_sosi_felles_egenskaper);
+   	json_input_structure.sosi_felles_egenskaper_flate := topo_rein.get_rein_felles_egenskaper_flate(simple_sosi_felles_egenskaper,use_default_dates);
 	
 
 	RETURN json_input_structure;

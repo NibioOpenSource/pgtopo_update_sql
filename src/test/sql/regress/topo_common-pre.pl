@@ -51,6 +51,10 @@ if ( -e '/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/schema_topo_rein
 	for my $file (glob '/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/view_*.sql') {
 		copy_file_into($file,$fh_out);
 	}
+
+	copy_file_into('/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/set_rls_rules.sql',$fh_out);
+	copy_file_into('/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/set_trigger_update_change_log.sql',$fh_out);
+	
 	
 	close($fh_out);	 
 	

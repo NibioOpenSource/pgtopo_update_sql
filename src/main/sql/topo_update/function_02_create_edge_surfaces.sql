@@ -120,11 +120,11 @@ BEGIN
 
 
     GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-	RAISE NOTICE 'Number of face objects found on the right side  % ',  num_rows_affected;
+	RAISE NOTICE 'topo_update.create_edge_surfaces, Number of face objects found on the right side  % ',  num_rows_affected;
 
 	DROP TABLE IF EXISTS new_surface_data; 
 	-- Create a temp table to hold new surface data
-	CREATE TEMP TABLE new_surface_data(surface_topo topogeometry, felles_egenskaper_flate topo_rein.sosi_felles_egenskaper);
+	CREATE TEMP TABLE new_surface_data(surface_topo topogeometry);
 	-- create surface geometry if a surface exits for the left side
 
 	-- if input is a closed ring only geneate objects for faces
@@ -146,12 +146,12 @@ BEGIN
 	--			THEN
 				-- Could we here have used topplogical equality 
 				IF valid_closed_user_geometry IS NOT NULL AND NOT ST_Intersects(valid_closed_user_geometry,ST_PointOnSurface (new_surface_topo::geometry)) THEN
-					RAISE NOTICE 'Use new topo object % , but this new surface is outside user input %',  ST_asText(valid_closed_user_geometry), ST_AsText(ST_PointOnSurface (new_surface_topo::geometry));
+					RAISE NOTICE 'topo_update.create_edge_surfaces, Use new topo object % , but this new surface is outside user input %',  ST_asText(valid_closed_user_geometry), ST_AsText(ST_PointOnSurface (new_surface_topo::geometry));
 				ELSE
-					RAISE NOTICE 'Use new topo object % for face % created from user input %',  new_surface_topo, rec.face_id, new_border_data;
+					RAISE NOTICE 'topo_update.create_edge_surfaces, Use new topo object % for face % created from user input %',  new_surface_topo, rec.face_id, new_border_data;
 				END IF;
 				
-				INSERT INTO new_surface_data(surface_topo,felles_egenskaper_flate) VALUES(new_surface_topo,felles_egenskaper_flate);
+				INSERT INTO new_surface_data(surface_topo) VALUES(new_surface_topo);
 
 			END IF;
 		--END IF;

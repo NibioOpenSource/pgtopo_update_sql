@@ -15,9 +15,6 @@ topo_update.create_line_edge_domain_obj(json_feature text,
 RETURNS TABLE(id integer) AS $$
 DECLARE
 
--- this border layer id will picked up by input parameters
-border_layer_id int;
-
 -- this is the tolerance used for snap to 
 -- TODO use as parameter put for testing we just have here for now
 border_topo_info topo_update.input_meta_info ;
@@ -45,44 +42,30 @@ json_input_structure topo_update.json_input_structure;
 
 BEGIN
 
-		-- get meta data the border line for the surface
+	-- get meta data the border line for the surface
 	border_topo_info := topo_update.make_input_meta_info(layer_schema, layer_table , layer_column );
 
 	-- TODO totally rewrite this code
 	json_input_structure := topo_update.handle_input_json_props(json_feature::json,server_json_feature::json,border_topo_info.srid);
 	input_geo := json_input_structure.input_geo;
 
-	
-	
-	-- find border layer id
-	-- TODO remove this variable
-	border_layer_id := border_topo_info.border_layer_id;
+	RAISE NOTICE 'The JSON input for create_line_edge_domain_obj %',  json_feature;
+	RAISE NOTICE 'border_topo_info.border_layer_id %', border_topo_info.border_layer_id;
 
-	
-	RAISE NOTICE 'The JSON input %',  json_feature;
-
-	RAISE NOTICE 'border_layer_id %', border_layer_id;
-
-
-	-- get the json values
+	-- Create a table to hold json input values
 	command_string := topo_update.create_temp_tbl_def('ttt2_new_attributes_values_c_l_e_d','(geom geometry,properties json)');
 	RAISE NOTICE 'command_string %', command_string;
-
 	EXECUTE command_string;
-
-	-- TRUNCATE TABLE ttt2_new_attributes_values_c_l_e_d;
 	INSERT INTO ttt2_new_attributes_values_c_l_e_d(geom,properties)
 	VALUES(json_input_structure.input_geo,json_input_structure.json_properties) ;
 
-		-- check that it is only one row put that value into 
+	-- check that it is only one row put that value into 
 	-- TODO rewrite this to not use table in
 	
 	RAISE NOTICE 'Step::::::::::::::::: 1';
 
 
 	felles_egenskaper_linje := json_input_structure.sosi_felles_egenskaper;
-
-	
 
 	RAISE NOTICE 'Step::::::::::::::::: 2';
 
@@ -94,41 +77,36 @@ BEGIN
 	         border_topo_info.layer_table_name));
 	EXECUTE command_string;
 
-  -- Insert all matching column names into temp table
+    -- Insert all matching column names into temp table from input json structure
 	INSERT INTO ttt2_new_topo_rows_in_org_table
 		SELECT r.* --, t2.geom
 		FROM ttt2_new_attributes_values_c_l_e_d t2,
          json_populate_record(
             null::ttt2_new_topo_rows_in_org_table,
             t2.properties) r;
+    RAISE NOTICE 'Added all input attributes to ttt2_new_topo_rows_in_org_table';
 
-  RAISE NOTICE 'Added all attributes to ttt2_new_topo_rows_in_org_table';
-
-  -- Convert geometry to TopoGeometry, write it in the temp table
-  command_string := format('UPDATE ttt2_new_topo_rows_in_org_table
+    -- Convert input geometry to TopoGeometry, update topo geom column in the temp table
+    command_string := format('UPDATE ttt2_new_topo_rows_in_org_table
     SET %I = topology.toTopoGeom(%L, %L, %L, %L)',
     border_topo_info.layer_feature_column, input_geo,
-    border_topo_info.topology_name, border_layer_id,
+    border_topo_info.topology_name, border_topo_info.border_layer_id,
     border_topo_info.snap_tolerance);
 	EXECUTE command_string;
+    RAISE NOTICE 'Converted to TopoGeometry';
 
-  RAISE NOTICE 'Converted to TopoGeometry';
-
-  -- Add the common felles_egenskaper field
-  command_string := format('UPDATE ttt2_new_topo_rows_in_org_table
+    -- Update the common felles_egenskaper field
+    command_string := format('UPDATE ttt2_new_topo_rows_in_org_table
     SET felles_egenskaper = %L', felles_egenskaper_linje);
 	EXECUTE command_string;
+    RAISE NOTICE 'Done Set felles_egenskaper field';
 
-  RAISE NOTICE 'Set felles_egenskaper field';
-
-  -- Extract name of fields with not-null values:
-  SELECT array_agg(quote_ident(key))
+    -- Extract name of fields with not-null values into array
+    SELECT array_agg(quote_ident(key))
     FROM ttt2_new_topo_rows_in_org_table t, json_each_text(to_json((t)))
-   WHERE value IS NOT NULL
+    WHERE value IS NOT NULL
     INTO not_null_fields;
-
-
-  RAISE NOTICE 'Extract name of not-null fields: %', not_null_fields;
+    RAISE NOTICE 'Extracted name of not-null fields: %', not_null_fields;
 
   -- Copy full record from temp table to actual table and
   -- update temp table with actual table values
@@ -178,9 +156,9 @@ ttt2_new_topo_rows_in_org_table SELECT * FROM inserted ',
 	  border_topo_info.topology_name,
 	  border_topo_info.topology_name,
 	  border_topo_info.layer_feature_column,
-    border_layer_id,
+    border_topo_info.border_layer_id,
 	  border_topo_info.layer_feature_column,
-    border_layer_id,
+    border_topo_info.border_layer_id,
 	  border_topo_info.layer_feature_column,
 	  border_topo_info.layer_feature_column
   );
@@ -216,7 +194,7 @@ ttt2_new_topo_rows_in_org_table SELECT * FROM inserted ',
   border_topo_info.topology_name,
   border_topo_info.topology_name,
   border_topo_info.layer_feature_column,
-  border_layer_id
+  border_topo_info.border_layer_id
   );
   EXECUTE command_string;
 
@@ -253,8 +231,8 @@ ttt2_new_topo_rows_in_org_table SELECT * FROM inserted ',
   border_topo_info.topology_name,
   border_topo_info.topology_name,
 	border_topo_info.layer_feature_column,
-	border_layer_id,
-	border_layer_id
+	border_topo_info.border_layer_id,
+	border_topo_info.border_layer_id
   );
 	EXECUTE command_string;
 
@@ -289,9 +267,9 @@ topo_update.create_temp_tbl_as('ttt2_affected_objects_id','SELECT * FROM  ttt2_n
   border_topo_info.layer_schema_name,
   border_topo_info.layer_table_name,
   border_topo_info.layer_feature_column,
-  border_layer_id,
+  border_topo_info.border_layer_id,
   border_topo_info.layer_feature_column,
-  border_layer_id
+  border_topo_info.border_layer_id
   );
 	EXECUTE command_string;
 	
@@ -330,8 +308,8 @@ topo_update.create_temp_tbl_as('ttt2_objects_to_be_delted','SELECT * FROM  ttt2_
 	border_topo_info.topology_name,
 	border_topo_info.topology_name,
 	border_topo_info.layer_feature_column,
-  border_layer_id,
-  border_layer_id
+  border_topo_info.border_layer_id,
+  border_topo_info.border_layer_id
   );
 	EXECUTE command_string;
 		
@@ -380,7 +358,7 @@ topo_update.create_temp_tbl_as('ttt2_objects_to_be_delted','SELECT * FROM  ttt2_
 	GROUP BY b.id',
 	border_topo_info.topology_name,
 	border_topo_info.layer_feature_column,
-	border_layer_id
+	border_topo_info.border_layer_id
   );
 	EXECUTE command_string;
 
@@ -409,7 +387,7 @@ topo_update.create_temp_tbl_as('ttt2_objects_to_be_delted','SELECT * FROM  ttt2_
   border_topo_info.layer_schema_name,
   border_topo_info.layer_table_name,
 	border_topo_info.layer_feature_column,
-	border_topo_info.topology_name, border_layer_id, 
+	border_topo_info.topology_name, border_topo_info.border_layer_id, 
 	border_topo_info.snap_tolerance
   );
 
@@ -502,12 +480,12 @@ where a.id = nr.id)',
 		WHERE 
 		ud.id = a.id AND
 		(a.' || quote_ident(border_topo_info.layer_feature_column) || ').id = re.topogeo_id AND
-		re.layer_id = ' || border_layer_id || ' AND 
+		re.layer_id = ' || border_topo_info.border_layer_id || ' AND 
 		re.element_type = 2 AND  -- TODO use variable element_type_edge=2
 		ed.edge_id = re.element_id AND
 		
 		(nr2.' || quote_ident(border_topo_info.layer_feature_column) || ').id = re2.topogeo_id and
-		re2.layer_id = ' || border_layer_id || ' and 
+		re2.layer_id = ' || border_topo_info.border_layer_id || ' and 
 		re2.element_type = 2 and  -- todo use variable element_type_edge=2
 		ed2.edge_id = re2.element_id and
 		(ed2.start_node = ed.start_node or
@@ -550,7 +528,7 @@ where a.id = nr.id)',
 				' || quote_ident(border_topo_info.topology_name) || '.relation re4,
 				' || quote_ident(border_topo_info.topology_name) || '.edge_data eda
 				WHERE 
-				re3.layer_id = ' || border_layer_id || ' AND 
+				re3.layer_id = ' || border_topo_info.border_layer_id || ' AND 
 				re3.element_type = 2 AND  -- TODO use variable element_type_edge=2
 				ed.edge_id = re3.element_id AND
 				re4.topogeo_id = re3.topogeo_id AND
@@ -604,7 +582,7 @@ where a.id = nr.id)',
   border_topo_info.layer_schema_name,
   border_topo_info.layer_table_name,
 	border_topo_info.layer_feature_column,
-	border_layer_id
+	border_topo_info.border_layer_id
     );
 		EXECUTE command_string;
 	
@@ -653,7 +631,7 @@ where a.id = nr.id)',
     border_topo_info.layer_schema_name,
     border_topo_info.layer_table_name,
     border_topo_info.layer_feature_column,
-    border_topo_info.topology_name, border_layer_id, 
+    border_topo_info.topology_name, border_topo_info.border_layer_id, 
     border_topo_info.snap_tolerance
     );
 	
@@ -701,7 +679,7 @@ where a.id = nr.id)',
   border_topo_info.layer_schema_name,
   border_topo_info.layer_table_name,
 	border_topo_info.layer_feature_column,
-  border_layer_id
+  border_topo_info.border_layer_id
     );
 		EXECUTE command_string;
 
@@ -731,7 +709,7 @@ where a.id = nr.id)',
 		WHERE 
 		a.id = ud.id AND
 		(a.' || quote_ident(border_topo_info.layer_feature_column) || ').id = re.topogeo_id AND
-		re.layer_id = ' || border_layer_id || ' AND 
+		re.layer_id = ' || border_topo_info.border_layer_id || ' AND 
 		re.element_type = 2 AND  -- TODO use variable element_type_edge=2
 		ed.edge_id = re.element_id AND
 		ST_Intersects(fl.geom,ed.geom)
@@ -755,7 +733,7 @@ where a.id = nr.id)',
 		WHERE 
 		a.id = ud.id AND
 		(a.' || quote_ident(border_topo_info.layer_feature_column) || ').id = re.topogeo_id AND
-		re.layer_id = ' || border_layer_id || ' AND 
+		re.layer_id = ' || border_topo_info.border_layer_id || ' AND 
 		re.element_type = 2 AND  -- TODO use variable element_type_edge=2
 		ed.edge_id = re.element_id AND
 		NOT EXISTS (SELECT 1 FROM ttt2_final_edge_list_for_intersect_line WHERE ed.edge_id = edge_id);
@@ -818,7 +796,7 @@ where a.id = nr.id)',
     border_topo_info.layer_schema_name,
     border_topo_info.layer_table_name,
     border_topo_info.topology_name,
-    border_layer_id, border_topo_info.snap_tolerance,
+    border_topo_info.border_layer_id, border_topo_info.snap_tolerance,
     border_topo_info.layer_schema_name,
     border_topo_info.layer_table_name
     );
@@ -859,7 +837,7 @@ where a.id = nr.id)',
     border_topo_info.layer_schema_name,
     border_topo_info.layer_table_name,
     border_topo_info.layer_feature_column,
-    border_topo_info.topology_name, border_layer_id, 
+    border_topo_info.topology_name, border_topo_info.border_layer_id, 
     border_topo_info.snap_tolerance
     );
     EXECUTE command_string;
