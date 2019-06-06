@@ -24,7 +24,7 @@ services:
 global:
   - PGPORT=5432
 script:
-  - find / -name shp2pgsql* 2>/dev/null 
+#  - find / -name shp2pgsql* 2>/dev/null 
   - echo "select version()" | psql template1
   - make check RUNTESTFLAGS=-v
 
