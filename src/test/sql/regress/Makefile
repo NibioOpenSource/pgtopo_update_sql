@@ -1,5 +1,5 @@
 #POSTGIS_SCRIPT_DIR ?= `pg_config --sharedir`/contrib/postgis-2.3
-POSTGIS_SCRIPT_DIR ?=/usr/share/postgresql/9.6/contrib/postgis-2.3
+POSTGIS_SCRIPT_DIR ?=/usr/share/postgresql/11/contrib/postgis-2.5
 
 check: loader 00-regress
 	POSTGIS_REGRESS_DB=nibio_reg ./run_test.pl --spatial_ref_sys --topology $(RUNTESTFLAGS) topo_update 
