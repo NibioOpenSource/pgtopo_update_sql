@@ -1,22 +1,24 @@
 
+addons:
+  apt:
+    packages:
+      - postgresql-11
+      - postgresql-11-postgis-2.5
+      - postgresql-11-postgis-2.5-scripts
+  postgresql: '11'
 
-language: ruby
-rvm: 2.6.2
 before_install:
-  - sudo apt-get update
-  - sudo apt-get --yes remove postgresql\*
-  - sudo apt-get install -y postgresql-11-postgis-2.5 postgresql-client-11
-  - sudo cp /etc/postgresql/{9.6,11}/main/pg_hba.conf
-  - sudo service postgresql restart 11  
-before_script:
-  - psql --version
-  - psql -c 'CREATE DATABASE {{your database name here}};' -U postgres
-  - psql -c 'CREATE ROLE travis SUPERUSER LOGIN CREATEDB;' -U postgres
-  - cp config/database.yml.travis config/database.yml
+  - sudo sed -i 's/port = 5433/port = 5432/' /etc/postgresql/11/main/postgresql.conf
+  - sudo cp /etc/postgresql/{10,11}/main/pg_hba.conf
+  - sudo service postgresql stop
+  - sudo service postgresql start 11
+
+services:
+  - postgresql
+
 global:
   - PGPORT=5432
 script: 
-  - bundle exec rake spec
   - echo "select version()" | psql template1
   - make check RUNTESTFLAGS=-v
 
