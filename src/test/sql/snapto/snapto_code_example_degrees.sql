@@ -1,6 +1,15 @@
+--But when we are using degrees things starts be more difficult. The reason why we are using degrees is to get a accurate  transformations to local UTM zones which are different depending on where in Norway you are.
 
-DROP schema if exists test_topo_snap_02_layers cascade;
-select topology.droptopology('test_topo_snap_02');
+--So the problem is how to use tolerances so we get a behavior equal to the test using meter. 
+
+--We can we define the layer in Postgis Topology with quite big value because this is just max value as it seems. So we can adjust the tolerance parameter as we add lines but the problem is that we need to adjust this parameter depending on where we are and what orientation the line has.  For vertical lines we need a bigger tolerance than for horizontal lines in Norway. This makes it quite complicated to handle adding new lines. 
+
+--The code :https://github.com/NibioOpenSource/pgtopo_update_sql/blob/develop/src/test/sql/snapto/snapto_code_example_degrees.sql
+
+--A image of the result :https://github.com/NibioOpenSource/pgtopo_update_sql/blob/develop/src/test/sql/snapto/snapto_code_example_degrees.png
+
+--DROP schema if exists test_topo_snap_02_layers cascade;
+--select topology.droptopology('test_topo_snap_02');
 
 DO
 $body$
@@ -20,8 +29,7 @@ x real;
 y real;
 new_line geometry;
 srid_used_in_layer int = 4258;
---layer_precision real := 0.000171514623328451;
-layer_precision real := 0.00017;
+layer_precision real := 0.00017; -- somthing close to 10 meter a place i Norway ???
 
 add_line_layer_precision_vertical real := layer_precision/5.0;
 add_line_layer_precision_horizontal real := layer_precision/10.0;

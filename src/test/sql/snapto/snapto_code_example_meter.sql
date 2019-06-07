@@ -1,3 +1,10 @@
+--First we show that this works well when working in meter. I create a Postgis Topology layer with layer_precision 10 meter using https://epsg.io/25833. Then we add 4 horizontal lines and 4 vertical lines using a precision with 2 meter. Postgis Topology handles this nicely and we end with total of 4 lines and not 8 lines as we added, because every second line snaps to the line added before because the distance between the lines are less 2 meter which use as precision we used when adding new lines. 
+
+--The code:https://github.com/NibioOpenSource/pgtopo_update_sql/blob/develop/src/test/sql/snapto/snapto_code_example_meter.sql
+
+--A image of the result:https://github.com/NibioOpenSource/pgtopo_update_sql/blob/develop/src/test/sql/snapto/snapto_code_example_meter.png
+--The green lines are the lines we added, the red lines are the lines that are stored in the edge table.
+
 
 --DROP schema if exists test_topo_snap_01_layers cascade;
 --select topology.droptopology('test_topo_snap_01');
