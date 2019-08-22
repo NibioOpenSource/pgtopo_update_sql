@@ -23,6 +23,6 @@ select topology.droptopology('topo_rein_sysdata_reb');
 select topology.droptopology('topo_rein_sysdata_rro');
 select topology.droptopology('topo_rein_sysdata_rsi');
 
-
+select topology.droptopology('topo_rein_sysdata_rdr');
 
 drop schema topo_update cascade;

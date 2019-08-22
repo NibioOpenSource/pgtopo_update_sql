@@ -8,8 +8,8 @@
 
 --A image of the result :https://github.com/NibioOpenSource/pgtopo_update_sql/blob/develop/src/test/sql/snapto/snapto_code_example_degrees.png
 
---DROP schema if exists test_topo_snap_02_layers cascade;
---select topology.droptopology('test_topo_snap_02');
+DROP schema if exists test_topo_snap_02_layers cascade;
+select topology.droptopology('test_topo_snap_02');
 
 DO
 $body$

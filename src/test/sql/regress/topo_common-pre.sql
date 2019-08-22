@@ -2944,6 +2944,129 @@ COMMENT ON COLUMN topo_rein.siidaomrade_flate.felles_egenskaper IS 'Sosi common 
 CREATE INDEX topo_rein_siidaomrade_flate_geo_relation_id_idx ON topo_rein.siidaomrade_flate(topo_rein.get_relation_id(omrade));
 
 COMMENT ON INDEX topo_rein.topo_rein_siidaomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
+SELECT CreateTopology('topo_rein_sysdata_rdr', 4258, 0.0000000001);
+
+-- Workaround for PostGIS bug from Sandro, see
+-- http://trac.osgeo.org/postgis/ticket/3359
+-- Start edge_id from 2
+-- Start face_id from 3
+SELECT setval('topo_rein_sysdata_rdr.edge_data_edge_id_seq', 2, false),
+       setval('topo_rein_sysdata_rdr.face_face_id_seq', 3, false);
+
+-- give puclic access
+
+GRANT USAGE ON SCHEMA topo_rein_sysdata_rdr TO public;
+
+-- clear out old data added to make testing more easy:
+-- DROP TABLE topo_rein.flyttlei_grense, topo_rein.flyttlei;
+-- SELECT topology.DropTopoGeometryColumn('topo_rein', 'flyttlei_grense', 'grense');
+-- SELECT topology.DropTopoGeometryColumn('topo_rein', 'flyttlei', 'omrade');
+
+-- If yes then we need the table beitehage_grense
+CREATE TABLE topo_rein.flyttlei_grense(
+  -- a internal id will that can be changed when ver needed
+  id serial PRIMARY KEY NOT NULL,
+  -- Felles egenskaper for rein
+  felles_egenskaper topo_rein.sosi_felles_egenskaper NOT NULL,
+  -- Reffers to the user that is logged in.
+  saksbehandler varchar
+);
+-- add a topogeometry column to get a ref to the borders
+SELECT topology.AddTopoGeometryColumn(
+  'topo_rein_sysdata_rdr', 'topo_rein', 'flyttlei_grense', 'grense', 'LINESTRING'
+) AS new_layer_id;
+
+-- rename to flate
+CREATE TABLE topo_rein.flyttlei_flate(
+  -- an internal id can be changed whenever needed
+  -- may be used by the update client when reffering to a certain row when we update
+  id SERIAL PRIMARY KEY NOT NULL,
+
+  -- column område is added later and may be renamed to geo
+
+  -- Definition: indicates which reindeer pasture district uses the pasture area
+  reinbeitebruker_id VARCHAR(3) CHECK (reinbeitebruker_id IN (
+    'XI','ZA','ZB','ZC','ZD','ZE','ZF','ØG','UW','UX','UY','UZ','ØA','ØB','ØC',
+    'ØE','ØF','ZG','ZH','ZJ','ZS','ZL','ZÅ','YA','YB','YC','YD','YE','YF','YG',
+    'XM','XR','XT','YH','YI','YJ','YK','YL','YM','YN','YP','YX','YR','YS','YT',
+    'YU','YV','YW','YY','XA','XD','XE','XG','XH','XJ','XK','XL','XM','XR','XS',
+    'XT','XN','XØ','XP','XU','XV','XW','XZ','XX','XY','WA','WB','WD','WF','WK',
+    'WL','WN','WP','WR','WS','WX','WZ','VA','VF','VG','VJ','VM','VR','YQA',
+    'YQB','YQC','ZZ','RR','ZQA'
+  )),
+  reinbeitebruker_id2 VARCHAR(3) CHECK (reinbeitebruker_id2 IN (
+    'XI','ZA','ZB','ZC','ZD','ZE','ZF','ØG','UW','UX','UY','UZ','ØA','ØB','ØC',
+    'ØE','ØF','ZG','ZH','ZJ','ZS','ZL','ZÅ','YA','YB','YC','YD','YE','YF','YG',
+    'XM','XR','XT','YH','YI','YJ','YK','YL','YM','YN','YP','YX','YR','YS','YT',
+    'YU','YV','YW','YY','XA','XD','XE','XG','XH','XJ','XK','XL','XM','XR','XS',
+    'XT','XN','XØ','XP','XU','XV','XW','XZ','XX','XY','WA','WB','WD','WF','WK',
+    'WL','WN','WP','WR','WS','WX','WZ','VA','VF','VG','VJ','VM','VR','YQA',
+    'YQB','YQC','ZZ','RR','ZQA'
+  )),
+  reinbeitebruker_id3 VARCHAR(3) CHECK (reinbeitebruker_id3 IN (
+    'XI','ZA','ZB','ZC','ZD','ZE','ZF','ØG','UW','UX','UY','UZ','ØA','ØB','ØC',
+    'ØE','ØF','ZG','ZH','ZJ','ZS','ZL','ZÅ','YA','YB','YC','YD','YE','YF','YG',
+    'XM','XR','XT','YH','YI','YJ','YK','YL','YM','YN','YP','YX','YR','YS','YT',
+    'YU','YV','YW','YY','XA','XD','XE','XG','XH','XJ','XK','XL','XM','XR','XS',
+    'XT','XN','XØ','XP','XU','XV','XW','XZ','XX','XY','WA','WB','WD','WF','WK',
+    'WL','WN','WP','WR','WS','WX','WZ','VA','VF','VG','VJ','VM','VR','YQA',
+    'YQB','YQC','ZZ','RR','ZQA'
+  )),
+
+  -- Since in sosi we can have multiple reinbeitebruker_id, this list contains
+  -- the origninal list from the sosi file
+  -- The format is a simple XI,ZA,ZF, but we could also have used an array (text[]),
+  -- but since we are not sure about how this field is used
+  -- we use a simple comma separated text for now
+  alle_reinbeitebr_id VARCHAR NOT NULL DEFAULT '',
+
+  -- This is flag used indicate the status of this record.
+  -- -1: Avvist
+  --  0: Ukjent
+  --  1: Kvalitetssikret
+  -- 11: Kvalitetssikret (automatisk godkjent)
+  -- 10: Ikke kvalitetssikret
+  status INT NOT NULL DEFAULT 0,
+
+  -- contains common attribute for rein
+  felles_egenskaper topo_rein.sosi_felles_egenskaper,
+
+  -- Refers to the user that is logged in.
+  saksbehandler VARCHAR,
+
+  -- This is used by the user to indicate deleted objects
+  -- 0 menas that the object exists
+  -- 1 menas that the user has chosen to delete the object
+  slette_status_kode SMALLINT NOT NULL DEFAULT 0 CHECK (slette_status_kode IN (0, 1)),
+
+  -- added because of performance, used by wms and sp on
+  -- update in the same transaction as the topo objekt
+  simple_geo geometry(MultiPolygon, 4258)
+);
+
+-- add a topogeometry column that is a ref to polygpn surface:
+SELECT topology.AddTopoGeometryColumn(
+  'topo_rein_sysdata_rdr', 'topo_rein', 'flyttlei_flate', 'omrade', 'POLYGON'
+) AS new_layer_id;
+
+COMMENT ON TABLE topo_rein.flyttlei_flate IS '
+  Contains attributtes for rein and ref. to topo surface data.
+  For more info see http://www.statkart.no/Documents/Standard/SOSI kap3
+  Produktspesifikasjoner/FKB 4.5/4-rein-2014-03-01.pdf
+';
+COMMENT ON COLUMN topo_rein.flyttlei_flate.id IS 'Unique identifier of a surface';
+COMMENT ON COLUMN topo_rein.flyttlei_flate.felles_egenskaper IS '
+  Sosi common meta attribute part of kvalitet TODO create user defined type?
+';
+
+-- create function basded index to get performance
+CREATE INDEX topo_rein_flyttlei_geo_relation_id_idx ON topo_rein.flyttlei_flate(
+  topo_rein.get_relation_id(omrade)
+);
+
+COMMENT ON INDEX topo_rein.topo_rein_flyttlei_geo_relation_id_idx IS '
+  A function based index to faster find topo rows in the relation table
+';
 -- DROP VIEW topo_rein.arstidsbeite_host_flate_v cascade ;
 
 
@@ -3341,6 +3464,48 @@ END AS "editable"
 from topo_rein.ekspropriasjonsomrade_flate al;
 
 --select * from topo_rein.ekspropriasjonsomrade_topojson_flate_v
+-- DROP VIEW IF EXISTS topo_rein.oppsamlingomr_topojson_flate_v cascade ;
+CREATE OR REPLACE VIEW topo_rein.flyttlei_topojson_flate_v AS SELECT
+  id,
+  reinbeitebruker_id,
+  reinbeitebruker_id2,
+  reinbeitebruker_id3,
+  (al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forstedatafangstdato",
+  (al.felles_egenskaper).verifiseringsdato AS "fellesegenskaper.verifiseringsdato",
+  (al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
+  (al.felles_egenskaper).opphav AS "fellesegenskaper.opphav",
+  omrade,
+  -- alle_reinbeitebr_id,
+  status,
+  slette_status_kode,
+  CASE
+    WHEN EXISTS (
+      SELECT 1 FROM topo_rein.rls_role_mapping rl
+      WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+      AND rl.edit_all = true
+    ) THEN true
+
+    WHEN reinbeitebruker_id = ANY (
+      SELECT  column_value FROM topo_rein.rls_role_mapping rl
+      WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+      AND rl.table_name = '*'
+      AND rl.column_name = 'reinbeitebruker_id'
+    ) THEN true
+
+      -- a user have explicit access to selected table
+    WHEN reinbeitebruker_id = ANY (
+      SELECT  column_value FROM topo_rein.rls_role_mapping rl
+      WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+      AND rl.table_name = 'topo_rein.flyttlei_flate'
+      AND rl.column_name = 'reinbeitebruker_id'
+    ) THEN true
+
+    WHEN  reinbeitebruker_id is null
+    THEN true
+
+    ELSE false
+  END AS "editable"
+FROM topo_rein.flyttlei_flate al;
 -- DROP VIEW IF EXISTS topo_rein.konsesjonsomrade_topojson_flate_v cascade ;
 
 
@@ -3821,7 +3986,7 @@ schema_name text = 'topo_rein';
 topo_tables text[];
 cmd_text text;
 BEGIN
-foreach tbl_name IN array string_to_array('arstidsbeite_sommer_flate,arstidsbeite_host_flate,arstidsbeite_hostvinter_flate,arstidsbeite_vinter_flate,arstidsbeite_var_flate,beitehage_flate,oppsamlingomr_flate,reindrift_anlegg_linje,rein_trekklei_linje,reindrift_anlegg_punkt',',')
+foreach tbl_name IN array string_to_array('arstidsbeite_sommer_flate,arstidsbeite_host_flate,arstidsbeite_hostvinter_flate,arstidsbeite_vinter_flate,arstidsbeite_var_flate,beitehage_flate,oppsamlingomr_flate,reindrift_anlegg_linje,rein_trekklei_linje,reindrift_anlegg_punkt,flyttlei_flate',',')
 loop
 	cmd_text = format('-- add row level security
 	ALTER TABLE %3$s ENABLE ROW LEVEL SECURITY;
@@ -3932,7 +4097,7 @@ $body$;
 /* Create the table in which to store changes in tables logs */
 --drop TABLE topo_rein.data_update_log cascade;
  
-CREATE TABLE topo_rein.data_update_log (
+CREATE TABLE IF NOT EXISTS topo_rein.data_update_log (
     id              serial primary key not null,
     action_time     timestamptz not null DEFAULT CURRENT_TIMESTAMP,
     schema_name     text not null,
@@ -3971,7 +4136,7 @@ DECLARE
 tbl_name text;
 topo_tables text[];
 BEGIN
-foreach tbl_name IN array string_to_array('arstidsbeite_sommer,arstidsbeite_host,arstidsbeite_hostvinter,arstidsbeite_vinter,arstidsbeite_var,beitehage,oppsamlingomr',',')
+foreach tbl_name IN array string_to_array('arstidsbeite_sommer,arstidsbeite_host,arstidsbeite_hostvinter,arstidsbeite_vinter,arstidsbeite_var,beitehage,oppsamlingomr,flyttlei',',')
 loop
 	EXECUTE format('DROP VIEW IF EXISTS %1$s_flate_json_update_log; CREATE OR REPLACE VIEW %1$s_flate_json_update_log as select v1.*,v2.saksbehandler from %1$s_topojson_flate_v v1, %1$s_flate v2 where v1.id = v2.id', 'topo_rein.'||tbl_name);
 END loop;
@@ -4078,7 +4243,7 @@ CREATE OR REPLACE FUNCTION topo_rein.change_trigger_insert_after() RETURNS trigg
 	        	) THEN
 	        		is_ready_stage := true;
 	        	END IF;
-	        ELSIF (TG_RELNAME IN ('oppsamlingomr_flate')) THEN 	
+	        ELSIF (TG_RELNAME IN ('oppsamlingomr_flate','flyttlei_flate')) THEN 	
 	        	IF (
 	        	NEW.reinbeitebruker_id is not null
 	        	) THEN
@@ -4141,7 +4306,7 @@ CREATE OR REPLACE FUNCTION topo_rein.change_trigger_update_before() RETURNS trig
 	        	) THEN
 	        		is_ready_stage := true;
 	        	END IF;
-	        ELSIF (TG_RELNAME IN ('oppsamlingomr_flate')) THEN 	
+	        ELSIF (TG_RELNAME IN ('oppsamlingomr_flate','flyttlei_flate')) THEN 	
 	        	IF (
 	        	OLD.reinbeitebruker_id is not null
 	        	) THEN
@@ -4196,7 +4361,7 @@ CREATE OR REPLACE FUNCTION topo_rein.change_trigger_update_after() RETURNS trigg
 	        	) THEN
 	        		is_ready_stage := true;
 	        	END IF;
-	        ELSIF (TG_RELNAME IN ('oppsamlingomr_flate')) THEN 	
+	        ELSIF (TG_RELNAME IN ('oppsamlingomr_flate','flyttlei_flate')) THEN 	
 	        	IF (
 	        	NEW.reinbeitebruker_id is not null
 	        	) THEN
@@ -4246,7 +4411,7 @@ DECLARE
 tbl_name text;
 topo_tables text[];
 BEGIN
-foreach tbl_name IN array string_to_array('arstidsbeite_sommer_flate,arstidsbeite_host_flate,arstidsbeite_hostvinter_flate,arstidsbeite_vinter_flate,arstidsbeite_var_flate,beitehage_flate,oppsamlingomr_flate,reindrift_anlegg_linje,rein_trekklei_linje,reindrift_anlegg_punkt',',')
+foreach tbl_name IN array string_to_array('arstidsbeite_sommer_flate,arstidsbeite_host_flate,arstidsbeite_hostvinter_flate,arstidsbeite_vinter_flate,arstidsbeite_var_flate,beitehage_flate,oppsamlingomr_flate,reindrift_anlegg_linje,rein_trekklei_linje,reindrift_anlegg_punkt,flyttlei_flate',',')
 loop
 
 EXECUTE format('DROP TRIGGER IF EXISTS table_change_i_trigger_insert_after ON %1$s', 'topo_rein.'||tbl_name);           
