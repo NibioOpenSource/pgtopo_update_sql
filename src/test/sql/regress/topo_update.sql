@@ -190,12 +190,14 @@ SELECT '28', count(id) FROM (SELECT 1 AS id FROM topo_update.create_surface_edge
 SELECT '29', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status  from topo_rein.arstidsbeite_sommer_flate;
 SELECT '30', count(*) from topo_rein.arstidsbeite_sommer_flate;
 -- Set attributtes
-SELECT '31', topo_update.apply_attr_on_topo_line('{"properties":{"id":1,"status":1,"reinbeitebruker_id":"ZH","reindrift_sesongomrade_kode":4}}','topo_rein', 'arstidsbeite_sommer_flate', 'omrade');
-SELECT '32', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status  from topo_rein.arstidsbeite_sommer_flate;
+SELECT '31', topo_update.apply_attr_on_topo_line('{"properties":{"id":1,"status":1,"reinbeitebruker_id":"ZH","reindrift_sesongomrade_kode":4,"fellesegenskaper.forstedatafangstdato":"2014-10-11","felles_egenskaper.verifiseringsdato":"2015-01-01"}}','topo_rein', 'arstidsbeite_sommer_flate', 'omrade');
+SELECT '32', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status,(felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato  from topo_rein.arstidsbeite_sommer_flate;
 --Add new polygon this surface 
 SELECT '32_1', count(id) FROM (SELECT 1 AS id FROM topo_update.create_surface_edge_domain_obj('{"type": "Feature","properties":{"reinbeitebruker_id":"XI","reindrift_sesongomrade_kode":1},"geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[18.33500,69.20970],[18.37686,69.22246],[18.34102,69.19811]]}}','topo_rein', 'arstidsbeite_sommer_flate', 'omrade', 'arstidsbeite_sommer_grense','grense',  1e-10,'{"properties":{"reinbeitebruker_id":"ZA"}}')) AS R;
+-- Check that the old is not changed
+SELECT '32_2A', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status,(felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato  from topo_rein.arstidsbeite_sommer_flate where id = 1;
 -- Check tht new status is 0  
-SELECT '32_2', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status  from topo_rein.arstidsbeite_sommer_flate order by id;
+SELECT '32_2B', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status,(felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato  from topo_rein.arstidsbeite_sommer_flate where id = 2;
 -- create a hole in this polygon (craete a surface and delete it)
 SELECT '32_3', topo_update.delete_topo_surface((SELECT ((SELECT * FROM topo_update.create_surface_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[18.340281,69.21086],[18.3536658335307,69.2066558329758],[18.3318345167625,69.1987665997243],[18.3210217330378,69.2029603714597],[18.338227,69.209054]]}}','topo_rein', 'arstidsbeite_sommer_flate', 'omrade', 'arstidsbeite_sommer_grense','grense',  1e-10))::json->1)::json->'id')::text::int,
 'topo_rein', 'arstidsbeite_sommer_flate', 'omrade', 'arstidsbeite_sommer_grense','grense');
