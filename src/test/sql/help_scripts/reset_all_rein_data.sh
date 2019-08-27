@@ -68,6 +68,7 @@ cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_reinbeiteomrade.sql >
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_restriksjonsomrade_flate.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_restriksjonsomrade_linje.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_siidaomrade.sql >> /tmp/trein.sql
+cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_flyttlei_flate.sql >> /tmp/trein.sql
 
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/view*.sql >> /tmp/trein.sql
 
