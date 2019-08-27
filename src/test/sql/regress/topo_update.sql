@@ -197,7 +197,7 @@ SELECT '32_1', count(id) FROM (SELECT 1 AS id FROM topo_update.create_surface_ed
 -- Check that the old is not changed
 SELECT '32_2A', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status,(felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato  from topo_rein.arstidsbeite_sommer_flate where id = 1;
 -- Check tht new status is 0  
-SELECT '32_2B', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status,(felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato  from topo_rein.arstidsbeite_sommer_flate where id = 2;
+SELECT '32_2B', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status  from topo_rein.arstidsbeite_sommer_flate where id = 2 and (felles_egenskaper).forstedatafangstdato = CURRENT_DATE and (felles_egenskaper).verifiseringsdato = CURRENT_DATE ;
 -- create a hole in this polygon (craete a surface and delete it)
 SELECT '32_3', topo_update.delete_topo_surface((SELECT ((SELECT * FROM topo_update.create_surface_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[18.340281,69.21086],[18.3536658335307,69.2066558329758],[18.3318345167625,69.1987665997243],[18.3210217330378,69.2029603714597],[18.338227,69.209054]]}}','topo_rein', 'arstidsbeite_sommer_flate', 'omrade', 'arstidsbeite_sommer_grense','grense',  1e-10))::json->1)::json->'id')::text::int,
 'topo_rein', 'arstidsbeite_sommer_flate', 'omrade', 'arstidsbeite_sommer_grense','grense');
@@ -319,12 +319,18 @@ SELECT '59_layer_accept_update', * from  topo_update.layer_accept_update(48,'lop
 
 -- Check update log after after accpet surface
 select '59_sommer_data_update_log_c3', count(*) from topo_rein.data_update_log where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_sommer_flate' and row_id = 1 and removed_by_splitt_operation = false and change_confirmed_by_admin = false;
-SELECT '59_sommer_r3', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status from topo_rein.arstidsbeite_sommer_flate order by id desc limit 1;
+update topo_rein.arstidsbeite_sommer_flate set felles_egenskaper.forstedatafangstdato = '2013-08-26';
+update topo_rein.arstidsbeite_sommer_flate set felles_egenskaper.verifiseringsdato = '2015-07-26';
+update topo_rein.arstidsbeite_sommer_flate set felles_egenskaper.oppdateringsdato = '2016-07-26';
+
+SELECT '59_sommer_r3', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato, (felles_egenskaper).oppdateringsdato  from topo_rein.arstidsbeite_sommer_flate order by id desc limit 2;
 
 -- Split the created surface in two
 SELECT '59_sommer_split', count(id) FROM (SELECT 1 AS id FROM topo_update.create_surface_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[572358.582674182,7902771.102496703],[572960.1837898717,7891010.480783969]]}}','topo_rein', 'arstidsbeite_sommer_flate', 'omrade', 'arstidsbeite_sommer_grense','grense',  1e-10)) AS R;
 
-SELECT '59_sommer_r4', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status from topo_rein.arstidsbeite_sommer_flate order by id desc limit 3;
+-- Check that forstedatafangstdato and verifiseringsdato is not updated
+-- Check that is oppdateringsdato is updated
+SELECT '59_sommer_r4', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato, (felles_egenskaper).oppdateringsdato  from topo_rein.arstidsbeite_sommer_flate order by id desc limit 3;
 
 select '59_sommer_data_update_log_r4', id, schema_name,  table_name, row_id, operation, status, 
 (json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_status ,

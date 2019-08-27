@@ -404,7 +404,8 @@ BEGIN
 	    command_string := format(
 	    'UPDATE %I.%I a
 		SET 
-		felles_egenskaper.forstedatafangstdato = (c.felles_egenskaper).forstedatafangstdato 
+		felles_egenskaper.forstedatafangstdato = (c.felles_egenskaper).forstedatafangstdato, 
+		felles_egenskaper.verifiseringsdato = (c.felles_egenskaper).verifiseringsdato 
 		FROM new_rows_added_in_org_table b, 
 		old_rows_attributes c
 		WHERE 
