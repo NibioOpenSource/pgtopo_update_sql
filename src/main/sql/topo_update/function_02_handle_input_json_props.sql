@@ -2,6 +2,10 @@
 -- This is a common method to parse all input data
 -- It returns a struture that is adjusted reindrift that depends on sosi felles eganskaper
 
+
+DROP FUNCTION IF EXISTS topo_update.handle_input_json_props(json, json, int,boolean) ;
+DROP FUNCTION IF EXISTS topo_update.handle_input_json_props(json, json, int) ;
+
 CREATE OR REPLACE FUNCTION  topo_update.handle_input_json_props(client_json_feature json,  server_json_feature json, srid_out int) 
 RETURNS topo_update.json_input_structure AS $$DECLARE
 
