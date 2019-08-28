@@ -405,7 +405,8 @@ BEGIN
 	    'UPDATE %I.%I a
 		SET 
 		felles_egenskaper.forstedatafangstdato = (c.felles_egenskaper).forstedatafangstdato, 
-		felles_egenskaper.verifiseringsdato = (c.felles_egenskaper).verifiseringsdato 
+		felles_egenskaper.verifiseringsdato = (c.felles_egenskaper).verifiseringsdato, 
+		felles_egenskaper.opphav = (c.felles_egenskaper).opphav 
 		FROM new_rows_added_in_org_table b, 
 		old_rows_attributes c
 		WHERE 

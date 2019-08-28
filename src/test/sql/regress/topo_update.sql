@@ -322,15 +322,19 @@ select '59_sommer_data_update_log_c3', count(*) from topo_rein.data_update_log w
 update topo_rein.arstidsbeite_sommer_flate set felles_egenskaper.forstedatafangstdato = '2013-08-26';
 update topo_rein.arstidsbeite_sommer_flate set felles_egenskaper.verifiseringsdato = '2015-07-26';
 update topo_rein.arstidsbeite_sommer_flate set felles_egenskaper.oppdateringsdato = '2016-07-26';
+update topo_rein.arstidsbeite_sommer_flate set felles_egenskaper.opphav = 'ole';
 
-SELECT '59_sommer_r3', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato, (felles_egenskaper).oppdateringsdato  from topo_rein.arstidsbeite_sommer_flate order by id desc limit 2;
+SELECT '59_sommer_r3', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status, (felles_egenskaper).opphav, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato, (felles_egenskaper).oppdateringsdato  from topo_rein.arstidsbeite_sommer_flate order by id desc limit 2;
 
 -- Split the created surface in two
-SELECT '59_sommer_split', count(id) FROM (SELECT 1 AS id FROM topo_update.create_surface_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[572358.582674182,7902771.102496703],[572960.1837898717,7891010.480783969]]}}','topo_rein', 'arstidsbeite_sommer_flate', 'omrade', 'arstidsbeite_sommer_grense','grense',  1e-10)) AS R;
+SELECT '59_sommer_split', count(id) FROM (SELECT 1 AS id FROM topo_update.create_surface_edge_domain_obj(
+'{"type":"Feature","geometry":{"type":"LineString","coordinates":[[572358.582674182,7902771.102496703],[572960.1837898717,7891010.480783969]],"crs":{"type":"name","properties":{"name":"EPSG:4258"}}},"properties":{"fellesegenskaper.kvalitet.maalemetode":82}}',
+'topo_rein', 'arstidsbeite_sommer_flate', 'omrade', 'arstidsbeite_sommer_grense','grense',  1e-10,
+'{"properties":{"status":"10","saksbehandler":"distrikt.zd@nibio.no","reinbeitebruker_id":null,"fellesegenskaper.opphav":"Distrikt"}}')) AS R;
 
 -- Check that forstedatafangstdato and verifiseringsdato is not updated
 -- Check that is oppdateringsdato is updated
-SELECT '59_sommer_r4', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato, (felles_egenskaper).oppdateringsdato  from topo_rein.arstidsbeite_sommer_flate order by id desc limit 3;
+SELECT '59_sommer_r4', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status,  (felles_egenskaper).opphav, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato, (felles_egenskaper).oppdateringsdato  from topo_rein.arstidsbeite_sommer_flate order by id desc limit 3;
 
 select '59_sommer_data_update_log_r4', id, schema_name,  table_name, row_id, operation, status, 
 (json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_status ,
