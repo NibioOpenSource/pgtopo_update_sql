@@ -4700,13 +4700,18 @@ saksbehandler varchar,
 -- This is used by the user to indicate that he wants to delete object or not use it
 -- 0 menas that the object exits in normal way
 -- 1 menas that the users has selcted delete object
-slette_status_kode smallint not null default 0  CHECK (slette_status_kode IN (0,1))
+slette_status_kode smallint not null default 0  CHECK (slette_status_kode IN (0,1)),
+
+-- This is used to indicate the area
+-- TODO rename columns to common name
+reinbeitebruker_id varchar
 
 
 );
 
 -- add a topogeometry column that is a ref to polygpn surface-- should this be called område/flate or geo ?
-SELECT topology.AddTopoGeometryColumn('topo_ar5_sysdata_webclient', 'topo_ar5', 'webclient_flate', 'flate', 'POLYGON') As new_layer_id;
+-- TODO rename to flate
+SELECT topology.AddTopoGeometryColumn('topo_ar5_sysdata_webclient', 'topo_ar5', 'webclient_flate', 'omrade', 'POLYGON') As new_layer_id;
 
 
 
@@ -4720,7 +4725,7 @@ COMMENT ON COLUMN topo_ar5.webclient_flate.felles_egenskaper IS 'Sosi common met
 -- COMMENT ON COLUMN topo_ar5.webclient_flate.geo IS 'This holds the ref to topo_ar5_sysdata_webclient.relation table, where we find pointers needed top build the the topo surface';
 
 -- create function basded index to get performance
-CREATE INDEX topo_ar5_webclient_flate_geo_relation_id_idx ON topo_ar5.webclient_flate(topo_rein.get_relation_id(flate));	
+CREATE INDEX topo_ar5_webclient_flate_geo_relation_id_idx ON topo_ar5.webclient_flate(topo_rein.get_relation_id(omrade));	
 
 COMMENT ON INDEX topo_ar5.topo_ar5_webclient_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
