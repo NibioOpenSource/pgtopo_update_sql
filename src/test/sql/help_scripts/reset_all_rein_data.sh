@@ -21,6 +21,10 @@ echo "select topology.droptopology('topo_rein_sysdata_reb');"  >> /tmp/trein.sql
 echo "select topology.droptopology('topo_rein_sysdata_rro');"  >> /tmp/trein.sql
 echo "select topology.droptopology('topo_rein_sysdata_rsi');"  >> /tmp/trein.sql
 
+echo "select topology.droptopology('topo_rein_sysdata_rdr');"  >> /tmp/trein.sql
+
+
+
 # added delete to handle case old schema exit
 echo 'drop schema topo_rein_sysdata cascade;' >> /tmp/trein.sql 
 echo 'drop schema topo_rein_sysdata_rvr cascade;' >> /tmp/trein.sql 
@@ -42,6 +46,9 @@ echo 'drop schema topo_rein_sysdata_reb cascade;' >> /tmp/trein.sql
 echo 'drop schema topo_rein_sysdata_rro cascade;' >> /tmp/trein.sql
 echo 'drop schema topo_rein_sysdata_rsi cascade;' >> /tmp/trein.sql
 
+echo 'drop schema topo_rein_sysdata_rdr cascade;' >> /tmp/trein.sql
+
+
 
 
 cat ~/dev/git/topologi/pgtopo_update_sql/src/test/sql/help_scripts/Performance_Fix_From_Sandro_TopoJSON.sql>> /tmp/trein.sql 
@@ -57,7 +64,7 @@ cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_reindrift_anlegg_linj
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_reindrift_anlegg_punkt.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_trekklei_linje.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_beitehage_flate.sql >> /tmp/trein.sql
-cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_oppsamlingomr_flate.sql >> /tmp/trein.sql
+cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_oppsamlingsomrade_flate.sql >> /tmp/trein.sql
 
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_avtaleomrade.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_ekspropriasjonsomrade.sql >> /tmp/trein.sql
@@ -86,6 +93,8 @@ cat ~/dev/git/topologi/pgtopo_update_sql/src/main/sql/topo_update/function*  >> 
 #echo "INSERT INTO topo_rein.rls_role_mapping(user_logged_in,session_id,edit_all,table_name,column_name,column_value )
 #VALUES('topo_rein_crud1','session_id',true,'*','reinbeitebruker_id','ZD');" >> /tmp/trein.sql 
 
+# set row level security 
+cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/set_rls_rules.sql >> /tmp/trein.sql
 
 
 cat /tmp/trein.sql
