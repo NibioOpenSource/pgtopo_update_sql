@@ -23,7 +23,7 @@ DECLARE
 
 json_result text;
 
-new_border_data topogeometry;
+new_border_data topology.topogeometry;
 
 -- TODO use as parameter put for testing we just have here for now
 border_topo_info topo_update.input_meta_info ;

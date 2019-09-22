@@ -34,7 +34,7 @@ add_debug_tables int = 0;
 rec RECORD;
 
 -- used for creating new topo objects
-new_surface_topo topogeometry;
+new_surface_topo topology.topogeometry;
 
 -- the closed geom if the instring is closed
 valid_closed_user_geometry geometry;
