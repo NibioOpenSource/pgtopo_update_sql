@@ -4587,6 +4587,10 @@ CREATE SCHEMA topo_ar5;
 -- give puclic access
 GRANT USAGE ON SCHEMA topo_ar5 TO public;
 
+-- layuer id AR5_WEBCLIENT_F
+
+-- select DropTopology('topo_ar5_sysdata_webclient');
+
 select CreateTopology('topo_ar5_sysdata_webclient',4258,0.0000000001);
 -- give puclic access
 
@@ -4731,3 +4735,26 @@ COMMENT ON INDEX topo_ar5.topo_ar5_webclient_flate_geo_relation_id_idx IS 'A fun
 
 
 
+DROP VIEW IF EXISTS topo_rein.webclient_flate_topojson_flate_v cascade ;
+
+
+CREATE OR REPLACE VIEW topo_rein.webclient_flate_topojson_flate_v 
+AS
+select 
+id,
+arealtype,
+treslag,
+skogbonitet,
+grunnforhold,
+reinbeitebruker_id, -- Ti rename to a more common name
+(al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forstedatafangstdato", 
+(al.felles_egenskaper).verifiseringsdato AS "fellesegenskaper.verifiseringsdato",
+(al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
+(al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
+omrade,
+status,
+slette_status_kode,
+1 "editable" --No access rules added her, we need to find out how to handle this 
+from topo_ar5.webclient_flate al;
+
+--select * from topo_rein.webclient_flate_topojson_flate_v

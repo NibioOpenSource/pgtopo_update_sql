@@ -61,6 +61,10 @@ if ( -e '/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/schema_topo_rein
 	copy_file_into('/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_ar5/table_01_ar5webclient_flate.sql',$fh_out);
 	
 	
+	# This tables are not in any public repo so we only generate when they are available 
+	for my $file (glob '/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_ar5/view_*.sql') {
+		copy_file_into($file,$fh_out);
+	}
 	
 
 

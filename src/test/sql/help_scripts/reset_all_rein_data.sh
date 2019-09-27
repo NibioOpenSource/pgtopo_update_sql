@@ -76,15 +76,17 @@ cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_restriksjonsomrade_fl
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_restriksjonsomrade_linje.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_siidaomrade.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_flyttlei_flate.sql >> /tmp/trein.sql
-
- 
-cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_ar5/schema_topo_ar5.sql >> /tmp/trein.sql
-cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_ar5/table_01_ar5webclient_flate.sql >> /tmp/trein.sql
-
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/view*.sql >> /tmp/trein.sql
 
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/set_rls_rules.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/set_trigger_update_change_log.sql >> /tmp/trein.sql
+
+
+#ar5 web client
+cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_ar5/schema_topo_ar5.sql >> /tmp/trein.sql
+cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_ar5/roles_*.sql >> /tmp/trein.sql
+cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_ar5/table_01_ar5webclient_flate.sql >> /tmp/trein.sql
+cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_ar5/view*.sql >> /tmp/trein.sql
 
 
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/roles_tables.sql  >> /tmp/trein.sql 
