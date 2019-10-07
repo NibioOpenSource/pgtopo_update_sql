@@ -1,5 +1,6 @@
-echo 'drop schema topo_rein cascade;' > /tmp/trein.sql
-echo 'drop schema topo_update cascade;'  >> /tmp/trein.sql
+# Reindrift
+echo 'drop schema if exists topo_rein cascade;' > /tmp/trein.sql
+echo 'drop schema if exists topo_update cascade;'  >> /tmp/trein.sql
 
 echo "select topology.droptopology('topo_rein_sysdata');"  >> /tmp/trein.sql
 echo "select topology.droptopology('topo_rein_sysdata_rvr');"  >> /tmp/trein.sql
@@ -24,30 +25,36 @@ echo "select topology.droptopology('topo_rein_sysdata_rsi');"  >> /tmp/trein.sql
 echo "select topology.droptopology('topo_rein_sysdata_rdr');"  >> /tmp/trein.sql
 
 
-
 # added delete to handle case old schema exit
-echo 'drop schema topo_rein_sysdata cascade;' >> /tmp/trein.sql 
-echo 'drop schema topo_rein_sysdata_rvr cascade;' >> /tmp/trein.sql 
-echo 'drop schema topo_rein_sysdata_rso cascade;' >> /tmp/trein.sql 
-echo 'drop schema topo_rein_sysdata_rhs cascade;' >> /tmp/trein.sql 
-echo 'drop schema topo_rein_sysdata_rhv cascade;' >> /tmp/trein.sql 
-echo 'drop schema topo_rein_sysdata_rvi cascade;' >> /tmp/trein.sql 
-echo 'drop schema topo_rein_sysdata_rbh cascade;' >> /tmp/trein.sql 
-echo 'drop schema topo_rein_sysdata_rop cascade;' >> /tmp/trein.sql 
-echo 'drop schema topo_rein_sysdata_ran cascade;' >> /tmp/trein.sql 
-echo 'drop schema topo_rein_sysdata_rtr cascade;' >> /tmp/trein.sql 
+echo 'drop schema if exists topo_rein_sysdata cascade;' >> /tmp/trein.sql 
+echo 'drop schema if exists topo_rein_sysdata_rvr cascade;' >> /tmp/trein.sql 
+echo 'drop schema if exists topo_rein_sysdata_rso cascade;' >> /tmp/trein.sql 
+echo 'drop schema if exists topo_rein_sysdata_rhs cascade;' >> /tmp/trein.sql 
+echo 'drop schema if exists topo_rein_sysdata_rhv cascade;' >> /tmp/trein.sql 
+echo 'drop schema if exists topo_rein_sysdata_rvi cascade;' >> /tmp/trein.sql 
+echo 'drop schema if exists topo_rein_sysdata_rbh cascade;' >> /tmp/trein.sql 
+echo 'drop schema if exists topo_rein_sysdata_rop cascade;' >> /tmp/trein.sql 
+echo 'drop schema if exists topo_rein_sysdata_ran cascade;' >> /tmp/trein.sql 
+echo 'drop schema if exists topo_rein_sysdata_rtr cascade;' >> /tmp/trein.sql 
+echo 'drop schema if exists topo_rein_sysdata_rav cascade;' >> /tmp/trein.sql
+echo 'drop schema if exists topo_rein_sysdata_reo cascade;' >> /tmp/trein.sql
+echo 'drop schema if exists topo_rein_sysdata_rks cascade;' >> /tmp/trein.sql
+echo 'drop schema if exists topo_rein_sysdata_rko cascade;' >> /tmp/trein.sql
+echo 'drop schema if exists topo_rein_sysdata_rdg cascade;' >> /tmp/trein.sql
+echo 'drop schema if exists topo_rein_sysdata_reb cascade;' >> /tmp/trein.sql
+echo 'drop schema if exists topo_rein_sysdata_rro cascade;' >> /tmp/trein.sql
+echo 'drop schema if exists topo_rein_sysdata_rsi cascade;' >> /tmp/trein.sql
+echo 'drop schema if exists topo_rein_sysdata_rdr cascade;' >> /tmp/trein.sql
 
-echo 'drop schema topo_rein_sysdata_rav cascade;' >> /tmp/trein.sql
-echo 'drop schema topo_rein_sysdata_reo cascade;' >> /tmp/trein.sql
-echo 'drop schema topo_rein_sysdata_rks cascade;' >> /tmp/trein.sql
-echo 'drop schema topo_rein_sysdata_rko cascade;' >> /tmp/trein.sql
-echo 'drop schema topo_rein_sysdata_rdg cascade;' >> /tmp/trein.sql
-echo 'drop schema topo_rein_sysdata_reb cascade;' >> /tmp/trein.sql
-echo 'drop schema topo_rein_sysdata_rro cascade;' >> /tmp/trein.sql
-echo 'drop schema topo_rein_sysdata_rsi cascade;' >> /tmp/trein.sql
 
-echo 'drop schema topo_rein_sysdata_rdr cascade;' >> /tmp/trein.sql
 
+#ar5 
+echo 'drop schema if exists topo_ar5 cascade;' >> /tmp/trein.sql
+echo "select topology.droptopology('topo_ar5_sysdata_webclient');"  >> /tmp/trein.sql
+
+
+
+echo 'drop schema if exists topo_ar5_sysdata_webclient cascade;' >> /tmp/trein.sql
 
 
 
@@ -76,31 +83,35 @@ cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_restriksjonsomrade_fl
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_restriksjonsomrade_linje.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_siidaomrade.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_flyttlei_flate.sql >> /tmp/trein.sql
+
+# Create views
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/view*.sql >> /tmp/trein.sql
 
+#Row level security rules
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/set_rls_rules.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/set_trigger_update_change_log.sql >> /tmp/trein.sql
+
+# Grant roles
+cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/roles_tables.sql  >> /tmp/trein.sql 
 
 
 #ar5 web client
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_ar5/schema_topo_ar5.sql >> /tmp/trein.sql
-cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_ar5/roles_*.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_ar5/table_01_ar5webclient_flate.sql >> /tmp/trein.sql
+
+# Create views
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_ar5/view*.sql >> /tmp/trein.sql
 
+# Grant roles
+cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_ar5/roles_tables.sql >> /tmp/trein.sql
 
-cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/roles_tables.sql  >> /tmp/trein.sql 
+# Create topo rein code
 cat ~/dev/git/topologi/pgtopo_update_sql/src/main/sql/topo_update/schema_*  >> /tmp/trein.sql
 cat ~/dev/git/topologi/pgtopo_update_sql/src/main/sql/topo_update/roles_topo_update.sql >> /tmp/trein.sql
 cat ~/dev/git/topologi/pgtopo_update_sql/src/main/sql/topo_update/function*  >> /tmp/trein.sql
 #cat /Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/import_script/function_simple*.sql  >> /tmp/trein.sql
 #cat /Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/convert_to_topo/surface/view/*.sql >> /tmp/trein.sql
 
-#echo "INSERT INTO topo_rein.rls_role_mapping(user_logged_in,session_id,edit_all,table_name,column_name,column_value )
-#VALUES('topo_rein_crud1','session_id',true,'*','reinbeitebruker_id','ZD');" >> /tmp/trein.sql 
-
-# set row level security 
-cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/set_rls_rules.sql >> /tmp/trein.sql
 
 
 cat /tmp/trein.sql
