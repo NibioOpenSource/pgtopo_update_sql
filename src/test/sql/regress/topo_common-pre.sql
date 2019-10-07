@@ -4735,10 +4735,11 @@ COMMENT ON INDEX topo_ar5.topo_ar5_webclient_flate_geo_relation_id_idx IS 'A fun
 
 
 
-DROP VIEW IF EXISTS topo_rein.webclient_flate_topojson_flate_v cascade ;
+
+DROP VIEW IF EXISTS topo_ar5.webclient_flate_topojson_flate_v cascade ;
 
 
-CREATE OR REPLACE VIEW topo_rein.webclient_flate_topojson_flate_v 
+CREATE OR REPLACE VIEW topo_ar5.webclient_flate_topojson_flate_v 
 AS
 select 
 id,
@@ -4757,4 +4758,4 @@ slette_status_kode,
 1 "editable" --No access rules added her, we need to find out how to handle this 
 from topo_ar5.webclient_flate al;
 
---select * from topo_rein.webclient_flate_topojson_flate_v
+--select * from topo_ar5.webclient_flate_topojson_flate_v
