@@ -70,8 +70,8 @@ cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_arstidsbeite_vinter_f
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_reindrift_anlegg_linje.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_reindrift_anlegg_punkt.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_trekklei_linje.sql >> /tmp/trein.sql
-cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_beitehage_flate.sql >> /tmp/trein.sql
-cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_oppsamlingsomrade_flate.sql >> /tmp/trein.sql
+cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_beitehage.sql >> /tmp/trein.sql
+cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_oppsamlingsomrade.sql >> /tmp/trein.sql
 
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_avtaleomrade.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_ekspropriasjonsomrade.sql >> /tmp/trein.sql
@@ -82,7 +82,7 @@ cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_reinbeiteomrade.sql >
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_restriksjonsomrade_flate.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_restriksjonsomrade_linje.sql >> /tmp/trein.sql
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_siidaomrade.sql >> /tmp/trein.sql
-cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_flyttlei_flate.sql >> /tmp/trein.sql
+cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/table_02_flyttlei.sql >> /tmp/trein.sql
 
 # Create views
 cat ~/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/view*.sql >> /tmp/trein.sql
