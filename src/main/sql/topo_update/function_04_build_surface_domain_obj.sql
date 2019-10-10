@@ -31,7 +31,7 @@ num_edge_intersects int;
 simple_sosi_felles_egenskaper_flate topo_rein.simple_sosi_felles_egenskaper;
 felles_egenskaper_flate topo_rein.sosi_felles_egenskaper;
 
-surface_topogeometry topogeometry;
+surface_topogeometry topology.topogeometry;
 
 -- array of quoted field identifiers
 -- for attribute fields passed in by user and known (by name)

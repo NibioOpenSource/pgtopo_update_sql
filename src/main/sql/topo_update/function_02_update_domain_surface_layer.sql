@@ -31,7 +31,7 @@ num_rows_affected int;
 num_rows_to_delete int;
 
 -- The border topology
-new_border_data topogeometry;
+new_border_data topology.topogeometry;
 
 -- used for logging
 add_debug_tables int = 0;

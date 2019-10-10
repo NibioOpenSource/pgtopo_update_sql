@@ -6,10 +6,10 @@
 
 CREATE OR REPLACE FUNCTION topo_update.create_surface_edge(geo_in geometry, 
 border_topo_info topo_update.input_meta_info) 
-RETURNS topogeometry   AS $$DECLARE
+RETURNS topology.topogeometry   AS $$DECLARE
 
 -- result 
-new_border_data topogeometry;
+new_border_data topology.topogeometry;
 
 -- hold striped gei
 edge_with_out_loose_ends geometry = null;
