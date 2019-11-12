@@ -415,6 +415,7 @@ BEGIN
       -- if there are any toching interfaces  
 	IF (SELECT count(*) FROM touching_surface)::int > 0 THEN
 
+	IF valid_closed_user_geometry IS NOT NULL THEN
 	   SELECT
 		  	array_agg(quote_ident(update_column)) AS update_fields
 		  INTO
@@ -426,8 +427,21 @@ BEGIN
 		   AND key != 'felles_egenskaper' AND key != 'status' 
 		   AND key != 'saksbehandler' AND key != 'slette_status_kode' AND key != 'alle_reinbeitebr_id' AND key != 'simple_geo'
 		  ) AS keys;
-		
 		  RAISE NOTICE 'topo_update.update_domain_surface_layer Extract name of not-null fields-a: %', update_fields;
+	ELSE
+	   SELECT
+		  	array_agg(quote_ident(update_column)) AS update_fields
+		  INTO
+		  	update_fields
+		  FROM (
+		   SELECT distinct(key) AS update_column
+		   FROM new_rows_added_in_org_table t, json_each_text(to_json((t)))  
+		   WHERE key != 'reinbeitebruker_id' AND key != 'id' AND  key != 'foo_geo' AND key != 'omrade' 
+		   AND key != 'felles_egenskaper' AND key != 'status' 
+		   AND key != 'saksbehandler' AND key != 'slette_status_kode' AND key != 'alle_reinbeitebr_id' AND key != 'simple_geo'
+		  ) AS keys;
+		  RAISE NOTICE 'topo_update.update_domain_surface_layer Extract name of not-null fields-a: %', update_fields;	
+	END IF;
 		
 	   	-- update the newly inserted rows with attribute values based from old_rows_table
 	    -- find the rows toubching
@@ -472,6 +486,7 @@ BEGIN
 	END IF;
 
 
+	
 
 
 
