@@ -52,6 +52,10 @@ surface_layer_name text;
 -- the closed geom if the instring is closed
 valid_closed_user_geometry geometry = null;
 
+-- temp variable
+temp_text_var TEXT;
+
+
 
 BEGIN
 	-- this is the tolerance used for snap to 
@@ -340,59 +344,6 @@ BEGIN
   END IF;
 
 
-  -- if there are any toching interfaces  
-	IF (SELECT count(*) FROM touching_surface)::int > 0 THEN
-
-	   SELECT
-		  	array_agg(quote_ident(update_column)) AS update_fields,
-		  	array_agg('d.'||quote_ident(update_column)) as update_fields_t
-		  INTO
-		  	update_fields,
-		  	update_fields_t
-		  FROM (
-		   SELECT distinct(key) AS update_column
-		   FROM new_rows_added_in_org_table t, json_each_text(to_json((t)))  
-		   WHERE key != 'reinbeitebruker_id' AND key != 'id' AND key != 'foo_geo' AND key != 'omrade' AND key != 'felles_egenskaper' AND key != 'status'
-		  ) AS keys;
-		
-		  RAISE NOTICE 'topo_update.update_domain_surface_layer Extract name of not-null fields-a: %', update_fields_t;
-		  RAISE NOTICE 'topo_update.update_domain_surface_layer Extract name of not-null fields-a: %', update_fields;
-		
-	   	-- update the newly inserted rows with attribute values based from old_rows_table
-	    -- find the rows toubching
---	  	DROP TABLE IF EXISTS touching_surface;
---		CREATE TEMP TABLE touching_surface AS 
---		(SELECT topo_update.touches(surface_layer_name,a.id,surface_topo_info) as id 
---		FROM new_rows_added_in_org_table a);
-	
-	
-		-- we set values with null row that can pick up a value from a neighbor.
-		-- NB! this onlye work if new rows dont' have any defalut value
-		-- TODO use a test based on new rows added and not a test on null values
-	    command_string := format('UPDATE %I.%I a
-		SET 
-			(%s) = (%s) 
-		FROM 
-		%I.%I d,
-		touching_surface b
-		WHERE 
-		d.id = b.id_from AND
-		a.id = b.id',
-	    surface_topo_info.layer_schema_name,
-	    surface_topo_info.layer_table_name,
-	    array_to_string(update_fields, ','),
-	    array_to_string(update_fields_t, ','),
-	    surface_topo_info.layer_schema_name,
-	    surface_topo_info.layer_table_name);
-		RAISE NOTICE 'topo_update.update_domain_surface_layer command_string %', command_string;
-		EXECUTE command_string;
-	
-		GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-	
-		RAISE NOTICE 'topo_update.update_domain_surface_layer Number num_rows_affected  %',  num_rows_affected;
-		
-	END IF;
-
 	  -- Extract name of fields with not-null values:
   -- Extract name of fields with not-null values and append the table prefix n.:
   -- Only update json value that exits 
@@ -461,7 +412,66 @@ BEGIN
 	
 	END IF;
 
-    
+      -- if there are any toching interfaces  
+	IF (SELECT count(*) FROM touching_surface)::int > 0 THEN
+
+	   SELECT
+		  	array_agg(quote_ident(update_column)) AS update_fields
+		  INTO
+		  	update_fields
+		  FROM (
+		   SELECT distinct(key) AS update_column
+		   FROM new_rows_added_in_org_table t, json_each_text(to_json((t)))  
+		   WHERE key != 'id' AND key != 'foo_geo' AND key != 'omrade' 
+		   AND key != 'felles_egenskaper' AND key != 'status' 
+		   AND key != 'saksbehandler' AND key != 'slette_status_kode' AND key != 'alle_reinbeitebr_id' AND key != 'simple_geo'
+		  ) AS keys;
+		
+		  RAISE NOTICE 'topo_update.update_domain_surface_layer Extract name of not-null fields-a: %', update_fields;
+		
+	   	-- update the newly inserted rows with attribute values based from old_rows_table
+	    -- find the rows toubching
+--	  	DROP TABLE IF EXISTS touching_surface;
+--		CREATE TEMP TABLE touching_surface AS 
+--		(SELECT topo_update.touches(surface_layer_name,a.id,surface_topo_info) as id 
+--		FROM new_rows_added_in_org_table a);
+	
+	
+		-- we set values with null row that can pick up a value from a neighbor.
+		-- NB! this onlye work if new rows dont' have any defalut value
+		-- TODO use a test based on new rows added and not a test on null values
+		FOR temp_text_var IN SELECT unnest( update_fields ) LOOP
+	        raise notice 'update colum: %', temp_text_var;
+		    command_string := format('UPDATE %I.%I a
+			SET 
+				%s = d.%s 
+			FROM 
+			%I.%I d,
+			touching_surface b
+			WHERE 
+			d.id = b.id_from AND
+			a.id = b.id AND
+			d.%s is not null AND
+			a.%s is null',
+		    surface_topo_info.layer_schema_name,
+		    surface_topo_info.layer_table_name,
+		    temp_text_var,
+		    temp_text_var,
+		    surface_topo_info.layer_schema_name,
+		    surface_topo_info.layer_table_name,
+		    temp_text_var,
+		    temp_text_var);
+--			RAISE NOTICE '? command_string %', command_string;
+			EXECUTE command_string;
+		
+--			GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
+--			RAISE NOTICE 'topo_update.update_domain_surface_layer Number num_rows_affected  %',  num_rows_affected;
+   		END loop;
+
+  
+	END IF;
+
+
 
 
 
@@ -472,4 +482,13 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+--	RAISE NOTICE 'topo_update.update_domain_surface_layer touching_surface  %', to_json(array_agg(row_to_json(t.*))) FROM touching_surface t;
+--	RAISE NOTICE 'topo_update.update_domain_surface_layer new_surface_data  %', to_json(array_agg(row_to_json(t.*))) FROM new_surface_data t;
+--	RAISE NOTICE 'topo_update.update_domain_surface_layer new_rows_added_in_org_table  %', to_json(array_agg(row_to_json(t.*))) FROM new_rows_added_in_org_table t;
+--	RAISE NOTICE 'topo_update.update_domain_surface_layer old_rows_attributes  %', to_json(array_agg(row_to_json(t.*))) FROM old_rows_attributes t;
+--  RAISE NOTICE 'topo_update.update_domain_surface_layer old_surface_data %', to_json(array_agg(row_to_json(t.*))) FROM old_surface_data t;
+--	RAISE NOTICE 'topo_update.update_domain_surface_layer valid_closed_user_geometry  %', ST_AsText(valid_closed_user_geometry);
 
+--{"15" : "0106000020A210000001000000010300000001000000080000004D5073032713244136C9202FD79C5D41FAAF4A00A31D2441B4D7C9EA529A5D413F8E9C0F18212441959EA025449D5D4168008CDCFF3B2441AA2C686E169E5D41417493AD4E392441F9099639F6975D416D070D7C840024410DD0B708F2975D417D4058E360072441F789B7297B9C5D414D5073032713244136C9202FD79C5D41"},
+--{"16" : "0106000020A210000001000000010300000001000000050000003F8E9C0F18212441959EA025449D5D414D5073032713244136C9202FD79C5D416315863C41FE23414ADE8359DBA15D410D5E3E58F8262441B4E7F75D44A25D413F8E9C0F18212441959EA025449D5D41"},
+--{"17" : "0106000020A210000001000000010300000001000000040000003F8E9C0F18212441959EA025449D5D41FAAF4A00A31D2441B4D7C9EA529A5D414D5073032713244136C9202FD79C5D413F8E9C0F18212441959EA025449D5D41"}]
