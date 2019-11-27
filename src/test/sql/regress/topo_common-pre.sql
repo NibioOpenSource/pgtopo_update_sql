@@ -4587,6 +4587,17 @@ CREATE SCHEMA topo_ar5;
 -- give puclic access
 GRANT USAGE ON SCHEMA topo_ar5 TO public;
 
+-- This function is used to create indexes
+CREATE OR REPLACE FUNCTION topo_ar5.get_relation_id( geo TopoGeometry) RETURNS integer AS $$DECLARE
+    relation_id integer;
+BEGIN
+	relation_id := (geo).id;
+   	RETURN relation_id;
+END;
+$$ LANGUAGE plpgsql
+IMMUTABLE;
+
+COMMENT ON FUNCTION topo_ar5.get_relation_id(TopoGeometry) IS 'Return the id used to find the row in the relation for polygons). Needed to create function based indexs.';
 -- layuer id AR5_WEBCLIENT_F
 
 -- select DropTopology('topo_ar5_sysdata_webclient');
