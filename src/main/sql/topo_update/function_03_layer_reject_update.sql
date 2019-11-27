@@ -44,7 +44,7 @@ BEGIN
 		this_schema_name, 
 		this_table_name);	
 	ELSE 
-		command_string := format('update %I.%I set slette_status_kode = 1 where id = %L',
+		command_string := format('update %I.%I set status = 1, slette_status_kode = 1 where id = %L',
 		this_schema_name, this_table_name, this_data_row_id);
 		RAISE NOTICE 'command_string %' , command_string;
 		EXECUTE command_string;
