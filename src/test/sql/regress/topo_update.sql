@@ -353,21 +353,35 @@ SELECT '61_res_02', id, reinbeitebruker_id,arealtype, treslag, skogbonitet , gru
 
 -- Create a simple closed polygon
 SELECT '62_sommer_closed_r1', count(id) FROM (SELECT 1 AS id FROM topo_update.create_surface_edge_domain_obj(
-'{"type":"Feature","geometry":{"type":"LineString","coordinates":[[662580.2500028815,7768517.381560434],[655136.6182104762,7767917.398673603],[659153.5005698197,7760203.668569494],[660478.4073418331,7769224.159768911]]
+'{"type":"Feature","geometry":{"type":"LineString","coordinates":[[19.2566862806899,69.9728016344656],[19.061380935077,69.9719838363748],[19.1524713810463,69.9005671594361],[19.2031159830381,69.980428365885]]
 ,"crs":{"type":"name","properties":{"name":"EPSG:4258"}}},"properties":{"fellesegenskaper.kvalitet.maalemetode":82}}',
 'topo_rein', 'arstidsbeite_sommer_flate', 'omrade', 'arstidsbeite_sommer_grense','grense',  1e-10,
 '{"properties":{"status":"10","saksbehandler":"distrikt.zd@nibio.no","reinbeitebruker_id":null,"fellesegenskaper.opphav":"Distrikt","reinbeitebruker_id":"ZH"}}')) AS R;
 
+--SELECT ST_AsText(ST_transform(ST_SetSrid(ST_GeomFromGeoJSON('{"type":"LineString","coordinates":[[662580.2500028815,7768517.381560434],[655136.6182104762,7767917.398673603],[659153.5005698197,7760203.668569494],[660478.4073418331,7769224.159768911]]}'),32633),4258)) As wkt;
+--SELECT ST_AsGeoJson(ST_transform(ST_SetSrid(ST_GeomFromGeoJSON('{"type":"LineString","coordinates":[[663856.5975224273,7764257.187557388],[656304.4440326836,7762412.651827327],[655426.2422869034,7757768.136219037],[662695.3390156106,7757784.899782651],[663058.4064553657,7764394.05016712]]}'),32633),4258)) As wkt;
+
 
 SELECT '62_sommer_update_r1', topo_update.apply_attr_on_topo_line('{"properties":{"id":14,"status":1,"reinbeitebruker_id":"ZH","reindrift_sesongomrade_kode":4,"fellesegenskaper.verifiseringsdato":"2017-11-22","fellesegenskaper.forstedatafangstdato":"2017-11-20"}}','topo_rein', 'arstidsbeite_sommer_flate', 'omrade');
 
-SELECT '62_sommer_closed_r1', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status,  (felles_egenskaper).opphav, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato from topo_rein.arstidsbeite_sommer_flate where (felles_egenskaper).oppdateringsdato = current_date order by id desc limit 1;
+SELECT '62_sommer_closed_r1', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, 
+ST_area(ST_transform(omrade::geometry,3035))::integer as area, 
+status,  (felles_egenskaper).opphav, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato from topo_rein.arstidsbeite_sommer_flate where (felles_egenskaper).oppdateringsdato = current_date order by id desc limit 1;
 
 SELECT '62_sommer_closed_r2', count(id) FROM (SELECT 1 AS id FROM topo_update.create_surface_edge_domain_obj(
-'{"type":"Feature","geometry":{"type":"LineString","coordinates":[[663856.5975224273,7764257.187557388],[656304.4440326836,7762412.651827327],[655426.2422869034,7757768.136219037],[662695.3390156106,7757784.899782651],[663058.4064553657,7764394.05016712]]
+'{"type":"Feature","geometry":{"type":"LineString","coordinates":[[19.2821685336156,69.9339049529857],[19.0822259656477,69.922047410019],[19.0513191478947,69.8810279567446],[19.2401888463084,69.8767530548273],[19.2616309004501,69.9356296334007]]
 ,"crs":{"type":"name","properties":{"name":"EPSG:4258"}}},"properties":{"fellesegenskaper.kvalitet.maalemetode":82}}',
 'topo_rein', 'arstidsbeite_sommer_flate', 'omrade', 'arstidsbeite_sommer_grense','grense',  1e-10,
 '{"properties":{"status":"10","saksbehandler":"distrikt.zd@nibio.no","reinbeitebruker_id":null,"fellesegenskaper.opphav":"Distrikt","reinbeitebruker_id":"ZH","reindrift_sesongomrade_kode":4}}')) AS R;
+-- check that old dates are ok
+SELECT '62_sommer_closed_r2', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, 
+ST_area(ST_transform(omrade::geometry,3035))::integer as area, 
+status,  (felles_egenskaper).opphav, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato from topo_rein.arstidsbeite_sommer_flate where (felles_egenskaper).oppdateringsdato = current_date and (felles_egenskaper).forstedatafangstdato = '2017-11-20' order by id desc limit 2;
 
-SELECT '62_sommer_closed_r2', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status,  (felles_egenskaper).opphav, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato from topo_rein.arstidsbeite_sommer_flate where (felles_egenskaper).oppdateringsdato = current_date order by id desc limit 3;
+-- check area is ok
+SELECT '62_sommer_closed_r2_sum', sum(area) from ( select id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, ST_area(ST_transform(omrade::geometry,32633))::integer as area, status,  (felles_egenskaper).opphav, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato from topo_rein.arstidsbeite_sommer_flate where (felles_egenskaper).oppdateringsdato = current_date and (felles_egenskaper).forstedatafangstdato = '2017-11-20' order by id desc limit 2) as t;
+
+
+-- check that new dates are ok
+SELECT '62_sommer_closed_r3', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, ST_area(ST_transform(omrade::geometry,32633))::integer as area, status,  (felles_egenskaper).opphav, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato from topo_rein.arstidsbeite_sommer_flate where (felles_egenskaper).oppdateringsdato = current_date order by id desc limit 1;
 
