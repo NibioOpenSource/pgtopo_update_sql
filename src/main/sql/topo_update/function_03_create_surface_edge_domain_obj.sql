@@ -118,7 +118,9 @@ BEGIN
 		num_edge_intersects :=  (SELECT ST_NumGeometries(line_intersection_result))::int;
 		
 		RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Found a non closed linestring does intersect % times, with any borders by using buildArea %', num_edge_intersects, json_input_structure.input_geo;
-		IF num_edge_intersects is null OR num_edge_intersects < 2 THEN
+		IF num_edge_intersects is null THEN
+			RAISE EXCEPTION 'Found a non non closed linestring does not intersect any borders by using buildArea %', json_input_structure.input_geo;
+		ELSEIF num_edge_intersects < 2 THEN
 			json_input_structure.input_geo := ST_ExteriorRing(ST_BuildArea(ST_UnaryUnion(ST_AddPoint(json_input_structure.input_geo, ST_StartPoint(json_input_structure.input_geo)))));
 		ELSEIF num_edge_intersects > 2 THEN
 			RAISE EXCEPTION 'Found a non valid linestring does intersect % times, with any borders by using buildArea %', num_edge_intersects, json_input_structure.input_geo;
