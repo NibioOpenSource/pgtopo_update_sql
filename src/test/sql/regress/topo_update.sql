@@ -370,9 +370,9 @@ status,  (felles_egenskaper).opphav, (felles_egenskaper).forstedatafangstdato, (
 
 SELECT '62_sommer_closed_r2', count(id) FROM (SELECT 1 AS id FROM topo_update.create_surface_edge_domain_obj(
 '{"type":"Feature","geometry":{"type":"LineString","coordinates":[[19.2821685336156,69.9339049529857],[19.0822259656477,69.922047410019],[19.0513191478947,69.8810279567446],[19.2401888463084,69.8767530548273],[19.2616309004501,69.9356296334007]]
-,"crs":{"type":"name","properties":{"name":"EPSG:4258"}}},"properties":{"fellesegenskaper.kvalitet.maalemetode":82}}',
+,"crs":{"type":"name","properties":{"name":"EPSG:4258"}}},"properties":{"fellesegenskaper.kvalitet.maalemetode":82,"fellesegenskaper.verifiseringsdato":"2017-12-22","fellesegenskaper.forstedatafangstdato":"2017-12-20","reinbeitebruker_id":"ZD"}}',
 'topo_rein', 'arstidsbeite_sommer_flate', 'omrade', 'arstidsbeite_sommer_grense','grense',  1e-10,
-'{"properties":{"status":"10","saksbehandler":"distrikt.zd@nibio.no","fellesegenskaper.opphav":"Distrikt","fellesegenskaper.verifiseringsdato":"2017-12-22","fellesegenskaper.forstedatafangstdato":"2017-12-20","reinbeitebruker_id":"ZD"}}')) AS R;
+'{"properties":{"status":"10","saksbehandler":"distrikt.zd@nibio.no","fellesegenskaper.opphav":"Distrikt","reinbeitebruker_id":null}}')) AS R;
 -- check that old dates are ok
 SELECT '62_sommer_closed_r2', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, 
 ST_area(ST_transform(omrade::geometry,3035))::integer as area, 
