@@ -315,7 +315,7 @@ from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_
 
 -- Accept the changes reindrift_anlegg_linje
 
-SELECT '59_layer_accept_update', * from  topo_update.layer_accept_update(46,'lop');
+SELECT '59_layer_accept_update', * from  topo_update.layer_accept_update(48,'lop');
 
 -- Check update log after after accpet surface
 select '59_sommer_data_update_log_c3', count(*) from topo_rein.data_update_log where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_sommer_flate' and row_id = 1 and removed_by_splitt_operation = false and change_confirmed_by_admin = false;
