@@ -10,12 +10,15 @@ ln -s /usr/local/Cellar/postgis/2.1.7_1/share/postgis regress/00-regress-install
 ln -s /usr/local/Cellar/postgis/2.3.0_1/share/postgis regress/00-regress-install/share/contrib/
 ln -s /usr/local/Cellar/postgis/2.5.0/share/postgis regress/00-regress-install/share/contrib/
 ln -s /usr/local/Cellar/postgis/2.5.2_2/share/postgis regress/00-regress-install/share/contrib/
+ln -s /usr/local/Cellar/postgis/3.0.0/share/postgis regress/00-regress-install/share/contrib/
 
+ 
 
 You may also need to set 
 export POSTGIS_SCRIPT_DIR=/usr/local/Cellar/postgis/2.1.7_1/share/postgis/
 export POSTGIS_SCRIPT_DIR=/usr/local/Cellar/postgis/2.3.0_1/share/postgis/
 export POSTGIS_SCRIPT_DIR=/usr/local/Cellar/postgis/2.5.0/share/postgis/
+export POSTGIS_SCRIPT_DIR=/usr/local/Cellar/postgis/3.0.0/share/postgis/
  
 This can probably be done in better way, please let me now.
 
