@@ -58,7 +58,7 @@ if ( -e '/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/schema_topo_rein
 	
 	# Add support for AR5 web client
 	copy_file_into('/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_ar5/schema_topo_ar5.sql',$fh_out);
-	copy_file_into('/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_ar5/table_01_ar5webclient_flate.sql',$fh_out);
+	copy_file_into('/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_ar5/webclient_table.sql',$fh_out);
 	
 	
 	# This tables are not in any public repo so we only generate when they are available 
