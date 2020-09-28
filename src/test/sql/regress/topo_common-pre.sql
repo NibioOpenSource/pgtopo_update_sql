@@ -2271,6 +2271,16 @@ status int not null default 0,
 -- may be null because it is updated after id is set because it this id is used a localid
 felles_egenskaper topo_rein.sosi_felles_egenskaper,
 
+reinbeitebruker_id VARCHAR(3) CHECK (reinbeitebruker_id IN (
+  'XI', 'ZA', 'ZB', 'ZC', 'ZD', 'ZE', 'ZF', 'ØG', 'UW', 'UX', 'UY', 'UZ', 'ØA',
+  'ØB', 'ØC', 'ØE', 'ØF', 'ZG', 'ZH', 'ZJ', 'ZS', 'ZL', 'ZÅ', 'YA', 'YB', 'YC',
+  'YD', 'YE', 'YF', 'YG', 'XM', 'XR', 'XT', 'YH', 'YI', 'YJ', 'YK', 'YL', 'YM',
+  'YN', 'YP', 'YX', 'YR', 'YS', 'YT', 'YU', 'YV', 'YW', 'YY', 'XA', 'XD', 'XE',
+  'XG', 'XH', 'XJ', 'XK', 'XL', 'XM', 'XR', 'XS', 'XT', 'XN', 'XØ', 'XP', 'XU',
+  'XV', 'XW', 'XZ', 'XX', 'XY', 'WA', 'WB', 'WD', 'WF', 'WK', 'WL', 'WN', 'WP',
+  'WR', 'WS', 'WX', 'WZ', 'VA', 'VF', 'VG', 'VJ', 'VM', 'VR', 'YQA', 'YQB',
+  'YQC', 'ZZ', 'RR', 'ZQA'
+)),
 
 -- Reffers to the user that is logged in.
 saksbehandler varchar,
@@ -2307,7 +2317,6 @@ COMMENT ON COLUMN topo_rein.konvensjonsomrade_flate.felles_egenskaper IS 'Sosi c
 CREATE INDEX topo_rein_konvensjonsomrade_flate_geo_relation_id_idx ON topo_rein.konvensjonsomrade_flate(topo_rein.get_relation_id(omrade));
 
 COMMENT ON INDEX topo_rein.topo_rein_konvensjonsomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
-
 select CreateTopology('topo_rein_sysdata_rdg',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
@@ -2495,7 +2504,7 @@ id serial PRIMARY KEY NOT NULL,
 
 -- objtype VARCHAR(40) from sosi and what should the value be ????
 
-reinbeiteområde_id varchar(3) CHECK (reinbeiteområde_id IN ('U','V','W','X','Y','Z')),
+reinbeiteområde_id varchar(3) CHECK (reinbeiteområde_id IN ('U', 'V', 'W', 'X', 'Y', 'Z')),
 
 -- contains felles egenskaper for rein
 -- may be null because it is updated after id is set because it this id is used a localid
@@ -2559,11 +2568,20 @@ id serial PRIMARY KEY not null,
 -- removed because we don't need it, we can generate it if we need id.
 -- all rows here should be of type surface and no rows with point only
 
-reinbeiteområde_id varchar(3) CHECK (reinbeiteområde_id IN ('U','V','W','X','Y','Z')),
+reinbeiteområde_id VARCHAR(3) CHECK (reinbeiteområde_id IN ('U', 'V', 'W', 'X', 'Y', 'Z')),
 
 -- angir hvilket reinbeiteomrade som bruker beiteområdet
 -- Definition -- indicates which reindeer pasture district uses the pasture area
--- reinbeitebruker_id varchar(3) CHECK (reinbeitebruker_id IN ('XI','ZA','ZB','ZC','ZD','ZE','ZF','ØG','UW','UX','UY','UZ','ØA','ØB','ØC','ØE','ØF','ZG','ZH','ZJ','ZS','ZL','ZÅ','YA','YB','YC','YD','YE','YF','YG','XM','XR','XT','YH','YI','YJ','YK','YL','YM','YN','YP','YX','YR','YS','YT','YU','YV','YW','YY','XA','XD','XE','XG','XH','XJ','XK','XL','XM','XR','XS','XT','XN','XØ','XP','XU','XV','XW','XZ','XX','XY','WA','WB','WD','WF','WK','WL','WN','WP','WR','WS','WX','WZ','VA','VF','VG','VJ','VM','VR','YQA','YQB','YQC','ZZ','RR','ZQA')),
+reinbeitebruker_id VARCHAR(3) CHECK (reinbeitebruker_id IN (
+  'XI', 'ZA', 'ZB', 'ZC', 'ZD', 'ZE', 'ZF', 'ØG', 'UW', 'UX', 'UY', 'UZ', 'ØA',
+  'ØB', 'ØC', 'ØE', 'ØF', 'ZG', 'ZH', 'ZJ', 'ZS', 'ZL', 'ZÅ', 'YA', 'YB', 'YC',
+  'YD', 'YE', 'YF', 'YG', 'XM', 'XR', 'XT', 'YH', 'YI', 'YJ', 'YK', 'YL', 'YM',
+  'YN', 'YP', 'YX', 'YR', 'YS', 'YT', 'YU', 'YV', 'YW', 'YY', 'XA', 'XD', 'XE',
+  'XG', 'XH', 'XJ', 'XK', 'XL', 'XM', 'XR', 'XS', 'XT', 'XN', 'XØ', 'XP', 'XU',
+  'XV', 'XW', 'XZ', 'XX', 'XY', 'WA', 'WB', 'WD', 'WF', 'WK', 'WL', 'WN', 'WP',
+  'WR', 'WS', 'WX', 'WZ', 'VA', 'VF', 'VG', 'VJ', 'VM', 'VR', 'YQA', 'YQB',
+  'YQC', 'ZZ', 'RR', 'ZQA'
+)),
 
 -- Since we in sosi can have multiple reinbeitebruker_id, this list contains the origninal list from the sosi file
 -- The format is a simple XI,ZA,ZF, but we could also have used an array (text[]), but since we are not sure about how this field is used
@@ -2627,7 +2645,6 @@ COMMENT ON COLUMN topo_rein.reinbeiteomrade_flate.felles_egenskaper IS 'Sosi com
 CREATE INDEX topo_rein_reinbeiteomrade_flate_geo_relation_id_idx ON topo_rein.reinbeiteomrade_flate(topo_rein.get_relation_id(omrade));
 
 COMMENT ON INDEX topo_rein.topo_rein_reinbeiteomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
-
 select CreateTopology('topo_rein_sysdata_rro',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
@@ -2735,6 +2752,17 @@ status int not null default 0,
 -- may be null because it is updated after id is set because it this id is used a localid
 felles_egenskaper topo_rein.sosi_felles_egenskaper,
 
+reinbeitebruker_id VARCHAR(3) CHECK (reinbeitebruker_id IN (
+  'XI', 'ZA', 'ZB', 'ZC', 'ZD', 'ZE', 'ZF', 'ØG', 'UW', 'UX', 'UY', 'UZ', 'ØA',
+  'ØB', 'ØC', 'ØE', 'ØF', 'ZG', 'ZH', 'ZJ', 'ZS', 'ZL', 'ZÅ', 'YA', 'YB', 'YC',
+  'YD', 'YE', 'YF', 'YG', 'XM', 'XR', 'XT', 'YH', 'YI', 'YJ', 'YK', 'YL', 'YM',
+  'YN', 'YP', 'YX', 'YR', 'YS', 'YT', 'YU', 'YV', 'YW', 'YY', 'XA', 'XD', 'XE',
+  'XG', 'XH', 'XJ', 'XK', 'XL', 'XM', 'XR', 'XS', 'XT', 'XN', 'XØ', 'XP', 'XU',
+  'XV', 'XW', 'XZ', 'XX', 'XY', 'WA', 'WB', 'WD', 'WF', 'WK', 'WL', 'WN', 'WP',
+  'WR', 'WS', 'WX', 'WZ', 'VA', 'VF', 'VG', 'VJ', 'VM', 'VR', 'YQA', 'YQB',
+  'YQC', 'ZZ', 'RR', 'ZQA'
+)),
+
 -- Reffers to the user that is logged in.
 saksbehandler varchar,
 
@@ -2770,7 +2798,6 @@ COMMENT ON COLUMN topo_rein.restriksjonsomrade_flate.felles_egenskaper IS 'Sosi 
 CREATE INDEX topo_rein_restriksjonsomrade_flate_geo_relation_id_idx ON topo_rein.restriksjonsomrade_flate(topo_rein.get_relation_id(omrade));
 
 COMMENT ON INDEX topo_rein.topo_rein_restriksjonsomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
-
 DROP TABLE IF EXISTS topo_rein.restriksjonsomrade_linje cascade;
 CREATE TABLE topo_rein.restriksjonsomrade_linje(
 
@@ -2887,7 +2914,16 @@ id serial PRIMARY KEY not null,
 
 -- angir hvilket siidaomrade som bruker beiteområdet
 -- Definition -- indicates which reindeer pasture district uses the pasture area
--- reinbeitebruker_id varchar(3) CHECK (reinbeitebruker_id IN ('XI','ZA','ZB','ZC','ZD','ZE','ZF','ØG','UW','UX','UY','UZ','ØA','ØB','ØC','ØE','ØF','ZG','ZH','ZJ','ZS','ZL','ZÅ','YA','YB','YC','YD','YE','YF','YG','XM','XR','XT','YH','YI','YJ','YK','YL','YM','YN','YP','YX','YR','YS','YT','YU','YV','YW','YY','XA','XD','XE','XG','XH','XJ','XK','XL','XM','XR','XS','XT','XN','XØ','XP','XU','XV','XW','XZ','XX','XY','WA','WB','WD','WF','WK','WL','WN','WP','WR','WS','WX','WZ','VA','VF','VG','VJ','VM','VR','YQA','YQB','YQC','ZZ','RR','ZQA')),
+reinbeitebruker_id VARCHAR(3) CHECK (reinbeitebruker_id IN (
+  'XI', 'ZA', 'ZB', 'ZC', 'ZD', 'ZE', 'ZF', 'ØG', 'UW', 'UX', 'UY', 'UZ', 'ØA',
+  'ØB', 'ØC', 'ØE', 'ØF', 'ZG', 'ZH', 'ZJ', 'ZS', 'ZL', 'ZÅ', 'YA', 'YB', 'YC',
+  'YD', 'YE', 'YF', 'YG', 'XM', 'XR', 'XT', 'YH', 'YI', 'YJ', 'YK', 'YL', 'YM',
+  'YN', 'YP', 'YX', 'YR', 'YS', 'YT', 'YU', 'YV', 'YW', 'YY', 'XA', 'XD', 'XE',
+  'XG', 'XH', 'XJ', 'XK', 'XL', 'XM', 'XR', 'XS', 'XT', 'XN', 'XØ', 'XP', 'XU',
+  'XV', 'XW', 'XZ', 'XX', 'XY', 'WA', 'WB', 'WD', 'WF', 'WK', 'WL', 'WN', 'WP',
+  'WR', 'WS', 'WX', 'WZ', 'VA', 'VF', 'VG', 'VJ', 'VM', 'VR', 'YQA', 'YQB',
+  'YQC', 'ZZ', 'RR', 'ZQA'
+)),
 
 -- Since we in sosi can have multiple reinbeitebruker_id, this list contains the origninal list from the sosi file
 -- The format is a simple XI,ZA,ZF, but we could also have used an array (text[]), but since we are not sure about how this field is used
@@ -4582,191 +4618,163 @@ where id_before != id_after and json_after is not null and json_after::text <> '
 
 --SELECT '31', topo_update.apply_attr_on_topo_line('{"properties":{"id":2,"status":1,"reinbeitebruker_id":"ZH","reindrift_sesongomrade_kode":4}}','topo_rein', 'arstidsbeite_sommer_flate', 'omrade');
 --SELECT '32', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status  from topo_rein.arstidsbeite_sommer_flate;
--- create schema for topo_ar5 data, tables, .... 
+-- create schema for topo_ar5 data, tables, ....
 CREATE SCHEMA topo_ar5;
 -- give puclic access
 GRANT USAGE ON SCHEMA topo_ar5 TO public;
 
 -- This function is used to create indexes
-CREATE OR REPLACE FUNCTION topo_ar5.get_relation_id( geo TopoGeometry) RETURNS integer AS $$DECLARE
+CREATE OR REPLACE FUNCTION topo_ar5.get_relation_id( geo TopoGeometry)
+RETURNS integer AS $$DECLARE
     relation_id integer;
 BEGIN
 	relation_id := (geo).id;
-   	RETURN relation_id;
+  RETURN relation_id;
 END;
 $$ LANGUAGE plpgsql
 IMMUTABLE;
 
-COMMENT ON FUNCTION topo_ar5.get_relation_id(TopoGeometry) IS 'Return the id used to find the row in the relation for polygons). Needed to create function based indexs.';
+COMMENT ON FUNCTION topo_ar5.get_relation_id(TopoGeometry) IS
+  'Return the id used to find the row in the relation for polygons). Needed to create function based indexs.';
 -- layuer id AR5_WEBCLIENT_F
 
 -- select DropTopology('topo_ar5_sysdata_webclient');
 
-select CreateTopology('topo_ar5_sysdata_webclient',4258,0.0000000001);
+SELECT CreateTopology('topo_ar5_sysdata_webclient', 4258, 0.0000000001);
 -- give puclic access
 
 GRANT USAGE ON SCHEMA topo_ar5_sysdata_webclient TO public;
 
-
 -- If yes then we need the table webclient_grense
 CREATE TABLE topo_ar5.webclient_grense(
+  -- a internal id will that can be changed when ver needed
+  id SERIAL PRIMARY KEY NOT NULL,
 
--- a internal id will that can be changed when ver needed
-id serial PRIMARY KEY NOT NULL,
+  -- ArealressursAvgrensingType
+  -- ===========================
+  -- ArealressursGrense = 4206
+  -- IkkeKartlagtgrense = 9300
+  -- Isbregrense = 3310
+  -- Lagringsenhetgrense = 9111
+  -- Samferdselsgrense = 7200
+  -- Vanngrense = 3000
+  avgrensing_type SMALLINT
+    CHECK (avgrensing_type IN (4206, 9300, 3310, 9111, 7200, 3000)),
 
--- ArealressursAvgrensingType
--- ===========================
--- ArealressursGrense = 4206
--- IkkeKartlagtgrense = 9300
--- Isbregrense = 3310
--- Lagringsenhetgrense = 9111
--- Samferdselsgrense = 7200
--- Vanngrense = 3000
-avgrensing_type smallint  CHECK (avgrensing_type  IN (4206,9300,3310,9111,7200,3000)), 
+  -- contains felles egenskaper for sosi
+  felles_egenskaper topo_rein.sosi_felles_egenskaper NOT NULL,
 
--- contains felles egenskaper for sosi
-felles_egenskaper topo_rein.sosi_felles_egenskaper NOT NULL,
-
--- The user logged in not used in kartverket
-saksbehandler varchar
-
+  -- The user logged in not used in kartverket
+  saksbehandler VARCHAR
 );
 
 -- add a topogeometry column to get a ref to the borders
 -- should this be called grense or geo ?
-SELECT topology.AddTopoGeometryColumn('topo_ar5_sysdata_webclient', 'topo_ar5', 'webclient_grense', 'grense', 'LINESTRING') As new_layer_id;
+SELECT topology.AddTopoGeometryColumn(
+  'topo_ar5_sysdata_webclient', 'topo_ar5', 'webclient_grense', 'grense', 'LINESTRING'
+);
 
 
 CREATE TABLE topo_ar5.webclient_flate(
+  -- a internal id will that can be changed when ver needed
+  id serial PRIMARY KEY not null,
 
--- a internal id will that can be changed when ver needed
-id serial PRIMARY KEY not null,
+  -- ArealressursArealtype :
+  -- =======================
+  -- Bebygd = 11
+  -- Ferskvann = 81
+  -- Fulldyrka jord = 21
+  -- Hav = 82
+  -- Ikke kartlagt = 99
+  -- Innmarksbeite = 23
+  -- Myr = 60
+  -- Overflatedyrka jord = 22
+  -- Samferdsel = 12
+  -- Skog = 30
+  -- Snøisbre = 70
+  -- Åpen fastmark = 50
+  arealtype SMALLINT CHECK (arealtype IN (11, 81, 21, 82, 99, 23, 60, 22, 12, 30, 70, 50)),
 
--- ArealressursArealtype :
--- =======================
--- Bebygd = 11
--- Ferskvann = 81
--- Fulldyrka jord = 21
--- Hav = 82
--- Ikke kartlagt = 99
--- Innmarksbeite = 23
--- Myr = 60
--- Overflatedyrka jord = 22
--- Samferdsel = 12
--- Skog = 30
--- Snøisbre = 70
--- Åpen fastmark = 50
-arealtype smallint  CHECK (arealtype IN (11,81,21,82,99,23,60,22,12,30,70,50)), 
+  -- ArealressursTreslag
+  -- ===================
+  -- Barskog = 31
+  -- Lauvskog = 32
+  -- Blandingsskog = 33
+  -- Lauvblandingsskog = 35
+  -- Ikke tresatt = 39
+  -- Ikke relevant = 98
+  -- Ikke registrert = 99
+  treslag SMALLINT CHECK (treslag IN (31, 32, 33, 35, 39, 98, 99)),
 
--- ArealressursTreslag
--- ===================
--- Barskog = 31
--- Lauvskog = 32
--- Blandingsskog = 33
--- Lauvblandingsskog = 35
--- Ikke tresatt = 39
--- Ikke relevant = 98
--- Ikke registrert = 99
-treslag smallint  CHECK (treslag IN (31,32,33,35,39,98,99)), 
+  -- ArealressursSkogbonitet
+  -- ========================
+  -- Impediment = 11
+  -- Lav=12
+  -- Middels=13
+  -- Høy=14
+  -- Særshøy=15
+  -- Produktiv = 17
+  -- Høyogsærshøy=18
+  -- Ikke relevant = 98
+  -- Ikke registrert = 99
+  skogbonitet SMALLINT CHECK (skogbonitet IN (11, 12, 13, 14, 15, 17, 18, 98, 99)),
 
--- ArealressursSkogbonitet
--- ========================
--- Impediment = 11
--- Lav=12
--- Middels=13
--- Høy=14
--- Særshøy=15
--- Produktiv = 17
--- Høyogsærshøy=18
--- Ikke relevant = 98
--- Ikke registrert = 99
-skogbonitet smallint  CHECK (skogbonitet IN (11,12,13,14,15,17,18,98,99)), 
+  -- ArealressursGrunnforhold
+  -- ========================
+  -- Blokkmark=41
+  -- Fjell i dagen = 42
+  -- Grunnlendt = 43
+  -- Jorddekt = 44
+  -- Organiske jordlag = 45
+  -- Ikke relevant = 98
+  -- Ikke registrert = 99
+  grunnforhold SMALLINT CHECK (grunnforhold IN (41, 42, 43, 44, 45, 98, 99)),
 
+  -- This is flag used indicate the status of this record.
+  -- The rules for how to use this flag is not decided yet. May not be used in AR5
+  -- Here is a list of the current states.
+  -- 0: Ukjent (uknown)
+  -- 1: Godkjent
+  -- 10: Endret
+  status INT NOT NULL DEFAULT 0,
 
--- ArealressursGrunnforhold
--- ========================
--- Blokkmark=41
--- Fjell i dagen = 42
--- Grunnlendt = 43
--- Jorddekt = 44
--- Organiske jordlag = 45
--- Ikke relevant = 98
--- Ikke registrert = 99
-grunnforhold smallint  CHECK (grunnforhold IN (41,42,43,44,45,98,99)), 
+  -- contains felles egenskaper for ar5
+  felles_egenskaper topo_rein.sosi_felles_egenskaper,
 
+  informasjon TEXT,
 
+  -- Reffers to the user that is logged in.
+  saksbehandler VARCHAR,
 
--- This is flag used indicate the status of this record. 
--- The rules for how to use this flag is not decided yet. May not be used in AR5
--- Here is a list of the current states.
--- 0: Ukjent (uknown)
--- 1: Godkjent 
--- 10: Endret
-status int not null default 0,
+  -- This is used by the user to indicate that he wants to delete object or not use it
+  -- 0 menas that the object exits in normal way
+  -- 1 menas that the users has selcted delete object
+  slette_status_kode SMALLINT NOT NULL DEFAULT 0 CHECK (slette_status_kode IN (0, 1)),
 
-
-
--- contains felles egenskaper for ar5
-felles_egenskaper topo_rein.sosi_felles_egenskaper,
-
--- Reffers to the user that is logged in.
-saksbehandler varchar,
-
--- This is used by the user to indicate that he wants to delete object or not use it
--- 0 menas that the object exits in normal way
--- 1 menas that the users has selcted delete object
-slette_status_kode smallint not null default 0  CHECK (slette_status_kode IN (0,1)),
-
--- This is used to indicate the area
--- TODO rename columns to common name
-reinbeitebruker_id varchar
-
-
+  -- This is used to indicate the area
+  -- TODO rename columns to common name
+  reinbeitebruker_id VARCHAR
 );
 
 -- add a topogeometry column that is a ref to polygpn surface-- should this be called område/flate or geo ?
 -- TODO rename to flate
-SELECT topology.AddTopoGeometryColumn('topo_ar5_sysdata_webclient', 'topo_ar5', 'webclient_flate', 'omrade', 'POLYGON') As new_layer_id;
+SELECT topology.AddTopoGeometryColumn(
+  'topo_ar5_sysdata_webclient', 'topo_ar5', 'webclient_flate', 'omrade', 'POLYGON'
+);
 
-
-
-
-COMMENT ON TABLE topo_ar5.webclient_flate IS 'Contains attributtes for rein and ref. to topo surface data. For more info see http://www.statkart.no/Documents/Standard/SOSI kap3 Produktspesifikasjoner/FKB 4.5/4-rein-2014-03-01.pdf';
+COMMENT ON TABLE topo_ar5.webclient_flate IS
+  'Contains attributtes for rein and ref. to topo surface data. For more info see http://www.statkart.no/Documents/Standard/SOSI kap3 Produktspesifikasjoner/FKB 4.5/4-rein-2014-03-01.pdf';
 
 COMMENT ON COLUMN topo_ar5.webclient_flate.id IS 'Unique identifier of a surface';
 
-COMMENT ON COLUMN topo_ar5.webclient_flate.felles_egenskaper IS 'Sosi common meta attribute part of kvaliet TODO create user defined type ?';
+COMMENT ON COLUMN topo_ar5.webclient_flate.felles_egenskaper IS
+  'Sosi common meta attribute part of kvaliet TODO create user defined type ?';
 
 -- COMMENT ON COLUMN topo_ar5.webclient_flate.geo IS 'This holds the ref to topo_ar5_sysdata_webclient.relation table, where we find pointers needed top build the the topo surface';
 
 -- create function basded index to get performance
-CREATE INDEX topo_ar5_webclient_flate_geo_relation_id_idx ON topo_ar5.webclient_flate(topo_rein.get_relation_id(omrade));	
+CREATE INDEX topo_ar5_webclient_flate_geo_relation_id_idx
+  ON topo_ar5.webclient_flate(topo_rein.get_relation_id(omrade));
 
-COMMENT ON INDEX topo_ar5.topo_ar5_webclient_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
-
-
-
-
-DROP VIEW IF EXISTS topo_ar5.webclient_flate_topojson_flate_v cascade ;
-
-
-CREATE OR REPLACE VIEW topo_ar5.webclient_flate_topojson_flate_v 
-AS
-select 
-id,
-arealtype,
-treslag,
-skogbonitet,
-grunnforhold,
-reinbeitebruker_id, -- Ti rename to a more common name
-(al.felles_egenskaper).forstedatafangstdato AS "fellesegenskaper.forstedatafangstdato", 
-(al.felles_egenskaper).verifiseringsdato AS "fellesegenskaper.verifiseringsdato",
-(al.felles_egenskaper).oppdateringsdato AS "fellesegenskaper.oppdateringsdato",
-(al.felles_egenskaper).opphav AS "fellesegenskaper.opphav", 
-omrade,
-status,
-slette_status_kode,
-1 "editable" --No access rules added her, we need to find out how to handle this 
-from topo_ar5.webclient_flate al;
-
---select * from topo_ar5.webclient_flate_topojson_flate_v
+COMMENT ON INDEX topo_ar5.topo_ar5_webclient_flate_geo_relation_id_idx IS
+  'A function based index to faster find the topo rows for in the relation table';
