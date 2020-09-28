@@ -4774,7 +4774,7 @@ COMMENT ON COLUMN topo_ar5.webclient_flate.felles_egenskaper IS
 
 -- create function basded index to get performance
 CREATE INDEX topo_ar5_webclient_flate_geo_relation_id_idx
-  ON topo_ar5.webclient_flate(topo_rein.get_relation_id(omrade));
+  ON topo_ar5.webclient_flate(topo_ar5.get_relation_id(omrade));
 
 COMMENT ON INDEX topo_ar5.topo_ar5_webclient_flate_geo_relation_id_idx IS
   'A function based index to faster find the topo rows for in the relation table';
