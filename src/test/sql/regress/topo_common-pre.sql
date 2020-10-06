@@ -4619,7 +4619,7 @@ where id_before != id_after and json_after is not null and json_after::text <> '
 --SELECT '31', topo_update.apply_attr_on_topo_line('{"properties":{"id":2,"status":1,"reinbeitebruker_id":"ZH","reindrift_sesongomrade_kode":4}}','topo_rein', 'arstidsbeite_sommer_flate', 'omrade');
 --SELECT '32', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status  from topo_rein.arstidsbeite_sommer_flate;
 -- create schema for topo_ar5 data, tables, ....
-CREATE SCHEMA topo_ar5;
+CREATE SCHEMA IF NOT EXISTS topo_ar5;
 -- give puclic access
 GRANT USAGE ON SCHEMA topo_ar5 TO public;
 
