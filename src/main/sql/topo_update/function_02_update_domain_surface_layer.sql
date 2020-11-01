@@ -67,7 +67,7 @@ BEGIN
 	
 	-- find surface layer id
 	surface_layer_id := surface_topo_info.border_layer_id;
-	RAISE NOTICE 'topo_update.update_domain_surface_layer surface_layer_id   %',  surface_layer_id ;
+	RAISE NOTICE 'topo_update.update_domain_surface_layer surface_layer_id %, surface_topo_info.layer_feature_column % ',  surface_layer_id, surface_topo_info.layer_feature_column ;
 
 	surface_layer_name := surface_topo_info.layer_schema_name || '.' || surface_topo_info.layer_table_name;
 
@@ -158,10 +158,11 @@ BEGIN
 	DROP TABLE IF EXISTS old_rows_attributes;
 	
 	command_string :=  format('CREATE TEMP TABLE old_rows_attributes AS 
-	(SELECT distinct old_data_row.*, old_data_row.omrade::geometry as foo_geo FROM 
+	(SELECT distinct old_data_row.*, old_data_row.%s::geometry as foo_geo FROM 
 	%I.%I  old_data_row,
 	old_surface_data sf 
 	WHERE (old_data_row.%I).id = sf.topogeo_id)',
+	surface_topo_info.layer_feature_column,
     surface_topo_info.layer_schema_name,
     surface_topo_info.layer_table_name,
     surface_topo_info.layer_feature_column);  
@@ -182,9 +183,10 @@ BEGIN
 		-- list topo objects to be reused
 		-- get new objects created from topo_update.create_edge_surfaces
 		DROP TABLE IF EXISTS topo_rein.update_domain_surface_layer_t1;
-		CREATE TABLE topo_rein.update_domain_surface_layer_t1 AS 
-		( SELECT r.id, r.omrade::geometry AS geo, 'reuse topo objcts' || r.omrade::text AS topo
-			FROM topo_rein.arstidsbeite_sommer_flate r, old_rows_be_reused reuse WHERE reuse.id = r.id) ;
+		 
+		EXECUTE format('CREATE TABLE topo_rein.update_domain_surface_layer_t1 AS ( SELECT r.id, r.%S::geometry AS geo, %L || r.%S::text AS topo
+			FROM topo_rein.arstidsbeite_sommer_flate r, old_rows_be_reused reuse WHERE reuse.id = r.id)',
+			surface_topo_info.layer_feature_column,'reuse topo objcts', surface_topo_info.layer_feature_column);
 	END IF;
 
 	
@@ -243,12 +245,14 @@ BEGIN
 		WHERE old.id = reuse.id
 		returning *
 	)
-	INSERT INTO new_rows_updated_in_org_table(omrade)
-	SELECT omrade FROM updated',
+	INSERT INTO new_rows_updated_in_org_table(%s)
+	SELECT %s FROM updated',
     surface_topo_info.layer_schema_name,
     surface_topo_info.layer_table_name,
     surface_topo_info.layer_schema_name,
-    surface_topo_info.layer_table_name
+    surface_topo_info.layer_table_name,
+    surface_topo_info.layer_feature_column,
+    surface_topo_info.layer_feature_column
   	);  
 	EXECUTE command_string;
 	
@@ -264,8 +268,11 @@ BEGIN
 		-- get new objects created from topo_update.create_edge_surfaces
 		DROP TABLE IF EXISTS topo_rein.update_domain_surface_layer_t2;
 		CREATE TABLE topo_rein.update_domain_surface_layer_t2 AS 
-		( SELECT r.id, r.omrade::geometry AS geo, 'old rows deleted update' || r.omrade::text AS topo
-			FROM new_rows_updated_in_org_table r) ;
+			
+		EXECUTE format('CREATE TABLE topo_rein.update_domain_surface_layer_t2 AS ( SELECT r.id, r.%S::geometry AS geo, %L || r.%S::text AS topo
+			FROM new_rows_updated_in_org_table r)',
+			surface_topo_info.layer_feature_column,'old rows deleted update', surface_topo_info.layer_feature_column);
+
 	END IF;
 
 	
@@ -298,8 +305,8 @@ BEGIN
 	WHERE NOT EXISTS ( SELECT f.id FROM %I.%I f WHERE (new.surface_topo).id = (f.%I).id )
 	returning *
 	)
-	INSERT INTO new_rows_added_in_org_table(id,omrade)
-	SELECT inserted.id, omrade FROM inserted',
+	INSERT INTO new_rows_added_in_org_table(id,%s)
+	SELECT inserted.id, %s FROM inserted',
     surface_topo_info.layer_schema_name,
     surface_topo_info.layer_table_name,
     surface_topo_info.layer_schema_name,
@@ -307,6 +314,8 @@ BEGIN
     surface_topo_info.layer_feature_column,
     surface_topo_info.layer_schema_name,
     surface_topo_info.layer_table_name,
+    surface_topo_info.layer_feature_column,
+    surface_topo_info.layer_feature_column,
     surface_topo_info.layer_feature_column
   	);  
 	EXECUTE command_string;
@@ -317,9 +326,12 @@ BEGIN
 		-- list new objects added reused
 		-- get new objects created from topo_update.create_edge_surfaces
 		DROP TABLE IF EXISTS topo_rein.update_domain_surface_layer_t3;
-		CREATE TABLE topo_rein.update_domain_surface_layer_t3 AS 
-		( SELECT r.id, r.omrade::geometry AS geo, 'new topo objcts' || r.omrade::text AS topo
-			FROM new_rows_added_in_org_table r) ;
+
+        EXECUTE format('CREATE TABLE topo_rein.update_domain_surface_layer_t3 AS 
+		( SELECT r.id, r.%s::geometry AS geo, %L || r.%s::text AS topo
+			FROM new_rows_added_in_org_table r)',
+			surface_topo_info.layer_feature_column,'new topo objcts', surface_topo_info.layer_feature_column);
+			
 	END IF;
 
 	   	-- update the newly inserted rows with attribute values based from old_rows_table
@@ -334,11 +346,20 @@ BEGIN
 	  FROM new_rows_added_in_org_table a);
   ELSE
   -- IF this a cloesed polygon only use objcet thats inside th e surface drawn by the user
-	  CREATE TEMP TABLE touching_surface AS 
+  
+   --CREATE TEMP TABLE touching_surface AS 
+   --SELECT a.id, topo_update.touches(surface_layer_name,a.id,surface_topo_info) as id_from 
+   
+	  EXECUTE format('CREATE TEMP TABLE touching_surface AS 
 	  (
-	  SELECT a.id, topo_update.touches(surface_layer_name,a.id,surface_topo_info) as id_from 
+	  SELECT a.id, topo_update.touches(%L,a.id,%L) as id_from 
 	  FROM new_rows_added_in_org_table a
-	  WHERE ST_Covers(valid_closed_user_geometry,ST_PointOnSurface(a.omrade::geometry))
+	  WHERE ST_Covers(%L,ST_PointOnSurface(a.%s::geometry))
+	  )',
+	  surface_layer_name,
+	  surface_topo_info,
+	  valid_closed_user_geometry,
+	  surface_topo_info.layer_feature_column
 	  );
 	  
   END IF;
@@ -383,7 +404,7 @@ BEGIN
 		  FROM (
 		   SELECT distinct(key) AS update_column
 		   FROM old_rows_attributes t, json_each_text(to_json((t)))  
-		   WHERE key != 'id' AND key != 'foo_geo'  AND key != 'omrade' AND key != 'felles_egenskaper'  
+		   WHERE key != 'id' AND key != 'foo_geo'  AND key != surface_topo_info.layer_feature_column AND key != 'felles_egenskaper'  
 		  ) AS keys;
 		
 		  RAISE NOTICE 'topo_update.update_domain_surface_layer Extract name of not-null fields-c: %', update_fields_t;
@@ -423,7 +444,7 @@ BEGIN
 		  FROM (
 		   SELECT distinct(key) AS update_column
 		   FROM new_rows_added_in_org_table t, json_each_text(to_json((t)))  
-		   WHERE key != 'id' AND key != 'foo_geo' AND key != 'omrade' 
+		   WHERE key != 'id' AND key != 'foo_geo' AND key != surface_topo_info.layer_feature_column 
 		   AND key != 'felles_egenskaper' AND key != 'status' 
 		   AND key != 'saksbehandler' AND key != 'slette_status_kode' AND key != 'alle_reinbeitebr_id' AND key != 'simple_geo'
 		  ) AS keys;
@@ -436,7 +457,7 @@ BEGIN
 		  FROM (
 		   SELECT distinct(key) AS update_column
 		   FROM new_rows_added_in_org_table t, json_each_text(to_json((t)))  
-		   WHERE key != 'reinbeitebruker_id' AND key != 'id' AND  key != 'foo_geo' AND key != 'omrade' 
+		   WHERE key != 'reinbeitebruker_id' AND key != 'id' AND  key != 'foo_geo' AND key != surface_topo_info.layer_feature_column 
 		   AND key != 'felles_egenskaper' AND key != 'status' 
 		   AND key != 'saksbehandler' AND key != 'slette_status_kode' AND key != 'alle_reinbeitebr_id' AND key != 'simple_geo'
 		  ) AS keys;
