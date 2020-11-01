@@ -3833,36 +3833,36 @@ CASE
 
 	-- a user have explicit access to selected table
 	WHEN
-	reinbeitebruker_id = 
+	reinbeitebruker_id =
 	ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
 	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
 	AND rl.table_name = 'topo_rein.reindrift_anlegg_linje'
 	AND rl.column_name = 'reinbeitebruker_id')
-	AND
-	anleggstype::varchar  = 
-	ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
-	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-	AND rl.table_name = 'topo_rein.reindrift_anlegg_linje'
-	AND rl.column_name = 'anleggstype')
+	-- AND
+	-- anleggstype::varchar  =
+	-- ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
+	-- WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	-- AND rl.table_name = 'topo_rein.reindrift_anlegg_linje'
+	-- AND rl.column_name = 'anleggstype')
 	THEN true
 
-	WHEN
-	reinbeitebruker_id = 
-	ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
-	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-	AND rl.table_name = 'topo_rein.reindrift_anlegg_linje'
-	AND rl.column_name = 'reinbeitebruker_id')
-	AND
-	(
-	anleggstype is null
-	OR 
-	anleggstype::varchar  = 
-	ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
-	WHERE rl.session_id = current_setting('pgtopo_update.session_id')
-	AND rl.table_name = 'topo_rein.reindrift_anlegg_linje'
-	AND rl.column_name = 'anleggstype')
-	)
-	THEN true
+	-- WHEN
+	-- reinbeitebruker_id =
+	-- ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
+	-- WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	-- AND rl.table_name = 'topo_rein.reindrift_anlegg_linje'
+	-- AND rl.column_name = 'reinbeitebruker_id')
+	-- AND
+	-- (
+	-- anleggstype is null
+	-- OR
+	-- anleggstype::varchar  =
+	-- ANY (SELECT  column_value FROM topo_rein.rls_role_mapping rl
+	-- WHERE rl.session_id = current_setting('pgtopo_update.session_id')
+	-- AND rl.table_name = 'topo_rein.reindrift_anlegg_linje'
+	-- AND rl.column_name = 'anleggstype')
+	-- )
+	-- THEN true
 
 	WHEN  reinbeitebruker_id is null
 	THEN true
@@ -4641,8 +4641,8 @@ COMMENT ON FUNCTION topo_ar5.get_relation_id(TopoGeometry) IS
 -- select DropTopology('topo_ar5_sysdata_webclient');
 
 SELECT CreateTopology('topo_ar5_sysdata_webclient', 4258, 0.0000000001);
+ALTER SCHEMA topo_ar5_sysdata_webclient OWNER TO topo_ar5;
 -- give puclic access
-
 GRANT USAGE ON SCHEMA topo_ar5_sysdata_webclient TO public;
 
 -- If yes then we need the table webclient_grense
@@ -4728,7 +4728,7 @@ CREATE TABLE topo_ar5.webclient_flate(
   -- Organiske jordlag = 45
   -- Ikke relevant = 98
   -- Ikke registrert = 99
-  grunnforhold SMALLINT CHECK (grunnforhold IN (41, 42, 43, 44, 45, 98, 99)),
+  grunnforhold SMALLINT CHECK (grunnforhold IN (41, 42, 43, 44, 45, 46, 98, 99)),
 
   -- This is flag used indicate the status of this record.
   -- The rules for how to use this flag is not decided yet. May not be used in AR5
@@ -4741,7 +4741,7 @@ CREATE TABLE topo_ar5.webclient_flate(
   -- contains felles egenskaper for ar5
   felles_egenskaper topo_rein.sosi_felles_egenskaper,
 
-  informasjon TEXT,
+  informasjon TEXT NOT NULL DEFAULT '',
 
   -- Reffers to the user that is logged in.
   saksbehandler VARCHAR,
@@ -4763,7 +4763,9 @@ SELECT topology.AddTopoGeometryColumn(
 );
 
 COMMENT ON TABLE topo_ar5.webclient_flate IS
-  'Contains attributtes for rein and ref. to topo surface data. For more info see http://www.statkart.no/Documents/Standard/SOSI kap3 Produktspesifikasjoner/FKB 4.5/4-rein-2014-03-01.pdf';
+  'Contains attributtes for rein and ref. to topo surface data.
+   For more info see http://www.statkart.no/Documents/Standard/SOSI kap3
+   Produktspesifikasjoner/FKB 4.5/4-rein-2014-03-01.pdf';
 
 COMMENT ON COLUMN topo_ar5.webclient_flate.id IS 'Unique identifier of a surface';
 
