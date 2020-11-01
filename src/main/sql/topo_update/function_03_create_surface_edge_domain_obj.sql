@@ -269,15 +269,16 @@ BEGIN
 		'SELECT tg.id AS id, ''S''::text AS id_type FROM ' || 
 		surface_topo_info.layer_schema_name || '.' || surface_topo_info.layer_table_name || 
 		' tg, new_surface_data_for_edge new ' || 
-		'WHERE (new.surface_topo).id = (tg.omrade).id AND ' || 
+		'WHERE (new.surface_topo).id = (tg.%2$s).id AND ' || 
 		'ST_intersects(ST_PointOnSurface((new.surface_topo)::geometry), ST_MakePolygon(%1$L))'
-		,json_input_structure.input_geo);
+		,json_input_structure.input_geo,
+		surface_topo_info.layer_feature_column);
     	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj A closed objects only return objects in %', command_string;
   	ELSE	
 		command_string := 'INSERT INTO create_surface_edge_domain_obj_r1_r(id,id_type) ' ||
 		' SELECT tg.id AS id, ''S'' AS id_type FROM ' || 
 		surface_topo_info.layer_schema_name || '.' || surface_topo_info.layer_table_name || ' tg, new_surface_data_for_edge new ' || 
-		'WHERE (new.surface_topo).id = (tg.omrade).id ';
+		'WHERE (new.surface_topo).id = (tg.'||surface_topo_info.layer_feature_column||').id ';
 	END IF;
 
 	EXECUTE command_string;
