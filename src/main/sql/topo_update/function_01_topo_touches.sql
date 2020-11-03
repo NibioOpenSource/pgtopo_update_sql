@@ -26,35 +26,32 @@ CREATE TEMP TABLE IF NOT EXISTS idlist_temp(id_t int[]);
 --CREATE TEMP TABLE  idlist_temp(id_t int[]);
 
 command_string := format('INSERT INTO idlist_temp(id_t) 
-SELECT id_list as id_t FROM 
-	( SELECT array_agg( object_id) id_list, count(*) as antall
-	  FROM (
-	  WITH
-	  faces AS (
-	    SELECT (GetTopoGeomElements(%s))[1] face_id, id AS object_id FROM (
-	      SELECT %s, id from  %s 
+SELECT id_list as id_t 
+FROM ( SELECT array_agg( object_id) id_list, count(*) as antall
+  FROM (
+	WITH faces AS (
+	    SELECT (GetTopoGeomElements(%1$s))[1] face_id, id AS object_id FROM (
+	      SELECT %1$s, id from  %2$s 
 	    ) foo
 	  ),
-	  ary AS ( 
+	ary AS ( 
 	    SELECT array_agg(face_id) ids, face_id, object_id FROM faces
 	    GROUP BY face_id, object_id
 	  )
-	  SELECT object_id, face_id, e.edge_id 
-	  FROM %I.edge e, ary f
-	  WHERE ( left_face = any (f.ids) and not right_face = any (f.ids) )
-	     OR ( right_face = any (f.ids) and not left_face = any (f.ids) )
-	  ) AS t
-	  GROUP BY edge_id
-  	) AS r
+	SELECT object_id, face_id, e.edge_id 
+	FROM %3$I.edge e, ary f
+	WHERE ( left_face = any (f.ids) and not right_face = any (f.ids) )
+	OR ( right_face = any (f.ids) and not left_face = any (f.ids) )
+  ) AS t
+  GROUP BY edge_id
+) AS r
 WHERE antall > 1
 AND id_list[1] != id_list[2]
-AND (id_list[1] = %L OR id_list[2] = %L)
+AND (id_list[1] = %4$L OR id_list[2] =%4$L)
 ORDER BY id_t',
-surface_topo_info.layer_feature_column,
 surface_topo_info.layer_feature_column,
 _new_topo_objects,
 surface_topo_info.topology_name,
-id_to_check, 
 id_to_check);
 
 RAISE NOTICE 'command_string %',  command_string;
