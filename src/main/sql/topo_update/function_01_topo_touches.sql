@@ -43,7 +43,7 @@ FROM ( SELECT array_agg( object_id) object_id_list, count(*) as antall
 	FROM 
     %3$I.edge e, 
     faces_group_by_face_id_object_id f
-	WHERE  
+	WHERE 
     (  
       (e.left_face = any (f.face_id_ids) and not e.right_face = any (f.face_id_ids))
 	  OR (e.right_face = any (f.face_id_ids) and not e.left_face = any (f.face_id_ids)) 
@@ -53,14 +53,14 @@ FROM ( SELECT array_agg( object_id) object_id_list, count(*) as antall
 ) AS r
 WHERE antall > 1
 AND object_id_list[1] != object_id_list[2]
-AND (object_id_list[1] = %4$L OR object_id_list[2] =%4$L)
+AND (object_id_list[1] = %4$s OR object_id_list[2] = %4$s)
 ORDER BY id_t',
 surface_topo_info.layer_feature_column,
 _new_topo_objects,
 surface_topo_info.topology_name,
 id_to_check);
 
---RAISE NOTICE 'command_string touches %',  command_string;
+RAISE NOTICE 'command_string touches %',  command_string;
 
 EXECUTE command_string;
 
