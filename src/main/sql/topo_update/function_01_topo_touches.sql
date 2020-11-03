@@ -30,18 +30,24 @@ SELECT object_id_list as id_t
 FROM ( SELECT array_agg( object_id) object_id_list, count(*) as antall
   FROM (
 	WITH faces AS (
-	    SELECT (GetTopoGeomElements(%1$s))[1] face_id, id AS object_id FROM (
-	      SELECT %1$s, id from  %2$s 
-	    ) foo
+	  SELECT (GetTopoGeomElements(%1$s))[1] face_id, id AS object_id FROM (
+	    SELECT %1$s, id from  %2$s 
+	  ) foo
 	),
 	faces_group_by_face_id_object_id AS ( 
-	    SELECT array_agg(face_id) ids, face_id, object_id FROM faces
-	    GROUP BY face_id, object_id
-	)
+	  SELECT array_agg(face_id) face_id_ids, face_id, object_id 
+      FROM faces
+      GROUP BY face_id, object_id
+	) 
 	SELECT object_id, face_id, e.edge_id 
-	FROM %3$I.edge e, faces_group_by_face_id_object_id f
-	WHERE ( left_face = any (f.ids) and not right_face = any (f.ids) )
-	OR ( right_face = any (f.ids) and not left_face = any (f.ids) )
+	FROM 
+    %3$I.edge e, 
+    faces_group_by_face_id_object_id f
+	WHERE  
+    (  
+      (e.left_face = any (f.face_id_ids) and not e.right_face = any (f.face_id_ids))
+	  OR (e.right_face = any (f.face_id_ids) and not e.left_face = any (f.face_id_ids)) 
+    )
   ) AS t
   GROUP BY edge_id
 ) AS r
