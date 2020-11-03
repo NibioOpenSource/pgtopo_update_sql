@@ -13,19 +13,9 @@ BEGIN
 
 
 -- TODO rewrite code
+CREATE TEMP TABLE IF NOT EXISTS idlist_work_temp(id_t int[]);
 
-CREATE TEMP TABLE IF NOT EXISTS idlist_temp(id_t int[]);
-
---IF EXISTS (SELECT * FROM pg_tables WHERE tablename='idlist_temp') THEN	
-	TRUNCATE TABLE idlist_temp;
---ELSE 
---	CREATE TEMP TABLE  idlist_temp(id_t int[]);
---END IF;
-
---DROP TABLE IF EXISTS idlist_temp;
---CREATE TEMP TABLE  idlist_temp(id_t int[]);
-
-command_string := format('INSERT INTO idlist_temp(id_t) 
+command_string := format('INSERT INTO idlist_work_temp(id_t) 
 SELECT object_id_list as id_t 
 FROM ( SELECT array_agg( object_id) object_id_list, count(*) as antall
   FROM (
@@ -64,14 +54,15 @@ RAISE NOTICE 'command_string touches %',  command_string;
 
 EXECUTE command_string;
 
-DROP TABLE IF EXISTS idlist;
 
-CREATE TEMP TABLE  idlist(id int);
+CREATE TEMP TABLE  idlist_result_temp(id int);
 
-INSERT INTO idlist(id) SELECT id_t[1] AS id FROM idlist_temp WHERE id_to_check != id_t[1];
-INSERT INTO idlist(id) SELECT id_t[2] AS id FROM idlist_temp WHERE id_to_check != id_t[2];
+INSERT INTO idlist_result_temp(id) SELECT id_t[1] AS id FROM idlist_work_temp WHERE id_to_check != id_t[1];
+INSERT INTO idlist_result_temp(id) SELECT id_t[2] AS id FROM idlist_work_temp WHERE id_to_check != id_t[2];
+SELECT id FROM idlist_result_temp limit 1 into res;
 
-SELECT id FROM idlist limit 1 into res;
+DROP table idlist_result_temp;
+DROP table idlist_work_temp;
 
 RAISE NOTICE 'command_string touches result is % with (%) ', res, command_string;
 
