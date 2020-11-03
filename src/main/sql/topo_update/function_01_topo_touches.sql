@@ -49,7 +49,7 @@ FROM ( SELECT array_agg( object_id) object_id_list, count(*) as antall
 	  OR (e.right_face = any (f.face_id_ids) and not e.left_face = any (f.face_id_ids)) 
     )
   ) AS t
-  GROUP BY edge_id
+  GROUP BY t.edge_id
 ) AS r
 WHERE antall > 1
 AND object_id_list[1] != object_id_list[2]
