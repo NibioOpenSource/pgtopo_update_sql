@@ -13,7 +13,7 @@ BEGIN
 
 
 -- TODO rewrite code
-CREATE TEMP TABLE IF NOT EXISTS idlist_work_temp(id_t int[]);
+CREATE TEMP TABLE idlist_work_temp(id_t int[]);
 
 command_string := format('INSERT INTO idlist_work_temp(id_t) 
 SELECT object_id_list as id_t 
