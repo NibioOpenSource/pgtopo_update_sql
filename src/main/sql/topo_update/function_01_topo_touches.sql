@@ -12,6 +12,8 @@ command_string text;
 res int;
 BEGIN
 
+-- TODO handle multiple neighbours and return an array of results and make a test
+	
 command_string := format('select a.id from
 (  
   select distinct unnest(array_agg(array[e1.right_face , e1.left_face])) as face_id
