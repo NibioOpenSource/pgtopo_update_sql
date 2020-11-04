@@ -28,7 +28,7 @@ command_string := format('select a.id from
 ) as fa,
 %3$I.relation r,
 %2$s a
-where fa.face_id > 0 and r.element_type = 3 and r.layer_id = %5$s
+where fa.face_id > 0 and r.element_type = %6$s and r.layer_id = %5$s
 and fa.face_id = r.element_id
 and r.topogeo_id = topo_update.get_relation_id(a.%1$s)
 and a.id != %4$s',
@@ -36,7 +36,8 @@ surface_topo_info.layer_feature_column,
 _new_topo_objects,
 surface_topo_info.topology_name,
 id_to_check,
-surface_topo_info.border_layer_id);
+surface_topo_info.border_layer_id,
+surface_topo_info.element_type);
 
 RAISE NOTICE 'command_string touches %',  command_string;
 
