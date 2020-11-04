@@ -5,16 +5,18 @@
 
 -- DROP FUNCTION IF EXISTS topo_update.touches(_new_topo_objects regclass,id_to_check int) ;
 
+DROP FUNCTION IF EXISTS topo_update.touches(_new_topo_objects regclass, id_to_check int,surface_topo_info topo_update.input_meta_info);
+
 CREATE OR REPLACE FUNCTION topo_update.touches(_new_topo_objects regclass, id_to_check int,surface_topo_info topo_update.input_meta_info) 
-RETURNS int AS $$DECLARE
+RETURNS int[] AS $$DECLARE
 DECLARE 
 command_string text;
-res int;
+res int[];
 BEGIN
 
 -- TODO handle multiple neighbours and return an array of results and make a test
 	
-command_string := format('select a.id from
+command_string := format('select array_agg(a.id) from
 (  
   select distinct unnest(array_agg(array[e1.right_face , e1.left_face])) as face_id
   from 

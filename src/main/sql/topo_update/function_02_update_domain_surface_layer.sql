@@ -342,7 +342,7 @@ BEGIN
   -- If this is a not a closed polygon you have use touches
   IF  valid_closed_user_geometry IS NULL  THEN
 	  CREATE TEMP TABLE touching_surface AS 
-	  (SELECT a.id, topo_update.touches(surface_layer_name,a.id,surface_topo_info) as id_from 
+	  (SELECT distinct a.id, unnest(topo_update.touches(surface_layer_name,a.id,surface_topo_info)) as id_from 
 	  FROM new_rows_added_in_org_table a);
   ELSE
   -- IF this a cloesed polygon only use objcet thats inside th e surface drawn by the user
@@ -352,7 +352,7 @@ BEGIN
    
 	  EXECUTE format('CREATE TEMP TABLE touching_surface AS 
 	  (
-	  SELECT a.id, topo_update.touches(%L,a.id,%L) as id_from 
+	  SELECT distinct a.id, unnest(topo_update.touches(%L,a.id,%L)) as id_from 
 	  FROM new_rows_added_in_org_table a
 	  WHERE ST_Covers(%L,ST_PointOnSurface(a.%s::geometry))
 	  )',

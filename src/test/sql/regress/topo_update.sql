@@ -273,7 +273,7 @@ SELECT '55_7', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade  from
 -- Create point with all values set and eject it
 SELECT '58', count(id) FROM (SELECT 1 AS id FROM topo_update.create_point_point_domain_obj('{"type": "Feature","properties":{"fellesegenskaper.forstedatafangstdato":"2015-10-11","fellesegenskaper.verifiseringsdato":null,"fellesegenskaper.oppdateringsdato":null,"fellesegenskaper.opphav":"Reindriftsforvaltningen"},"geometry":{"type":"Point","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[5.70182,58.55131]}}','topo_rein', 'reindrift_anlegg_punkt', 'punkt', 1e-10,'{"properties":{"saksbehandler":"user1","reinbeitebruker_id":"XA","anleggstype":10,"fellesegenskaper.opphav":"opphav ØÆÅøå"}}')) AS R;
 -- Check that update log has values for reindrift_anlegg_punkt since the object in reindrift_anlegg_punkt has reached a valid state
-select '58_03_data_update_log', id, schema_name,  table_name, operation, status, 
+select '58_03_data_update_log', schema_name,  table_name, operation, status, 
 (json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_status ,
 (json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_slette_status_kode 
 --json_row_data#>'{objects,collection,geometries,0,properties,slette_status_kode}',
