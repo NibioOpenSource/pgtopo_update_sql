@@ -332,11 +332,17 @@ SELECT '59_sommer_split', count(id) FROM (SELECT 1 AS id FROM topo_update.create
 'topo_rein', 'arstidsbeite_sommer_flate', 'omrade', 'arstidsbeite_sommer_grense','grense',  1e-10,
 '{"properties":{"status":"10","saksbehandler":"distrikt.zd@nibio.no","reinbeitebruker_id":null,"fellesegenskaper.opphav":"Distrikt"}}')) AS R;
 
+-- Split polygon to the left one more time (should have caused an error in function_01_topo_touches but it did not happen, so we have to check this one more time)
+SELECT '59_sommer_split_b', count(id) FROM (SELECT 1 AS id FROM topo_update.create_surface_edge_domain_obj(
+'{"type":"Feature","geometry":{"type":"LineString","coordinates":[[572076,7894014],[577968,7896526]],"crs":{"type":"name","properties":{"name":"EPSG:4258"}}},"properties":{"fellesegenskaper.kvalitet.maalemetode":82}}',
+'topo_rein', 'arstidsbeite_sommer_flate', 'omrade', 'arstidsbeite_sommer_grense','grense',  1e-10,
+'{"properties":{"status":"10","saksbehandler":"distrikt.zd@nibio.no","reinbeitebruker_id":null,"fellesegenskaper.opphav":"Distrikt"}}')) AS R;
+
 -- Check that forstedatafangstdato and verifiseringsdato is not updated
 -- Check that is oppdateringsdato is updated
 SELECT '59_sommer_r4', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status,  (felles_egenskaper).opphav, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato from topo_rein.arstidsbeite_sommer_flate where (felles_egenskaper).oppdateringsdato = current_date or (felles_egenskaper).oppdateringsdato = '2016-07-26' order by id desc limit 3;
 
-select '59_sommer_data_update_log_r4', id, schema_name,  table_name, row_id, operation, status, 
+SELECT '59_sommer_data_update_log_r4', id, schema_name,  table_name, row_id, operation, status, 
 (json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_status ,
 (json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_slette_status_kode 
 from topo_rein.data_update_log 
@@ -362,7 +368,7 @@ SELECT '62_sommer_closed_r1', count(id) FROM (SELECT 1 AS id FROM topo_update.cr
 --SELECT ST_AsGeoJson(ST_transform(ST_SetSrid(ST_GeomFromGeoJSON('{"type":"LineString","coordinates":[[663856.5975224273,7764257.187557388],[656304.4440326836,7762412.651827327],[655426.2422869034,7757768.136219037],[662695.3390156106,7757784.899782651],[663058.4064553657,7764394.05016712]]}'),32633),4258)) As wkt;
 
 
-SELECT '62_sommer_update_r1', topo_update.apply_attr_on_topo_line('{"properties":{"id":14,"status":1,"reinbeitebruker_id":"ZH","reindrift_sesongomrade_kode":4,"fellesegenskaper.verifiseringsdato":"2017-11-22","fellesegenskaper.forstedatafangstdato":"2017-11-20"}}','topo_rein', 'arstidsbeite_sommer_flate', 'omrade');
+SELECT '62_sommer_update_r1', topo_update.apply_attr_on_topo_line('{"properties":{"id":16,"status":1,"reinbeitebruker_id":"ZH","reindrift_sesongomrade_kode":4,"fellesegenskaper.verifiseringsdato":"2017-11-22","fellesegenskaper.forstedatafangstdato":"2017-11-20"}}','topo_rein', 'arstidsbeite_sommer_flate', 'omrade');
 
 SELECT '62_sommer_closed_r1', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, 
 ST_area(ST_transform(omrade::geometry,3035))::integer as area, 
@@ -385,4 +391,5 @@ SELECT '62_sommer_closed_r2_sum', sum(area) from ( select id, reinbeitebruker_id
 SELECT '62_sommer_closed_r3', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, 
 ST_area(ST_transform(omrade::geometry,32633))::integer as area, 
 status,  (felles_egenskaper).opphav, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato from topo_rein.arstidsbeite_sommer_flate where (felles_egenskaper).oppdateringsdato = current_date and (felles_egenskaper).forstedatafangstdato = '2017-12-20' order by id desc limit 3;
+
 
