@@ -57,8 +57,17 @@ not_null_fields text[];
 -- holde the computed value for json input reday to use
 json_input_structure topo_update.json_input_structure;  
 
+-- do debug timing
+do_timing_debug boolean = true;
+ts timestamptz := clock_timestamp();
+proc_name text = 'topo_update.create_surface_edge_domain_obj';
+
 BEGIN
-	
+
+	IF do_timing_debug THEN
+		RAISE NOTICE '% time spent % start at %', proc_name, clock_timestamp() - ts, clock_timestamp();
+	END IF;
+
 	-- get topology meta data like layer num, srid, ... for the border line layer for this surface
 	border_topo_info := topo_update.make_input_meta_info(layer_schema, border_layer_table , border_layer_column );
 
@@ -73,11 +82,14 @@ BEGIN
 	-- save a copy of the input geometry before modfied, used for logging later.
 	org_geo_in := json_input_structure.input_geo;
 
-	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj client_json_feature %',  client_json_feature;
-	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj server_json_feature %',  server_json_feature;
-	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj The input as it used before check/fixed %',  ST_AsText(json_input_structure.input_geo);
-	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj json_input_structure %',  json_input_structure;
-
+	IF do_timing_debug THEN
+		RAISE NOTICE '% client_json_feature %', proc_name, client_json_feature;
+		RAISE NOTICE '% server_json_feature %', proc_name, server_json_feature;
+		RAISE NOTICE '% The input as it used before check/fixed %',  proc_name, ST_AsText(json_input_structure.input_geo);
+		RAISE NOTICE '% json_input_structure %', proc_name, json_input_structure;
+		RAISE NOTICE '% time spent % to get to init stage', proc_name, clock_timestamp() - ts;
+	END IF;
+	 
 	-- Only used for debug
 	IF add_debug_tables = 1 THEN
 		-- get new objects created from topo_update.create_edge_surfaces
@@ -127,6 +139,10 @@ BEGIN
 		END IF;
 	END IF;
 
+	IF do_timing_debug THEN
+		RAISE NOTICE '% time spent % to reach state where input check is done', proc_name, clock_timestamp() - ts;
+	END IF;
+
 	-- check the geometry is not null after it potencially may have checked/changed.
 	IF json_input_structure.input_geo IS NULL THEN
 		RAISE EXCEPTION 'The geo generated from json_input_structure.input_geo is null %', org_geo_in;
@@ -137,11 +153,15 @@ BEGIN
 		VALUES(json_input_structure.input_geo,St_IsSimple(json_input_structure.input_geo),St_IsClosed(json_input_structure.input_geo));
 	END IF;
 
-	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj The input as it used after check/fixed %',  ST_AsText(json_input_structure.input_geo);
 	
 	-- Create the new topo object for the egde layer, this edges will be used by the new surface objects later
 	new_border_data := topo_update.create_surface_edge(json_input_structure.input_geo,border_topo_info);
-	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj The new topo object created for based on the input geo % in table %.%',  new_border_data, border_topo_info.layer_schema_name,border_topo_info.layer_table_name;
+	IF do_timing_debug THEN
+		RAISE NOTICE 'topo_update.create_surface_edge_domain_obj The input as it used after check/fixed %',  ST_AsText(json_input_structure.input_geo);
+		RAISE NOTICE 'topo_update.create_surface_edge_domain_obj The new topo object created for based on the input geo % in table %.%',  new_border_data, border_topo_info.layer_schema_name,border_topo_info.layer_table_name;
+		RAISE NOTICE '% time spent % to reach state where new_border_data is by calling ', proc_name, clock_timestamp() - ts;
+	END IF;
+
 	
 	-- Create temporary table to hold the new data for the border objects. We here use the same table structure as the restult table.
 	command_string := topo_update.create_temp_tbl_as(
@@ -166,10 +186,10 @@ BEGIN
   	border_topo_info.layer_feature_column, new_border_data,json_input_structure.sosi_felles_egenskaper);
   	EXECUTE command_string;
 
-  	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Set felles_egenskaper field';
+  	IF do_timing_debug THEN
+		RAISE NOTICE '% time spent % to reach state Set felles_egenskaper field ', proc_name, clock_timestamp() - ts;
+	END IF;
 
-  	
-  	
   	
 	-- Find name of columns with not-null values from the temp table
 	-- We need this list of column names to crete a SQL to update the orignal row with new values.
@@ -177,8 +197,6 @@ BEGIN
 	  FROM ttt2_new_topo_rows_in_org_border_table t, json_each_text(to_json((t)))
 	WHERE value IS NOT NULL
 	  INTO not_null_fields;
-
-	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj extract name of not-null fields for border table : %', not_null_fields;
 
 	-- Copy data from from temp table in to actual table and
 	-- update temp table with actual data stored in actual table. 
@@ -195,8 +213,10 @@ BEGIN
 	);
 	EXECUTE command_string;
 
-	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Step::::::::::::::::: 3';
-	
+	IF do_timing_debug THEN
+		RAISE NOTICE '% time spent % to reach state, surface_edge_domain_obj Step::::::::::::::::: 3 ', proc_name, clock_timestamp() - ts;
+	END IF;
+
 	-- Create table for the rows to be returned to the caller.
 	-- The result contains list of line and surface id so the client knows alle row created. 
 	DROP TABLE IF EXISTS create_surface_edge_domain_obj_r1_r; 
@@ -236,14 +256,20 @@ BEGIN
 	-- In this list there may areas that overlaps so we need to clean up some values
 	
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Number of topo surfaces added to table new_surface_data_for_edge   %',  num_rows_affected;
 	
+	IF do_timing_debug THEN
+		RAISE NOTICE '% time spent % to reach state, Number of topo surfaces added to table new_surface_data_for_edge %', proc_name, clock_timestamp() - ts, num_rows_affected;
+	END IF;
+
 	-- Clean up old surface and return a list of the objects that should be returned to the user for further processing
 	DROP TABLE IF EXISTS res_from_update_domain_surface_layer; 
 	CREATE TEMP TABLE res_from_update_domain_surface_layer AS 
 	(SELECT topo::topogeometry AS surface_topo FROM topo_update.update_domain_surface_layer(surface_topo_info,border_topo_info,json_input_structure,'new_surface_data_for_edge'));
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Number_of_rows removed from topo_update.update_domain_surface_layer   %',  num_rows_affected;
+
+	IF do_timing_debug THEN
+		RAISE NOTICE '% time spent % to reach state, Number_of_rows removed from topo_update.update_domain_surface_layer %', proc_name, clock_timestamp() - ts, num_rows_affected;
+	END IF;
 
 	-- Only used for debug
 	IF add_debug_tables = 1 THEN
@@ -285,6 +311,9 @@ BEGIN
 
 	command_string := 'SELECT json_agg(row_to_json(t.*))::text FROM create_surface_edge_domain_obj_r1_r AS t';
 
+	IF do_timing_debug THEN
+		RAISE NOTICE '% time spent % done at %', proc_name, clock_timestamp() - ts, clock_timestamp();
+	END IF;
 	
     RETURN QUERY EXECUTE command_string;
     
