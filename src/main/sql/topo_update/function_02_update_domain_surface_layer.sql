@@ -55,9 +55,18 @@ valid_closed_user_geometry geometry = null;
 -- temp variable
 temp_text_var TEXT;
 
+-- do debug timing
+do_timing_debug boolean = true;
+ts timestamptz := clock_timestamp();
+proc_name text = 'topo_update.update_domain_surface_layer';
 
 
 BEGIN
+	
+	IF do_timing_debug THEN
+		RAISE NOTICE '% time spent % start at %', proc_name, clock_timestamp() - ts, clock_timestamp();
+	END IF;
+
 	-- this is the tolerance used for snap to 
 	snap_tolerance := surface_topo_info.snap_tolerance;
 	
@@ -112,6 +121,10 @@ BEGIN
     surface_layer_id);  
 	EXECUTE command_string;
 	
+	IF do_timing_debug THEN
+		RAISE NOTICE '% time spent % to reach state get where table old_surface_data are created ', proc_name, clock_timestamp() - ts;
+	END IF;
+
 	DROP TABLE IF EXISTS old_surface_data_not_in_new; 
 	-- Find any old objects that are not covered totaly by new surfaces 
 	-- This objets should not be deleted, but the geometry should only decrease in size.
@@ -132,6 +145,9 @@ BEGIN
     surface_layer_id);  
 	EXECUTE command_string;
 
+	IF do_timing_debug THEN
+		RAISE NOTICE '% time spent % to reach state get where table old_surface_data_not_in_new are created ', proc_name, clock_timestamp() - ts;
+	END IF;
 	
 	
 	DROP TABLE IF EXISTS old_rows_be_reused;
@@ -150,7 +166,13 @@ BEGIN
     surface_topo_info.layer_feature_column);  
 	EXECUTE command_string;
 
-	
+	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
+
+
+	IF do_timing_debug THEN
+		RAISE NOTICE '% time spent % to reach state get where table old_rows_be_reused are created, number of rows % ', proc_name, clock_timestamp() - ts, num_rows_affected;
+	END IF;
+
 	-- Take a copy of old attribute values because they will be needed when you add new rows.
 	-- The new surfaces should pick up old values from the old row attributtes that overlaps the new rows
 	-- We also have to take copy of the geometry we need that to find overlaps when we pick up old values
@@ -168,7 +190,12 @@ BEGIN
     surface_topo_info.layer_feature_column);  
 	EXECUTE command_string;
 
-		-- Only used for debug
+
+	IF do_timing_debug THEN
+		RAISE NOTICE '% time spent % to reach state get where table old_rows_attributes are created ', proc_name, clock_timestamp() - ts;
+	END IF;
+	
+-- Only used for debug
 	IF add_debug_tables = 1 THEN
 		-- list topo objects to be reused
 		-- get new objects created from topo_update.create_edge_surfaces
@@ -202,7 +229,10 @@ BEGIN
 	EXECUTE command_string;
 	
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
-	RAISE NOTICE 'topo_update.update_domain_surface_layer Number rows to be reused in org table %',  num_rows_affected;
+
+	IF do_timing_debug THEN
+		RAISE NOTICE '% time spent % to reach state get where Number rows to be reused in org table % ', proc_name, clock_timestamp() - ts, num_rows_affected;
+	END IF;
 
 	-- If no rows are updated the user don't have update rights, we are using row level security
 	-- We return no data and it will done a rollback
@@ -506,6 +536,9 @@ BEGIN
   
 	END IF;
 
+	IF do_timing_debug THEN
+		RAISE NOTICE '% time spent % done at %', proc_name, clock_timestamp() - ts, clock_timestamp();
+	END IF;
 
 	
 
