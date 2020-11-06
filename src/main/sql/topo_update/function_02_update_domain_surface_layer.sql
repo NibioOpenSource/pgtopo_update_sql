@@ -121,6 +121,9 @@ BEGIN
     surface_layer_id);  
 	EXECUTE command_string;
 	
+	command_string :=  format('CREATE index on old_surface_data(topogeo_id)');
+	EXECUTE command_string;
+
 	IF do_timing_debug THEN
 		RAISE NOTICE '% time spent % to reach state get where table old_surface_data are created ', proc_name, clock_timestamp() - ts;
 	END IF;
@@ -143,6 +146,9 @@ BEGIN
 	re.element_id NOT IN (SELECT element_id FROM old_surface_data))',
     surface_topo_info.topology_name,
     surface_layer_id);  
+	EXECUTE command_string;
+
+	command_string :=  format('CREATE index on old_surface_data_not_in_new(topogeo_id)');
 	EXECUTE command_string;
 
 	IF do_timing_debug THEN
@@ -171,6 +177,7 @@ BEGIN
 
 	IF do_timing_debug THEN
 		RAISE NOTICE '% time spent % to reach state get where table old_rows_be_reused are created, number of rows % ', proc_name, clock_timestamp() - ts, num_rows_affected;
+		RAISE NOTICE 'command_string % ', command_string;
 	END IF;
 
 	-- Take a copy of old attribute values because they will be needed when you add new rows.
