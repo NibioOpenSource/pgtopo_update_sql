@@ -151,7 +151,7 @@ topo_update.create_temp_tbl_as('ttt2_intersection_id','SELECT * FROM ttt2_new_to
 	topology.layer tl,
 	%I.edge_data  ed
 	WHERE ST_intersects(ed.geom,a2.geom)
-	AND topo_rein.get_relation_id(a.%I) = re.topogeo_id AND
+	AND ((a.%I).id) = re.topogeo_id AND
 re.layer_id = tl.layer_id AND tl.schema_name = %L AND 
 	tl.table_name = %L AND ed.edge_id=re.element_id
 	AND NOT EXISTS (SELECT 1 FROM ttt2_new_topo_rows_in_org_table nr

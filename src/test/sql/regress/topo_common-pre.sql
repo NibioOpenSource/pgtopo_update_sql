@@ -31,17 +31,8 @@ GRANT USAGE ON SCHEMA topo_rein_sysdata TO public;
 
 
 -- This function is used to create indexes
-CREATE OR REPLACE FUNCTION topo_rein.get_relation_id( geo TopoGeometry) RETURNS integer AS $$DECLARE
-    relation_id integer;
-BEGIN
-	relation_id := (geo).id;
-   	RETURN relation_id;
-END;
-$$ LANGUAGE plpgsql
-IMMUTABLE;
-
-COMMENT ON FUNCTION topo_rein.get_relation_id(TopoGeometry) IS 'Return the id used to find the row in the relation for polygons). Needed to create function based indexs.';
-
+-- We don't need this beacuse we can make an index 
+-- drop FUNCTION if exists topo_rein.get_relation_id( geo TopoGeometry);
 
 
 -- A composite type to hold sosi kopi_data
@@ -439,15 +430,15 @@ COMMENT ON COLUMN topo_rein.arstidsbeite_var_flate.felles_egenskaper IS 'Sosi co
 -- COMMENT ON COLUMN topo_rein.arstidsbeite_var_flate.geo IS 'This holds the ref to topo_rein_sysdata_rvr.relation table, where we find pointers needed top build the the topo surface';
 
 -- create function basded index to get performance
-CREATE INDEX topo_rein_arstidsbeite_var_flate_geo_relation_id_idx ON topo_rein.arstidsbeite_var_flate(topo_rein.get_relation_id(omrade));	
+CREATE INDEX topo_rein_arstidsbeite_var_flate_geo_relation_id_idx ON topo_rein.arstidsbeite_var_flate(((omrade).id));	
 
-COMMENT ON INDEX topo_rein.topo_rein_arstidsbeite_var_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
+--COMMENT ON INDEX topo_rein.topo_rein_arstidsbeite_var_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
 
 -- create index on topo_rein_sysdata_rvr.edge
 CREATE INDEX topo_rein_sysdata_rvr_edge_simple_geo_idx ON topo_rein.arstidsbeite_var_flate USING GIST (simple_geo); 
 
---COMMENT ON INDEX topo_rein.topo_rein_sysdata_rvr_edge_simple_geo_idx IS 'A index created to avoid building topo when the data is used for wms like mapserver which do no use the topo geometry';
+----COMMENT ON INDEX topo_rein.topo_rein_sysdata_rvr_edge_simple_geo_idx IS 'A index created to avoid building topo when the data is used for wms like mapserver which do no use the topo geometry';
 
 select CreateTopology('topo_rein_sysdata_rso',4258,0.0000000001);
 
@@ -603,9 +594,9 @@ COMMENT ON COLUMN topo_rein.arstidsbeite_sommer_flate.felles_egenskaper IS 'Sosi
 -- COMMENT ON COLUMN topo_rein.arstidsbeite_sommer_flate.geo IS 'This holds the ref to topo_rein_sysdata_rso.relation table, where we find pointers needed top build the the topo surface';
 
 -- create function basded index to get performance
-CREATE INDEX topo_rein_arstidsbeite_sommer_flate_geo_relation_id_idx ON topo_rein.arstidsbeite_sommer_flate(topo_rein.get_relation_id(omrade));	
+CREATE INDEX topo_rein_arstidsbeite_sommer_flate_geo_relation_id_idx ON topo_rein.arstidsbeite_sommer_flate(((omrade).id));	
 
-COMMENT ON INDEX topo_rein.topo_rein_arstidsbeite_sommer_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
+--COMMENT ON INDEX topo_rein.topo_rein_arstidsbeite_sommer_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
 select CreateTopology('topo_rein_sysdata_rhs',4258,0.0000000001);
 
@@ -760,9 +751,9 @@ COMMENT ON COLUMN topo_rein.arstidsbeite_host_flate.felles_egenskaper IS 'Sosi c
 -- COMMENT ON COLUMN topo_rein.arstidsbeite_host_flate.geo IS 'This holds the ref to topo_rein_sysdata_rhs.relation table, where we find pointers needed top build the the topo surface';
 
 -- create function basded index to get performance
-CREATE INDEX topo_rein_arstidsbeite_host_flate_geo_relation_id_idx ON topo_rein.arstidsbeite_host_flate(topo_rein.get_relation_id(omrade));	
+CREATE INDEX topo_rein_arstidsbeite_host_flate_geo_relation_id_idx ON topo_rein.arstidsbeite_host_flate(((omrade).id));	
 
-COMMENT ON INDEX topo_rein.topo_rein_arstidsbeite_host_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
+----COMMENT ON INDEX topo_rein.topo_rein_arstidsbeite_host_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
 
 select CreateTopology('topo_rein_sysdata_rhv',4258,0.0000000001);
@@ -920,9 +911,9 @@ COMMENT ON COLUMN topo_rein.arstidsbeite_hostvinter_flate.felles_egenskaper IS '
 -- COMMENT ON COLUMN topo_rein.arstidsbeite_hostvinter_flate.geo IS 'This holds the ref to topo_rein_sysdata_rhv.relation table, where we find pointers needed top build the the topo surface';
 
 -- create function basded index to get performance
-CREATE INDEX topo_rein_arstidsbeite_hostvinter_flate_geo_relation_id_idx ON topo_rein.arstidsbeite_hostvinter_flate(topo_rein.get_relation_id(omrade));	
+CREATE INDEX topo_rein_arstidsbeite_hostvinter_flate_geo_relation_id_idx ON topo_rein.arstidsbeite_hostvinter_flate(((omrade).id));	
 
-COMMENT ON INDEX topo_rein.topo_rein_arstidsbeite_hostvinter_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
+--COMMENT ON INDEX topo_rein.topo_rein_arstidsbeite_hostvinter_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
 select CreateTopology('topo_rein_sysdata_rvi',4258,0.0000000001);
 
@@ -1076,9 +1067,9 @@ COMMENT ON COLUMN topo_rein.arstidsbeite_vinter_flate.felles_egenskaper IS 'Sosi
 -- COMMENT ON COLUMN topo_rein.arstidsbeite_vinter_flate.geo IS 'This holds the ref to topo_rein_sysdata_rvi.relation table, where we find pointers needed top build the the topo surface';
 
 -- create function basded index to get performance
-CREATE INDEX topo_rein_arstidsbeite_vinter_flate_geo_relation_id_idx ON topo_rein.arstidsbeite_vinter_flate(topo_rein.get_relation_id(omrade));	
+CREATE INDEX topo_rein_arstidsbeite_vinter_flate_geo_relation_id_idx ON topo_rein.arstidsbeite_vinter_flate(((omrade).id));	
 
-COMMENT ON INDEX topo_rein.topo_rein_arstidsbeite_vinter_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
+--COMMENT ON INDEX topo_rein.topo_rein_arstidsbeite_vinter_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
 
 -- Should we have one table for all årstidsbeite thems or 5 different tables as today ?
@@ -1183,7 +1174,7 @@ SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata_ran', 'topo_rein', 'rei
 
 
 -- create function basded index to get performance
-CREATE INDEX topo_rein_reindrift_anlegg_linje_geo_relation_id_idx ON topo_rein.reindrift_anlegg_linje(topo_rein.get_relation_id(linje));
+CREATE INDEX topo_rein_reindrift_anlegg_linje_geo_relation_id_idx ON topo_rein.reindrift_anlegg_linje(((linje).id));
 
 
 
@@ -1287,7 +1278,7 @@ SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata_ran', 'topo_rein', 'rei
 
 
 -- create function basded index to get performance
-CREATE INDEX topo_rein_reindrift_anlegg_punkt_geo_relation_id_idx ON topo_rein.reindrift_anlegg_punkt(topo_rein.get_relation_id(punkt));
+CREATE INDEX topo_rein_reindrift_anlegg_punkt_geo_relation_id_idx ON topo_rein.reindrift_anlegg_punkt(((punkt).id));
 
 select CreateTopology('topo_rein_sysdata_rtr',4258,0.0000000001);
 
@@ -1372,7 +1363,7 @@ SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata_rtr', 'topo_rein', 'rei
 
 
 -- create function basded index to get performance
-CREATE INDEX topo_rein_rein_trekklei_linje_geo_relation_id_idx ON topo_rein.rein_trekklei_linje(topo_rein.get_relation_id(linje));	
+CREATE INDEX topo_rein_rein_trekklei_linje_geo_relation_id_idx ON topo_rein.rein_trekklei_linje(((linje).id));	
 
 
 
@@ -1586,9 +1577,9 @@ COMMENT ON COLUMN topo_rein.beitehage_flate.felles_egenskaper IS 'Sosi common me
 -- COMMENT ON COLUMN topo_rein.beitehage_flate.geo IS 'This holds the ref to topo_rein_sysdata_rbh.relation table, where we find pointers needed top build the the topo surface';
 
 -- create function basded index to get performance
-CREATE INDEX topo_rein_beitehage_flate_geo_relation_id_idx ON topo_rein.beitehage_flate(topo_rein.get_relation_id(omrade));
+CREATE INDEX topo_rein_beitehage_flate_geo_relation_id_idx ON topo_rein.beitehage_flate(((omrade).id));
 
-COMMENT ON INDEX topo_rein.topo_rein_beitehage_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
+--COMMENT ON INDEX topo_rein.topo_rein_beitehage_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
 SELECT CreateTopology('topo_rein_sysdata_rop', 4258, 0.0000000001);
 
@@ -1747,10 +1738,9 @@ COMMENT ON COLUMN topo_rein.oppsamlingsomrade_flate.felles_egenskaper IS
 -- COMMENT ON COLUMN topo_rein.oppsamlingsomrade_flate.geo IS 'This holds the ref to topo_rein_sysdata_rop.relation table, where we find pointers needed top build the the topo surface';
 
 -- create function basded index to get performance
-CREATE INDEX topo_rein_oppsamlingsomrade_flate_geo_relation_id_idx ON topo_rein.oppsamlingsomrade_flate(topo_rein.get_relation_id(omrade));
+CREATE INDEX topo_rein_oppsamlingsomrade_flate_geo_relation_id_idx ON topo_rein.oppsamlingsomrade_flate(((omrade).id));
 
-COMMENT ON INDEX topo_rein.topo_rein_oppsamlingsomrade_flate_geo_relation_id_idx IS
-  'A function based index to faster find the topo rows for in the relation table';
+--COMMENT ON INDEX topo_rein.topo_rein_oppsamlingsomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 select CreateTopology('topo_rein_sysdata_rav',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
@@ -1888,9 +1878,9 @@ COMMENT ON COLUMN topo_rein.avtaleomrade_flate.felles_egenskaper IS 'Sosi common
 -- COMMENT ON COLUMN topo_rein.avtaleomrade_flate.geo IS 'This holds the ref to topo_rein_sysdata_rav.relation table, where we find pointers needed top build the the topo surface';
 
 -- create function basded index to get performance
-CREATE INDEX topo_rein_avtaleomrade_flate_geo_relation_id_idx ON topo_rein.avtaleomrade_flate(topo_rein.get_relation_id(omrade));
+CREATE INDEX topo_rein_avtaleomrade_flate_geo_relation_id_idx ON topo_rein.avtaleomrade_flate(((omrade).id));
 
-COMMENT ON INDEX topo_rein.topo_rein_avtaleomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
+--COMMENT ON INDEX topo_rein.topo_rein_avtaleomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
 select CreateTopology('topo_rein_sysdata_reo',4258,0.0000000001);
 
@@ -2030,9 +2020,9 @@ COMMENT ON COLUMN topo_rein.ekspropriasjonsomrade_flate.felles_egenskaper IS 'So
 -- COMMENT ON COLUMN topo_rein.ekspropriasjonsomrade_flate.geo IS 'This holds the ref to topo_rein_sysdata_reo.relation table, where we find pointers needed top build the the topo surface';
 
 -- create function basded index to get performance
-CREATE INDEX topo_rein_ekspropriasjonsomrade_flate_geo_relation_id_idx ON topo_rein.ekspropriasjonsomrade_flate(topo_rein.get_relation_id(omrade));
+CREATE INDEX topo_rein_ekspropriasjonsomrade_flate_geo_relation_id_idx ON topo_rein.ekspropriasjonsomrade_flate(((omrade).id));
 
-COMMENT ON INDEX topo_rein.topo_rein_ekspropriasjonsomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
+--COMMENT ON INDEX topo_rein.topo_rein_ekspropriasjonsomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
 select CreateTopology('topo_rein_sysdata_rks',4258,0.0000000001);
 
@@ -2171,9 +2161,9 @@ COMMENT ON COLUMN topo_rein.konsesjonsomrade_flate.felles_egenskaper IS 'Sosi co
 -- COMMENT ON COLUMN topo_rein.konsesjonsomrade_flate.geo IS 'This holds the ref to topo_rein_sysdata_rks.relation table, where we find pointers needed top build the the topo surface';
 
 -- create function basded index to get performance
-CREATE INDEX topo_rein_konsesjonsomrade_flate_geo_relation_id_idx ON topo_rein.konsesjonsomrade_flate(topo_rein.get_relation_id(omrade));
+CREATE INDEX topo_rein_konsesjonsomrade_flate_geo_relation_id_idx ON topo_rein.konsesjonsomrade_flate(((omrade).id));
 
-COMMENT ON INDEX topo_rein.topo_rein_konsesjonsomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
+--COMMENT ON INDEX topo_rein.topo_rein_konsesjonsomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
 select CreateTopology('topo_rein_sysdata_rko',4258,0.0000000001);
 
@@ -2314,9 +2304,9 @@ COMMENT ON COLUMN topo_rein.konvensjonsomrade_flate.felles_egenskaper IS 'Sosi c
 -- COMMENT ON COLUMN topo_rein.konvensjonsomrade_flate.geo IS 'This holds the ref to topo_rein_sysdata_rko.relation table, where we find pointers needed top build the the topo surface';
 
 -- create function basded index to get performance
-CREATE INDEX topo_rein_konvensjonsomrade_flate_geo_relation_id_idx ON topo_rein.konvensjonsomrade_flate(topo_rein.get_relation_id(omrade));
+CREATE INDEX topo_rein_konvensjonsomrade_flate_geo_relation_id_idx ON topo_rein.konvensjonsomrade_flate(((omrade).id));
 
-COMMENT ON INDEX topo_rein.topo_rein_konvensjonsomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
+--COMMENT ON INDEX topo_rein.topo_rein_konvensjonsomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 select CreateTopology('topo_rein_sysdata_rdg',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
@@ -2460,9 +2450,9 @@ COMMENT ON COLUMN topo_rein.reinbeitedistrikt_flate.felles_egenskaper IS 'Sosi c
 -- COMMENT ON COLUMN topo_rein.reinbeitedistrikt_flate.geo IS 'This holds the ref to topo_rein_sysdata_rdg.relation table, where we find pointers needed top build the the topo surface';
 
 -- create function basded index to get performance
-CREATE INDEX topo_rein_reinbeitedistrikt_flate_geo_relation_id_idx ON topo_rein.reinbeitedistrikt_flate(topo_rein.get_relation_id(omrade));
+CREATE INDEX topo_rein_reinbeitedistrikt_flate_geo_relation_id_idx ON topo_rein.reinbeitedistrikt_flate(((omrade).id));
 
-COMMENT ON INDEX topo_rein.topo_rein_reinbeitedistrikt_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
+--COMMENT ON INDEX topo_rein.topo_rein_reinbeitedistrikt_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
 select CreateTopology('topo_rein_sysdata_reb',4258,0.0000000001);
 
@@ -2642,9 +2632,9 @@ COMMENT ON COLUMN topo_rein.reinbeiteomrade_flate.felles_egenskaper IS 'Sosi com
 -- COMMENT ON COLUMN topo_rein.reinbeiteomrade_flate.geo IS 'This holds the ref to topo_rein_sysdata_reb.relation table, where we find pointers needed top build the the topo surface';
 
 -- create function basded index to get performance
-CREATE INDEX topo_rein_reinbeiteomrade_flate_geo_relation_id_idx ON topo_rein.reinbeiteomrade_flate(topo_rein.get_relation_id(omrade));
+CREATE INDEX topo_rein_reinbeiteomrade_flate_geo_relation_id_idx ON topo_rein.reinbeiteomrade_flate(((omrade).id));
 
-COMMENT ON INDEX topo_rein.topo_rein_reinbeiteomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
+--COMMENT ON INDEX topo_rein.topo_rein_reinbeiteomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 select CreateTopology('topo_rein_sysdata_rro',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
@@ -2795,9 +2785,9 @@ COMMENT ON COLUMN topo_rein.restriksjonsomrade_flate.felles_egenskaper IS 'Sosi 
 -- COMMENT ON COLUMN topo_rein.restriksjonsomrade_flate.geo IS 'This holds the ref to topo_rein_sysdata_rro.relation table, where we find pointers needed top build the the topo surface';
 
 -- create function basded index to get performance
-CREATE INDEX topo_rein_restriksjonsomrade_flate_geo_relation_id_idx ON topo_rein.restriksjonsomrade_flate(topo_rein.get_relation_id(omrade));
+CREATE INDEX topo_rein_restriksjonsomrade_flate_geo_relation_id_idx ON topo_rein.restriksjonsomrade_flate(((omrade).id));
 
-COMMENT ON INDEX topo_rein.topo_rein_restriksjonsomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
+--COMMENT ON INDEX topo_rein.topo_rein_restriksjonsomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 DROP TABLE IF EXISTS topo_rein.restriksjonsomrade_linje cascade;
 CREATE TABLE topo_rein.restriksjonsomrade_linje(
 
@@ -2833,9 +2823,9 @@ slette_status_kode smallint not null default 0  CHECK (slette_status_kode IN (0,
 SELECT topology.AddTopoGeometryColumn('topo_rein_sysdata_rro', 'topo_rein', 'restriksjonsomrade_linje', 'linje', 'LINESTRING') As new_layer_id;
 
 -- create function basded index to get performance
-CREATE INDEX topo_rein_restriksjonsomrade_linje_geo_relation_id_idx ON topo_rein.restriksjonsomrade_linje(topo_rein.get_relation_id(linje));
+CREATE INDEX topo_rein_restriksjonsomrade_linje_geo_relation_id_idx ON topo_rein.restriksjonsomrade_linje(((linje).id));
 
-COMMENT ON INDEX topo_rein.topo_rein_restriksjonsomrade_linje_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
+--COMMENT ON INDEX topo_rein.topo_rein_restriksjonsomrade_linje_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 
 select CreateTopology('topo_rein_sysdata_rsi',4258,0.0000000001);
 
@@ -2989,9 +2979,9 @@ COMMENT ON COLUMN topo_rein.siidaomrade_flate.felles_egenskaper IS 'Sosi common 
 -- COMMENT ON COLUMN topo_rein.siidaomrade_flate.geo IS 'This holds the ref to topo_rein_sysdata_rsi.relation table, where we find pointers needed top build the the topo surface';
 
 -- create function basded index to get performance
-CREATE INDEX topo_rein_siidaomrade_flate_geo_relation_id_idx ON topo_rein.siidaomrade_flate(topo_rein.get_relation_id(omrade));
+CREATE INDEX topo_rein_siidaomrade_flate_geo_relation_id_idx ON topo_rein.siidaomrade_flate(((omrade).id));
 
-COMMENT ON INDEX topo_rein.topo_rein_siidaomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
+--COMMENT ON INDEX topo_rein.topo_rein_siidaomrade_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
 SELECT CreateTopology('topo_rein_sysdata_rdr', 4258, 0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
@@ -3109,12 +3099,10 @@ COMMENT ON COLUMN topo_rein.flyttlei_flate.felles_egenskaper IS '
 
 -- create function basded index to get performance
 CREATE INDEX topo_rein_flyttlei_geo_relation_id_idx ON topo_rein.flyttlei_flate(
-  topo_rein.get_relation_id(omrade)
+  ((omrade).id)
 );
 
-COMMENT ON INDEX topo_rein.topo_rein_flyttlei_geo_relation_id_idx IS '
-  A function based index to faster find topo rows in the relation table
-';
+--COMMENT ON INDEX topo_rein.topo_rein_flyttlei_geo_relation_id_idx IS ' A function based index to faster find topo rows in the relation table';
 -- DROP VIEW topo_rein.arstidsbeite_host_flate_v cascade ;
 
 
@@ -3177,7 +3165,8 @@ CASE
 END AS "editable"
 from topo_rein.arstidsbeite_host_flate al;
 
---select * from topo_rein.arstidsbeite_host_topojson_flate_v-- DROP VIEW IF EXISTS topo_rein.arstidsbeite_hostvinter_topojson_flate_v cascade ;
+--select * from topo_rein.arstidsbeite_host_topojson_flate_v
+-- DROP VIEW IF EXISTS topo_rein.arstidsbeite_hostvinter_topojson_flate_v cascade ;
 
 
 CREATE OR REPLACE VIEW topo_rein.arstidsbeite_hostvinter_topojson_flate_v 
@@ -3222,7 +3211,8 @@ CASE
 END AS "editable"
 from topo_rein.arstidsbeite_hostvinter_flate al;
 
---select * from topo_rein.arstidsbeite_hostvinter_topojson_flate_v-- DROP VIEW topo_rein.arstidsbeite_sommer_flate_v cascade ;
+--select * from topo_rein.arstidsbeite_hostvinter_topojson_flate_v
+-- DROP VIEW topo_rein.arstidsbeite_sommer_flate_v cascade ;
 
 
 CREATE OR REPLACE VIEW topo_rein.arstidsbeite_sommer_flate_v 
@@ -3284,7 +3274,8 @@ CASE
 END AS "editable" 
 from topo_rein.arstidsbeite_sommer_flate al;
 
---select * from topo_rein.arstidsbeite_sommer_topojson_flate_v-- DROP VIEW topo_rein.arstidsbeite_var_flate_v cascade ;
+--select * from topo_rein.arstidsbeite_sommer_topojson_flate_v
+-- DROP VIEW topo_rein.arstidsbeite_var_flate_v cascade ;
 
 
 CREATE OR REPLACE VIEW topo_rein.arstidsbeite_var_flate_v 
@@ -3346,7 +3337,8 @@ CASE
 END AS "editable"
 from topo_rein.arstidsbeite_var_flate al;
 
---select * from topo_rein.arstidsbeite_var_topojson_flate_v-- DROP VIEW IF EXISTS topo_rein.arstidsbeite_vinter_topojson_flate_v cascade ;
+--select * from topo_rein.arstidsbeite_var_topojson_flate_v
+-- DROP VIEW IF EXISTS topo_rein.arstidsbeite_vinter_topojson_flate_v cascade ;
 
 
 CREATE OR REPLACE VIEW topo_rein.arstidsbeite_vinter_topojson_flate_v 
@@ -3391,7 +3383,8 @@ CASE
 END AS "editable"
 from topo_rein.arstidsbeite_vinter_flate al;
 
---select * from topo_rein.arstidsbeite_vinter_topojson_flate_v-- DROP VIEW IF EXISTS topo_rein.avtaleomrade_topojson_flate_v cascade ;
+--select * from topo_rein.arstidsbeite_vinter_topojson_flate_v
+-- DROP VIEW IF EXISTS topo_rein.avtaleomrade_topojson_flate_v cascade ;
 
 
 CREATE OR REPLACE VIEW topo_rein.avtaleomrade_topojson_flate_v
@@ -3474,7 +3467,8 @@ CASE
 END AS "editable"
 from topo_rein.beitehage_flate al;
 
---select * from topo_rein.beitehage_topojson_flate_v-- DROP VIEW IF EXISTS topo_rein.ekspropriasjonsomrade_topojson_flate_v cascade ;
+--select * from topo_rein.beitehage_topojson_flate_v
+-- DROP VIEW IF EXISTS topo_rein.ekspropriasjonsomrade_topojson_flate_v cascade ;
 
 
 CREATE OR REPLACE VIEW topo_rein.ekspropriasjonsomrade_topojson_flate_v
@@ -4778,5 +4772,4 @@ COMMENT ON COLUMN topo_ar5.webclient_flate.felles_egenskaper IS
 CREATE INDEX topo_ar5_webclient_flate_geo_relation_id_idx
   ON topo_ar5.webclient_flate(topo_ar5.get_relation_id(omrade));
 
-COMMENT ON INDEX topo_ar5.topo_ar5_webclient_flate_geo_relation_id_idx IS
-  'A function based index to faster find the topo rows for in the relation table';
+-- COMMENT ON INDEX topo_ar5.topo_ar5_webclient_flate_geo_relation_id_idx IS 'A function based index to faster find the topo rows for in the relation table';
