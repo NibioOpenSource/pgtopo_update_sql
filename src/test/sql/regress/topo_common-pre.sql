@@ -4635,6 +4635,20 @@ COMMENT ON FUNCTION topo_ar5.get_relation_id(TopoGeometry) IS
 -- select DropTopology('topo_ar5_sysdata_webclient');
 
 SELECT CreateTopology('topo_ar5_sysdata_webclient', 4258, 0.0000000001);
+
+DO
+$do$
+BEGIN
+   IF NOT EXISTS (
+      SELECT FROM pg_catalog.pg_roles  -- SELECT list can be empty for this
+      WHERE  rolname = 'topo_ar5') THEN
+
+      CREATE ROLE my_user LOGIN PASSWORD 'topo_ar5_tull';
+   END IF;
+END
+$do$;
+
+
 ALTER SCHEMA topo_ar5_sysdata_webclient OWNER TO topo_ar5;
 -- give puclic access
 GRANT USAGE ON SCHEMA topo_ar5_sysdata_webclient TO public;
