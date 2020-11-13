@@ -34,7 +34,7 @@ command_string := format('select array_agg(a.id) from
 %2$s a
 where fa.face_id > 0 and r.element_type = %6$s and r.layer_id = %5$s
 and fa.face_id = r.element_id
-and r.topogeo_id = topo_update.get_relation_id(a.%1$s)
+and r.topogeo_id = ((a.%1$s).id)
 and a.id != %4$s',
 surface_topo_info.layer_feature_column,
 _new_topo_objects,
