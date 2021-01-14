@@ -241,11 +241,11 @@ user_logged_in varchar  NOT NULL,
 session_id varchar NOT NULL,
 
 -- the user can edit any row i any table
--- this overides all other settings indepentely of all other rows 
+-- this overides all other settings indepentely of all other rows
 -- found this session
 edit_all boolean NOT NULL DEFAULT false,
 
--- * for all tables, means that if it will check against all table with this column name 
+-- * for all tables, means that if it will check against all table with this column name
 table_name varchar NOT NULL,
 
 -- which columns we shoul chechk against
@@ -255,27 +255,26 @@ column_name varchar NOT NULL,
 column_value varchar NOT NULL
 
 -- did not get this to work the list of valid reinbeitebruker_id for this user
--- reinbeitebruker_list text[] 
--- reinbeitebruker_id varchar(3) CHECK (reinbeitebruker_id IN ('XI','ZA','ZB','ZC','ZD','ZE','ZF','ØG','UW','UX','UY','UZ','ØA','ØB','ØC','ØE','ØF','ZG','ZH','ZJ','ZS','ZL','ZÅ','YA','YB','YC','YD','YE','YF','YG','XM','XR','XT','YH','YI','YJ','YK','YL','YM','YN','YP','YX','YR','YS','YT','YU','YV','YW','YY','XA','XD','XE','XG','XH','XJ','XK','XL','XM','XR','XS','XT','XN','XØ','XP','XU','XV','XW','XZ','XX','XY','WA','WB','WD','WF','WK','WL','WN','WP','WR','WS','WX','WZ','VA','VF','VG','VJ','VM','VR','YQA','YQB','YQC','ZZ','RR','ZQA')), 
+-- reinbeitebruker_list text[]
+-- reinbeitebruker_id varchar(3) CHECK (reinbeitebruker_id IN ('XI','ZA','ZB','ZC','ZD','ZE','ZF','ØG','UW','UX','UY','UZ','ØA','ØB','ØC','ØE','ØF','ZG','ZH','ZJ','ZS','ZL','ZÅ','YA','YB','YC','YD','YE','YF','YG','XM','XR','XT','YH','YI','YJ','YK','YL','YM','YN','YP','YX','YR','YS','YT','YU','YV','YW','YY','XA','XD','XE','XG','XH','XJ','XK','XL','XM','XR','XS','XT','XN','XØ','XP','XU','XV','XW','XZ','XX','XY','WA','WB','WD','WF','WK','WL','WN','WP','WR','WS','WX','WZ','VA','VF','VG','VJ','VM','VR','YQA','YQB','YQC','ZZ','RR','ZQA')),
 
 );
 
 
---CREATE INDEX rls_role_mapping_session_id_idx ON topo_rein.rls_role_mapping(session_id);	
+--CREATE INDEX rls_role_mapping_session_id_idx ON topo_rein.rls_role_mapping(session_id);
 
---CREATE INDEX rls_role_mapping_table_name_idx ON topo_rein.rls_role_mapping(table_name);	
+--CREATE INDEX rls_role_mapping_table_name_idx ON topo_rein.rls_role_mapping(table_name);
 
---CREATE INDEX rls_role_mapping_column_name_idx ON topo_rein.rls_role_mapping(column_name);	
+--CREATE INDEX rls_role_mapping_column_name_idx ON topo_rein.rls_role_mapping(column_name);
 
---CREATE INDEX rls_role_mapping_column_value_name_idx ON topo_rein.rls_role_mapping(column_value);	
+--CREATE INDEX rls_role_mapping_column_value_name_idx ON topo_rein.rls_role_mapping(column_value);
 
-CREATE UNIQUE INDEX rls_role_mapping_un_idx1 ON topo_rein.rls_role_mapping(session_id,table_name,column_name,column_value);	
+CREATE UNIQUE INDEX rls_role_mapping_un_idx1 ON topo_rein.rls_role_mapping(session_id,table_name,column_name,column_value);
 
-
+-- Added this roles will cause tests to fail if runn on database where this roles do not exists
 --GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE ON topo_rein.rls_role_mapping TO topo_rein_update_role;
 
 --GRANT SELECT, USAGE, UPDATE ON topo_rein.rls_role_mapping_id_seq TO topo_rein_update_role;
-
 select CreateTopology('topo_rein_sysdata_rvr',4258,0.0000000001);
 
 -- Workaround for PostGIS bug from Sandro, see
