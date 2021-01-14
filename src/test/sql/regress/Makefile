@@ -2,8 +2,19 @@ PATH := $(PATH):$(shell pg_config --bindir)
 
 POSTGIS_SCRIPT_DIR ?= $(shell find $(shell pg_config --sharedir)/contrib/postgis-* -maxdepth 0 -type d | sort -n | tail -1)
 
+TESTS := \
+  topo_update \
+  update_features \
+  $(END)
+
 check: loader
-	POSTGIS_REGRESS_DB=nibio_reg ./run_test.pl --extension --spatial_ref_sys --topology $(RUNTESTFLAGS) topo_update 
+	POSTGIS_REGRESS_DB=nibio_reg \
+  ./run_test.pl \
+  --extension \
+  --spatial_ref_sys \
+  --topology \
+  $(RUNTESTFLAGS) \
+  $(TESTS)
 
 loader:
 #	find / -name shp2pgsql 2>/dev/null # debug 
