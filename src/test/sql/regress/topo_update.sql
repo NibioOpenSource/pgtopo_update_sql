@@ -324,7 +324,7 @@ update topo_rein.arstidsbeite_sommer_flate set felles_egenskaper.verifiseringsda
 update topo_rein.arstidsbeite_sommer_flate set felles_egenskaper.oppdateringsdato = '2016-07-26';
 update topo_rein.arstidsbeite_sommer_flate set felles_egenskaper.opphav = 'ole';
 
-SELECT '59_sommer_r3', id, reinbeitebruker_id, reindrift_sesongomrade_kode, omrade, status, (felles_egenskaper).opphav, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato, (felles_egenskaper).oppdateringsdato  from topo_rein.arstidsbeite_sommer_flate order by id desc limit 2;
+SELECT '59_sommer_r3', id, reinbeitebruker_id, reindrift_sesongomrade_kode, status, (felles_egenskaper).opphav, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato, (felles_egenskaper).oppdateringsdato  from topo_rein.arstidsbeite_sommer_flate order by id desc limit 2;
 
 -- Split the created surface in two
 SELECT '59_sommer_split', count(id) FROM (SELECT 1 AS id FROM topo_update.create_surface_edge_domain_obj(
