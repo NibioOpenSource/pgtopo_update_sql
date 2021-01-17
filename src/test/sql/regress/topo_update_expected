@@ -196,8 +196,8 @@
 59_data_update_log_new_v|48|49|topo_rein|arstidsbeite_sommer_flate|INSERT_BEFORE_VALID|UPDATE_AFTER|READY|||10|0
 59_layer_accept_update|2
 59_sommer_data_update_log_c3|0
-59_sommer_r3|11|ZH|4|(4,2,11,3)|1|ole|2013-08-26|2015-07-26|2016-07-26
-59_sommer_r3|10|ZH|4|(4,2,10,3)|1|ole|2013-08-26|2015-07-26|2016-07-26
+59_sommer_r3|11|ZH|4|1|ole|2013-08-26|2015-07-26|2016-07-26
+59_sommer_r3|10|ZH|4|1|ole|2013-08-26|2015-07-26|2016-07-26
 59_sommer_split|1
 59_sommer_split_b|1
 59_sommer_r4|15|ZH|4|(4,2,15,3)|1|ole|2013-08-26|2015-07-26
