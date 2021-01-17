@@ -1,6 +1,6 @@
 SET pgtopo_update.session_id ='session_id';
 SET pgtopo_update.draw_line_opr = '1';
-SET client_min_messages TO WARNING;
+SET client_min_messages to 'WARNING';
 
 -- TODO  add set pgtopo_update.session_replication_role
 
