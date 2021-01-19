@@ -1,11 +1,26 @@
 CREATE OR REPLACE FUNCTION topo_update.insert_feature(
+
+  -- A GeoJSON Feature object
+  -- See https://geojson.org/
   feature JSON,
+
+  -- SRID of geometry, or NULL for leaving it as unknown
   srid INT,
+
+  -- Target layer table (where to insert the new feature in)
   layerTable REGCLASS,
+
+  -- Name of the TopoGeometry column in the target layer table
   layerGeomColumn NAME,
-  layerIdColumn NAME,
-  id TEXT,
+
+  -- JSON mapping of PG columns and values
+  -- from JSON attributes and values
+  -- See topo_update.json_props_to_pg_cols() function
   layerColMap JSON,
+
+  -- Tolerance to use for insertion of topology primitives
+  -- used to represent the feature geometry.
+  -- May be NULL to use topology-default tolerance.
   tolerance FLOAT8
 )
 RETURNS VOID AS
@@ -36,9 +51,6 @@ BEGIN
   RAISE DEBUG 'toponame: %', toponame;
   RAISE DEBUG 'layer_id: %', layer_id;
 
-  --json_prop_array := array_agg(x) from json_array_elements_text( layerColMap -> layerIdColumn ) x;
-  --id := props #>> json_prop_array;
-
   props := feature -> 'properties';
 
 
@@ -51,14 +63,21 @@ BEGIN
 
   colnames := array_append(colnames, format('%I', layerGeomColumn));
 
+  geom := ST_GeomFromGeoJSON(feature -> 'geometry');
+  RAISE DEBUG 'GEOM: %', ST_AsEWKT(geom);
+
+  -- TODO: use the deprecated "crs" member in GeoJSON, if found ?
   RAISE DEBUG 'SRID: %', srid;
   RAISE DEBUG 'TOPO_SRID: %', topo_srid;
-  geom := ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(feature -> 'geometry'), srid), topo_srid);
-  RAISE DEBUG 'GEOM: %', ST_AsText(geom);
+  IF srid IS NOT NULL THEN
+    geom := ST_SetSRID(geom, srid);
+    IF topo_srid IS NOT NULL THEN
+      geom := ST_Transform(geom, topo_srid);
+    END IF;
+    RAISE DEBUG 'REPROJECTED GEOM: %', ST_AsEWKT(geom);
+  END IF;
   colvals := array_append(colvals, format('topology.toTopoGeom($1, %L, %L, %L)',
         toponame, layer_id, tolerance));
-
-
 	
 
   sql := format('INSERT INTO %s (%s) VALUES(%s)',
@@ -75,13 +94,34 @@ $BODY$ --}
 LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION topo_update.update_feature(
+
+  -- A GeoJSON Feature object
+  -- See https://geojson.org/
   feature JSON,
+
+  -- SRID of geometry, or NULL for leaving it as unknown
   srid INT,
+
+  -- Target layer table (where to insert the new feature in)
   layerTable REGCLASS,
+
+  -- Name of the TopoGeometry column in the target layer table
   layerGeomColumn NAME,
+
+  -- Name of the primary key column in the target layer table
   layerIdColumn NAME,
-  id TEXT, -- ID value
+
+  -- Identifier value for the feature to be inserted
+  id TEXT,
+
+  -- JSON mapping of PG columns and values
+  -- from JSON attributes and values
+  -- See topo_update.json_props_to_pg_cols() function
   layerColMap JSON,
+
+  -- Tolerance to use for insertion of topology primitives
+  -- used to represent the feature geometry.
+  -- May be NULL to use topology-default tolerance.
   tolerance FLOAT8
 )
 RETURNS VOID AS
@@ -123,7 +163,19 @@ BEGIN
 
   colnames := array_append(colnames, format('%I', layerGeomColumn));
 
-  geom := ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(feature -> 'geometry'), srid), topo_srid);
+  geom := ST_GeomFromGeoJSON(feature -> 'geometry');
+  RAISE DEBUG 'GEOM: %', ST_AsEWKT(geom);
+
+  -- TODO: use the deprecated "crs" member in GeoJSON, if found ?
+  RAISE DEBUG 'SRID: %', srid;
+  RAISE DEBUG 'TOPO_SRID: %', topo_srid;
+  IF srid IS NOT NULL THEN
+    geom := ST_SetSRID(geom, srid);
+    IF topo_srid IS NOT NULL THEN
+      geom := ST_Transform(geom, topo_srid);
+    END IF;
+    RAISE DEBUG 'REPROJECTED GEOM: %', ST_AsEWKT(geom);
+  END IF;
   colvals := array_append(colvals, format('topology.toTopoGeom($1, topology.clearTopoGeom(%I), %L)',
         layerGeomColumn, tolerance));
 
@@ -158,12 +210,31 @@ $BODY$ --}
 LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION topo_update.upsert_feature(
+
+  -- A GeoJSON Feature object
+  -- See https://geojson.org/
   feature JSON,
+
+  -- SRID of geometry, or NULL for leaving it as unknown
   srid INT,
+
+  -- Target layer table (where to insert the new feature in)
   layerTable REGCLASS,
+
+  -- Name of the TopoGeometry column in the target layer table
   layerGeomColumn NAME,
+
+  -- Name of the primary key column in the target layer table
   layerIdColumn NAME,
+
+  -- JSON mapping of PG columns and values
+  -- from JSON attributes and values
+  -- See topo_update.json_props_to_pg_cols() function
   layerColMap JSON,
+
+  -- Tolerance to use for insertion of topology primitives
+  -- used to represent the feature geometry.
+  -- May be NULL to use topology-default tolerance.
   tolerance FLOAT8
 )
 RETURNS VOID AS
@@ -223,8 +294,6 @@ BEGIN
       srid,
       layerTable,
       layerGeomColumn,
-      layerIdColumn,
-      id::text,
       layerColMap,
       tolerance
     );
