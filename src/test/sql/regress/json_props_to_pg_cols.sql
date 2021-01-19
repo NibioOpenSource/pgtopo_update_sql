@@ -31,6 +31,13 @@ INSERT INTO json_mappings(id, map, props) VALUES
       "item2": "val2"
     }
   }
+}'),
+(3, '{
+  "null_to_simple": [ "null" ],
+  "null_to_complex": [ [ "null" ], [ "notnull" ], [ "null" ] ]
+}', '{
+  "null": null,
+  "notnull": 1
 }')
 ;
 
