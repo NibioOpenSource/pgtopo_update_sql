@@ -1,1 +1,2 @@
 1|{from_simple,from_complex,from_subcomplex}|{'3000','val1','val2'}
+2|{comp_from_simple,comp_from_comp}|{"ROW('s1','s2')","ROW('val1','val2')"}
