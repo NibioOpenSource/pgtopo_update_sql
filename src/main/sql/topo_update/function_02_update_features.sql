@@ -61,7 +61,7 @@ BEGIN
 
 	
 
-  sql := format('INSERT INTO %s (%s) SELECT %s',
+  sql := format('INSERT INTO %s (%s) VALUES(%s)',
     layerTable,
     array_to_string(colnames, ','),
     array_to_string(colvals, ','));
