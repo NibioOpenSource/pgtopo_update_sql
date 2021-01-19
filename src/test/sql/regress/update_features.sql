@@ -189,7 +189,8 @@ VALUES (
       "treslag": [ "treslag" ],
       "skogbonitet": [ "skogbonitet" ],
       "grunnforhold": [ "grunnforhold" ],
-      "composite": [ ]
+      "composite.a": [ "kvalitet", "synbarhet" ],
+      "composite.b": [ "identifikasjon", "navnerom" ]
 		}'
 ),(
 	'update_features_test.lineal',
