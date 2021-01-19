@@ -1,0 +1,6 @@
+update_features_1|topo|N||POINT(0 0)
+update_features_1|topo|E|LINESTRING(0 0,10 0,10 10,0 0)
+update_features_1|areal|(0008e6eb-1332-4145-9943-591020916480,81,98,98,98,0,,"",,0,,"MULTIPOLYGON(((0 0,10 10,10 0,0 0)))")
+update_features_1|lineal|(092688bb-c6ef-43c9-b6f7-41b2f065537c,3000,1965-07-22,"2019-11-12 14:02:26",,1965-07-22,"MULTILINESTRING((0 0,10 0,10 10,0 0))")
+update_features_2|areal|(0008e6eb-1332-4145-9943-591020916480,81,98,98,98,0,,"",,0,,"MULTIPOLYGON(((0 0,10 10,10 0,0 0)))")
+update_features_2|lineal|(092688bb-c6ef-43c9-b6f7-41b2f065537c,3000,1965-07-22,"2019-11-12 14:02:26",,1965-07-22,"MULTILINESTRING((0 0,10 0,10 10,0 0))")
