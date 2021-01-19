@@ -20,11 +20,9 @@ INSERT INTO json_mappings(id, lbl, map, props) VALUES
   }
 }'),
 (2, 'composite', '{
-  "from_simple": [ [ "simple1" ], [ "simple2" ] ],
-  "from_comp": [ [ "comp", "item1" ], [ "comp", "subcomp", "item2" ] ]
+  "c.a": [ "comp", "item1" ],
+  "c.nc.a": [ "comp", "subcomp", "item2" ]
 }', '{
-  "simple1": "s1",
-  "simple2": "s2",
   "comp": {
     "item1": "c1",
     "subcomp": {
@@ -34,8 +32,7 @@ INSERT INTO json_mappings(id, lbl, map, props) VALUES
 }'),
 (3, 'nulls', '{
   "to_simple_by_path": [ "a" ],
-  "to_simple_by_literal": [ null ],
-  "to_comp_mixed": [ [ "a" ], [ "b" ], [ null ] ]
+  "to_simple_by_literal": [ null ]
 }', '{
   "a": null,
   "b": 1
