@@ -126,7 +126,7 @@ SELECT '21_status_set_deleted_flag', id, status, slette_status_kode, reinbeitebr
 select '21_data_update_log_after_set_delete_flag', id, row_id, removed_by_splitt_operation, schema_name,  table_name, operation, status, 
 (json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_status ,
 (json_row_data->'objects'->'collection'->'geometries'->0->'properties'->'slette_status_kode') as json_slette_status_kode 
-from topo_rein.data_update_log e where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_var_flate' and removed_by_splitt_operation = false and change_confirmed_by_admin = false;
+from topo_rein.data_update_log e where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_var_flate' and removed_by_splitt_operation = false and change_confirmed_by_admin = false ORDER BY id;
 -- Check that new data_update_log_new_v has values top accept for arstidsbeite_var_flate, in json_before the slette_status_kode should now be 0
 select '21_data_update_log_new_v_after_set_delete_flag', id_before, id_after, schema_name, data_row_id, table_name, operation_before, operation_after, data_row_state, 
 (json_before->'objects'->'collection'->'geometries'->0->'properties'->'status') as json_before_status ,
