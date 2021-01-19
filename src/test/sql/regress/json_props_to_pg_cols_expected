@@ -1,3 +1,3 @@
-1|{from_simple,from_complex,from_subcomplex}|{'3000','val1','val2'}
-2|{comp_from_simple,comp_from_comp}|{"ROW('s1','s2')","ROW('val1','val2')"}
-3|{null_to_simple,null_to_complex}|{"NULL","ROW(NULL,'1',NULL)"}
+simple|{from_simple,from_comp,from_subcomp}|{'1','c1','sc1'}
+composite|{from_simple,from_comp}|{"ROW('s1','s2')","ROW('c1','sc1')"}
+nulls|{to_simple_by_path,to_simple_by_literal,to_comp_mixed}|{"NULL","NULL","ROW(NULL,'1',NULL)"}

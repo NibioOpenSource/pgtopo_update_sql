@@ -3,48 +3,49 @@ BEGIN;
 CREATE SCHEMA IF NOT EXISTS topo_update;
 \i :regdir/../../../main/sql/topo_update/function_02_json_props_to_pg_cols.sql
 
-CREATE TABLE json_mappings (id INT primary key, map json, props json);
+CREATE TABLE json_mappings (id INT primary key, lbl TEXT UNIQUE, map json, props json);
 
-INSERT INTO json_mappings(id, map, props) VALUES
-(1, '{
+INSERT INTO json_mappings(id, lbl, map, props) VALUES
+(1, 'simple', '{
   "from_simple": [ "simple" ],
-  "from_complex": [ "complex", "item1" ],
-  "from_subcomplex": [ "complex", "subcomplex", "item2" ]
+  "from_comp": [ "comp", "item1" ],
+  "from_subcomp": [ "comp", "subcomp", "item2" ]
 }', '{
-  "simple": "3000",
-  "complex": {
-    "item1": "val1",
-    "subcomplex": {
-      "item2": "val2"
+  "simple": 1,
+  "comp": {
+    "item1": "c1",
+    "subcomp": {
+      "item2": "sc1"
     }
   }
 }'),
-(2, '{
-  "comp_from_simple": [ [ "simple1" ], [ "simple2" ] ],
-  "comp_from_comp": [ [ "complex", "item1" ], [ "complex", "subcomplex", "item2" ] ]
+(2, 'composite', '{
+  "from_simple": [ [ "simple1" ], [ "simple2" ] ],
+  "from_comp": [ [ "comp", "item1" ], [ "comp", "subcomp", "item2" ] ]
 }', '{
   "simple1": "s1",
   "simple2": "s2",
-  "complex": {
-    "item1": "val1",
-    "subcomplex": {
-      "item2": "val2"
+  "comp": {
+    "item1": "c1",
+    "subcomp": {
+      "item2": "sc1"
     }
   }
 }'),
-(3, '{
-  "null_to_simple": [ "null" ],
-  "null_to_complex": [ [ "null" ], [ "notnull" ], [ "null" ] ]
+(3, 'nulls', '{
+  "to_simple_by_path": [ "a" ],
+  "to_simple_by_literal": [ null ],
+  "to_comp_mixed": [ [ "a" ], [ "b" ], [ null ] ]
 }', '{
-  "null": null,
-  "notnull": 1
+  "a": null,
+  "b": 1
 }')
 ;
 
-SELECT id, colnames, colvals FROM (
-  SELECT id, (topo_update.json_props_to_pg_cols(props, map)).*
+SELECT lbl, colnames, colvals FROM (
+  SELECT lbl, (topo_update.json_props_to_pg_cols(props, map)).*
   FROM json_mappings
-) foo
-ORDER BY id;
+  ORDER BY id
+) foo;
 
 ROLLBACK;
