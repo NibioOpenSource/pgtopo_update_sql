@@ -4,6 +4,7 @@ POSTGIS_SCRIPT_DIR ?= $(shell find $(shell pg_config --sharedir)/contrib/postgis
 
 TESTS := \
   topo_update \
+  json_props_to_pg_cols \
   update_features \
   $(END)
 
