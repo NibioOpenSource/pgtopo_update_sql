@@ -5,7 +5,7 @@ use File::Spec::Functions;
 my ($pre_filename) = @ARGV;
 
 
-print "\n Output file is $pre_filename \n";
+#print "\n Output file is $pre_filename \n";
 
 $REIN_TABLES_DEF='topo_common-pre.sql';
 
@@ -13,7 +13,7 @@ if ( -e '/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/schema_topo_rein
 {
 
 
-	print "Source file for rein data exist so we can create a new $REIN_TABLES_DEF \n";
+	#print "Source file for rein data exist so we can create a new $REIN_TABLES_DEF \n";
 	# We need the spatial ref. for this tests 
 	open($fh_out, ">", $REIN_TABLES_DEF);
 
@@ -75,7 +75,7 @@ if ( -e '/Users/lop/dev/git/geomatikk/dbsql/src/db/sl/topo_rein/schema_topo_rein
 } 
 else
 {
-	print "Source file for rein data does not exist so we use the old one $REIN_TABLES_DEF \n";
+	#print "Source file for rein data does not exist so we use the old one $REIN_TABLES_DEF \n";
 }
 
 # build up topo_update.sql file used for test
@@ -83,17 +83,21 @@ open($fh_out_final, ">", $pre_filename);
 
 copy_file_into($REIN_TABLES_DEF,$fh_out_final);
 
-copy_file_into('../../../main/sql/topo_update/schema_topo_update.sql',$fh_out_final);
+my $file = '../../../main/sql/topo_update/schema_topo_update.sql';
+copy_file_into($file, $fh_out_final)
+    || die("Could not copy $file to final FD");
 
-for my $file (glob '../../../main/sql/topo_update/schema_userdef*') {
-	copy_file_into($file,$fh_out_final);
+for $file (glob '../../../main/sql/topo_update/schema_userdef*') {
+	copy_file_into($file,$fh_out_final)
+    || die("Could not copy $file to final FD");
 }
 
-for my $file (glob '../../../main/sql/topo_update/function*') {
-	copy_file_into($file,$fh_out_final);
+for $file (glob '../../../main/sql/topo_update/function*') {
+	copy_file_into($file,$fh_out_final)
+    || die("Could not copy $file to final FD");
 }
 
-close($fh_out_final);	 
+close($fh_out_final) || die ("Could not close final FD");
 
 
 sub copy_file_into() { 
