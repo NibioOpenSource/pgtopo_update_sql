@@ -1,3 +1,9 @@
+BEGIN;
+
+CREATE SCHEMA IF NOT EXISTS topo_update;
+\i :regdir/../../../main/sql/topo_update/function_02_json_props_to_pg_cols.sql
+\i :regdir/../../../main/sql/topo_update/function_02_update_features.sql
+
 -- TARGET TABLES:
 -- topo_ar5.webclient_flate
 -- topo_ar5.webclient_grense
@@ -136,8 +142,12 @@ BEGIN
 END;
 $BODY$ LANGUAGE 'plpgsql';
 
+CREATE TABLE update_features_test.composite (
+  a int,
+  b text
+);
+
 -- This is like topo_ar5.webclient_flate but has an UUID field
-DROP TABLE IF EXISTS update_features_test.areal;
 CREATE TABLE update_features_test.areal (
     "id" UUID PRIMARY KEY,
     "arealtype" smallint,
@@ -145,7 +155,7 @@ CREATE TABLE update_features_test.areal (
     "skogbonitet" smallint,
     "grunnforhold" smallint,
     "status" integer not null default 0,
-    "felles_egenskaper" topo_rein.sosi_felles_egenskaper,
+    "composite" update_features_test.composite,
     "informasjon" text not null default '',
     "saksbehandler" varchar,
     "slette_status_kode" smallint not null default 0,
@@ -153,17 +163,12 @@ CREATE TABLE update_features_test.areal (
 );
 SELECT NULL FROM AddTopoGeometryColumn('update_features_test_topo', 'update_features_test', 'areal', 'omrade', 'AREAL');
 
-DROP TABLE IF EXISTS update_features_test.lineal;
 CREATE TABLE update_features_test.lineal (
     "id" uuid PRIMARY KEY,
     "avgrensingType" int,
     "datafangstdato" date,
-    -- OMITTED "featuretype" (we know it's an edge "ArealressursGrense")
-    -- OMITTED composite "identifikasjon" (but its lokalId will be used as "id")
-    -- OMITTED composite "kvalitet"
     "oppdateringsdato" timestamp,
     "opphav" text,
-    -- OMITTED composite "registreringsversjon"
     "verifiseringsdato" date
 );
 SELECT NULL FROM AddTopoGeometryColumn('update_features_test_topo', 'update_features_test', 'lineal', 'omrade', 'LINEAL');
@@ -184,16 +189,7 @@ VALUES (
       "treslag": [ "treslag" ],
       "skogbonitet": [ "skogbonitet" ],
       "grunnforhold": [ "grunnforhold" ],
-      "felles_egenskaper": [
-				[],
-				[],
-				[],
-				[],
-				[],
-				[],
-				[],
-				[]
-			]
+      "composite": [ ]
 		}'
 ),(
 	'update_features_test.lineal',
@@ -205,21 +201,6 @@ VALUES (
       "verifiseringsdato": [ "verifiseringsdato" ]
 	}'
 );
---      "felles_egenskaper": [
---				[], -- forstedatafangstdato date
---				[], -- identifikasjon varchar
---				[], -- kvalitet topo_rein.sosi_kvalitet
---				[], -- oppdateringsdato date
---				[], -- opphav varchar(255)
---				[], -- verifiseringsdato date
---				[], -- informasjon varchar(255)
---				[]  -- registreringsversjon topo_rein.sosi_registreringsversjon
---			]
---      #"datafangstdato": [ "datafangstdato" ],
---      #"kartstandard": [ "kartstandard" ],
---      #"oppdateringsdato": [ "oppdateringsdato" ],
---      #"opphav": [ "opphav" ],
---      #"verifiseringsdato": [ "verifiseringsdato" ]
 
 -- Create input json table
 CREATE TABLE update_features_test.json_input(
@@ -375,10 +356,4 @@ SELECT 'update_features_2', 'topo', * FROM update_features_test.check_changes('u
 SELECT 'update_features_2', 'areal', * FROM update_features_test.check_layer_features('update_features_test.areal'::regclass, 'omrade'::name);
 SELECT 'update_features_2', 'lineal', * FROM update_features_test.check_layer_features('update_features_test.lineal'::regclass, 'omrade'::name);
 
-
-SELECT NULL FROM topology.DropTopoGeometryColumn('update_features_test', 'areal', 'omrade');
-SELECT NULL FROM topology.DropTopoGeometryColumn('update_features_test', 'lineal', 'omrade');
-SELECT NULL FROM DropTopology('update_features_test_topo');
-
-DROP SCHEMA update_features_test CASCADE;
-
+ROLLBACK;
