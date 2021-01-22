@@ -1,5 +1,7 @@
 BEGIN;
 
+set client_min_messages to WARNING;
+
 CREATE SCHEMA IF NOT EXISTS topo_update;
 \i :regdir/../../../main/sql/topo_update/function_02_json_props_to_pg_cols.sql
 \i :regdir/../../../main/sql/topo_update/function_02_update_features.sql
@@ -8,7 +10,6 @@ CREATE SCHEMA IF NOT EXISTS topo_update;
 -- topo_ar5.webclient_flate
 -- topo_ar5.webclient_grense
 
-set client_min_messages to WARNING;
 
 --CREATE EXTENSION IF NOT EXISTS postgis_topology CASCADE;
 --\i function_02_update_features_test.sql
