@@ -66,7 +66,6 @@ DECLARE
   has_valid_holes boolean;
   has_valid_boundary boolean;
   has_valid_data boolean ;
-  point_reduction boolean = false;
   closed_ring_number int;
   json_row_number int;
   json_data_found boolean = false;
@@ -160,34 +159,10 @@ BEGIN
 --Koordinater (meter) i UTM-sone 32
 --Nord, Øst: [ 6555265, 350075 ]
 
-    IF bb IS NULL THEN -- get all edges for given topology
-      CREATE TEMP TABLE _postgis_topology_astopojson_tmp_edges
-      ON COMMIT DROP
-      AS
-      SELECT
-           ROW_NUMBER() OVER (
-              ORDER BY
-                ST_XMin(e.geom),
-                ST_YMin(e.geom),
-                edge_id
-           ) leftmost_index,
-           e.edge_id,
-           e.left_face,
-           e.right_face,
-           e.next_right_edge,
-           e.next_left_edge,
-           e.geom
-      FROM edge_data e
-      WHERE
-           ( e.left_face = ANY ( all_faces ) OR
-             e.right_face = ANY ( all_faces ) );
              
-      --RAISE NOTICE 'case no bb _postgis_topology_astopojson_tmp_edges % for all_faces %', (select count(*) from _postgis_topology_astopojson_tmp_edges),all_faces;
-             
-    ELSE -- Use bb (bounding box) as to remove holes with a single edge outside the bounding box 
-      -- Will not pick up  edges where left_face = right_face
+    --IF bb IS NOT NULL Use bb (bounding box) as to remove holes with a single edge outside the bounding box 
+    -- Will not pick up  edges where left_face = right_face
            
-      point_reduction = true;
       json_row_number = 0;
 
       -- find the mbr for selected faces  
@@ -199,9 +174,17 @@ BEGIN
         start_index_closed_ring = 1;
         
         -- find intersection beetween th bb and mbr
-        bb_intersect_mbr = ST_Intersection(mbr_box,bb);
-        -- TODO what should here if we get null here,  Should we return a empty TopoJSON ??
-                
+        IF bb IS NOT NULL THEN
+          bb_intersect_mbr = ST_Intersection(mbr_box,bb);
+        END IF;
+---03_02_topojson_id|{"type":"Topology", "crs":{"type":"name","properties":{"name":"EPSG:25832"}},"objects":{"collection": { "type": "GeometryCollection", "geometries":[
+--{ "type": "MultiPolygon", "arcs": [[[0]]],"properties":{"id":1,"reindrift_sesongomrade_kode":null,"reinbeitebruker_id":null,"fellesegenskaper.forstedatafangstdato":"2016-01-01","fellesegenskaper.verifiseringsdato":"2016-01-01","fellesegenskaper.oppdateringsdato":"2021-01-24","fellesegenskaper.opphav":null,"alle_reinbeitebr_id":"","status":0,"slette_status_kode":0,"editable":true}}]}},
+--"arcs": [[[868804,7704125],[868454,7703947],[868357,7703954],[868128,7704070],[867995,7704227],[867871,7704465],[867752,7704804],[867605,7705061],[867431,7705470],[867438,7705561],[867490,7705683],[867587,7705778],[867784,7705893],[868055,7706000],[868345,7706028],[868534,7706057],[868707,7706133],[868836,7706284],[869066,7706599],[869145,7706655],[869233,7706685],[869370,7706645],[869563,7706521],[869824,7706243],[869940,7705935],[869909,7705762],[869809,7705315],[869562,7704743],[869274,7704427],[868804,7704125]]]}
+--
+--+03_02_topojson_id|{"type":"Topology", "crs":{"type":"name","properties":{"name":"EPSG:25832"}},"objects":{"collection": { "type": "GeometryCollection", "geometries":[
+--]}},
+--"arcs": [[[868804,7704125],[868454,7703947],[868357,7703954],[868128,7704070],[867995,7704227],[867871,7704465],[867752,7704804],[867605,7705061],[867431,7705470],[867438,7705561],[867490,7705683],[867587,7705778],[867784,7705893],[868055,7706000],[868345,7706028],[868534,7706057],[868707,7706133],[868836,7706284],[869066,7706599],[869145,7706655],[869233,7706685],[869370,7706645],[869563,7706521],[869824,7706243],[869940,7705935],[869909,7705762],[869809,7705315],[869562,7704743],[869274,7704427],[868804,7704125]]]}
+                 
         cmd := Format('CREATE TEMP TABLE _astopojson_with_bb_all_edges ON COMMIT DROP AS
         SELECT r.*
         FROM (
@@ -222,7 +205,7 @@ BEGIN
           END
           AS logical_end_node, 
 
-          CASE WHEN e.geom && %3$L THEN TRUE
+          CASE WHEN %3$L IS NULL OR e.geom && %3$L THEN TRUE
           ELSE FALSE
           END
           AS mbr_intersect 
@@ -272,6 +255,10 @@ BEGIN
           -- check if valid data here, inside bb
           has_valid_data = false;
           
+          IF bb IS NULL THEN
+            has_valid_data = true;
+            json_data_found = true;
+          ELSE 
           IF closed_ring_number = 0 THEN
             cmd := Format('SELECT ST_Polygonize(geom) FROM _astopojson_with_bb_all_edges e WHERE e.sequence >= %1$s AND e.sequence <= %2$s',
             start_index_closed_ring,
@@ -289,6 +276,7 @@ BEGIN
             start_index_closed_ring,
             stop_index_closed_ring);
             EXECUTE cmd INTO has_valid_data;
+          END IF;
           END IF;
 
           -- if inside data
@@ -338,17 +326,14 @@ BEGIN
               --RAISE NOTICE 'arcs_boandary %, face_id_selcted % ', arcs_boandary, face_id_selcted;
   
             ELSE
-              -- TODO fix/check this code
-              cmd := Format('SELECT array_agg(e.signed_edge_id_fa ORDER BY e.sequence desc) 
+              -- TODO fix/check this code is correct
+              SELECT array_agg((e.edge_id - 1) ORDER BY e.sequence desc) 
               FROM (
-                SELECT * FROM ( SELECT DISTINCT ON ( edge_id) 
-                  signed_edge_id_fa, 
-                  sequence
-                      FROM  FROM _astopojson_with_bb_all_edges e WHERE e.sequence >= %2$s AND e.sequence <= %3$
-                ) e ORDER BY sequence',
-                 start_index_closed_ring,
-                 stop_index_closed_ring);
-              EXECUTE cmd into arcs_boandary;
+              SELECT * FROM ( SELECT DISTINCT ON ( edge_id) edge_id, sequence
+                    FROM  _astopojson_with_bb_all_edges
+                ) e ORDER BY sequence  
+              ) e into arcs_boandary;
+
             END IF;
   
             -- add outer ring
@@ -390,201 +375,10 @@ BEGIN
         json := NULL; -- bo data found
       END IF;
      
-        RETURN json; -- we are done
-        EXECUTE 'SET search_path TO ' || old_search_path;
-    
+      EXECUTE 'SET search_path TO ' || old_search_path;
       
-      --RAISE NOTICE 'case bb _postgis_topology_astopojson_tmp_edges % for all_faces %', (select count(*) from _postgis_topology_astopojson_tmp_edges),all_faces;
-        
-
-      --RAISE NOTICE 'json % for all_faces %', json,all_faces;
-
-      --RAISE NOTICE 'case bb _postgis_topology_astopojson_tmp_edges % for all_faces %', (select count(*) from _postgis_topology_astopojson_tmp_edges),all_faces;
-  
-    END IF;
-   
-     
-    CREATE INDEX on _postgis_topology_astopojson_tmp_edges (edge_id);
-    CREATE INDEX on _postgis_topology_astopojson_tmp_edges (leftmost_index);
-
---    RAISE NOTICE 'Testlog Check edge for all_faces % with point_reduction %', all_faces, point_reduction;
---    FOR rec IN SELECT * FROM _postgis_topology_astopojson_tmp_edges
---    LOOP
---      RAISE NOTICE 'Testlog rec.edge_id % e.left_face % e.right_face % e.geom % for % with point_reduction %', rec.edge_id, rec.left_face, rec.right_face, rec.geom, all_faces, point_reduction;
---    END LOOP;
-
+      RETURN json; -- we are done
     
-    LOOP -- { until all edges were visited
-
-      arcs := NULL;
-      edges_found := false;
-
---#ifdef POSTGIS_TOPOLOGY_DEBUG
-      RAISE DEBUG 'LOOP START - looking for next % binding faces %',
-        CASE WHEN looking_for_holes THEN 'hole' ELSE 'shell' END, faces;
---#endif
-
-      FOR rec in -- {
-WITH RECURSIVE
-_edges AS (
-  SELECT
-     *,
-     left_face = ANY ( faces ) as lf,
-     right_face = ANY ( faces ) as rf
-  FROM
-    _postgis_topology_astopojson_tmp_edges
-),
-_leftmost_non_dangling_edge AS (
-  SELECT e.edge_id
-    FROM _edges e WHERE e.lf != e.rf
-  ORDER BY
-    leftmost_index
-  LIMIT 1
-),
-_edgepath AS (
-  SELECT
-    CASE
-      WHEN e.lf THEN lme.edge_id
-      ELSE -lme.edge_id
-    END as signed_edge_id,
-    false as back,
-
-    e.lf = e.rf as dangling,
-    e.left_face, e.right_face,
-    e.lf, e.rf,
-    e.next_right_edge, e.next_left_edge
-
-  FROM _edges e, _leftmost_non_dangling_edge lme
-  WHERE e.edge_id = abs(lme.edge_id)
-    UNION
-  SELECT
-    CASE
-      WHEN p.dangling AND NOT p.back THEN -p.signed_edge_id
-      WHEN p.signed_edge_id < 0 THEN p.next_right_edge
-      ELSE p.next_left_edge
-    END, -- signed_edge_id
-    CASE
-      WHEN p.dangling AND NOT p.back THEN true
-      ELSE false
-    END, -- back
-
-    e.lf = e.rf, -- dangling
-    e.left_face, e.right_face,
-    e.lf, e.rf,
-    e.next_right_edge, e.next_left_edge
-
-  FROM _edges e, _edgepath p
-  WHERE
-    e.edge_id = CASE
-      WHEN p.dangling AND NOT p.back THEN abs(p.signed_edge_id)
-      WHEN p.signed_edge_id < 0 THEN abs(p.next_right_edge)
-      ELSE abs(p.next_left_edge)
-    END
-)
-SELECT abs(signed_edge_id) as edge_id, signed_edge_id, dangling,
-        lf, rf, left_face, right_face
-FROM _edgepath
-      -- }
-
-      LOOP  -- { over recursive query
-
---#ifdef POSTGIS_TOPOLOGY_DEBUG
-        RAISE DEBUG ' edge % lf:%(%) rf:%(%)' , rec.signed_edge_id, rec.lf, rec.left_face, rec.rf, rec.right_face;
---#endif
-
-        IF rec.left_face = ANY (all_faces) AND NOT rec.left_face = ANY (shell_faces) THEN
-          shell_faces := shell_faces || rec.left_face;
-        END IF;
-
-        IF rec.right_face = ANY (all_faces) AND NOT rec.right_face = ANY (shell_faces) THEN
-          shell_faces := shell_faces || rec.right_face;
-        END IF;
-
-        visited_edges := visited_edges || rec.edge_id;
-
-        edges_found := true;
-
-        -- TODO: drop ?
-        IF rec.dangling THEN
-          CONTINUE;
-        END IF;
-
-        IF rec.left_face = ANY (all_faces) AND rec.right_face = ANY (all_faces) THEN
-          CONTINUE;
-        END IF;
-
-        IF edgeMapTable IS NOT NULL THEN
-          sql := 'SELECT arc_id-1 FROM ' || edgeMapTable::text || ' WHERE edge_id = $1';
-          EXECUTE sql INTO arcid USING rec.edge_id;
-          IF arcid IS NULL THEN
-            EXECUTE 'INSERT INTO ' || edgeMapTable::text
-              || '(edge_id) VALUES ($1) RETURNING arc_id-1'
-            INTO arcid USING rec.edge_id;
-          END IF;
-        ELSE
-          arcid := rec.edge_id-1;
-        END IF;
-
-        -- Swap sign, use two's complement for negative edges
-        IF rec.signed_edge_id >= 0 THEN
-          arcid := - ( arcid + 1 );
-        END IF;
-
---#ifdef POSTGIS_TOPOLOGY_DEBUG
-        RAISE DEBUG 'ARC id: %' , arcid;
---#endif
-
-        arcs := arcid || arcs;
-
-      END LOOP; -- } over recursive query
-
-      DELETE from _postgis_topology_astopojson_tmp_edges
-      WHERE edge_id = ANY (visited_edges);
-      visited_edges := ARRAY[]::int[];
-
---#ifdef POSTGIS_TOPOLOGY_DEBUG
-      --RAISE DEBUG 'Edges found:%, visited faces: %, ARCS: %' , edges_found, shell_faces, arcs;
---#endif
-
-      IF NOT edges_found THEN -- {
-
-        IF looking_for_holes THEN
-          looking_for_holes := false;
---#ifdef POSTGIS_TOPOLOGY_DEBUG
-          RAISE DEBUG 'NO MORE holes, rings:%', ringtxt;
---#endif
-          comptxt := comptxt || ( '[' || array_to_string(ringtxt, ',') || ']' );
-          ringtxt := NULL;
-          faces := all_faces;
-          shell_faces := ARRAY[]::int[];
-        ELSE
-          EXIT; -- end of loop
-        END IF;
-
-      ELSE -- } edges found {
-
-        faces := shell_faces;
-        IF arcs IS NOT NULL THEN
---#ifdef POSTGIS_TOPOLOGY_DEBUG
-          RAISE DEBUG ' % arcs: %', CASE WHEN looking_for_holes THEN 'hole' ELSE 'shell' END, arcs;
---#endif
-          ringtxt := ringtxt || ( '[' || array_to_string(arcs,',') || ']' );
-        END IF;
-        looking_for_holes := true;
-
-      END IF; -- }
-
-    END LOOP; -- }
-
-    DROP TABLE _postgis_topology_astopojson_tmp_edges;
-
-    json := json || array_to_string(comptxt, ',') || ']}';
-    
-    RAISE NOTICE 'json % for all_faces % , %', json,all_faces, ST_asText(bb);
-    
-
-    EXECUTE 'SET search_path TO ' || old_search_path;
-
   ELSIF tg.type = 4 THEN -- collection
     RAISE EXCEPTION 'Collection TopoGeometries are not supported by AsTopoJSON';
 
