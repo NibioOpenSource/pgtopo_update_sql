@@ -18,10 +18,17 @@ SELECT '2', ST_length(topology.toTopoGeom('SRID=4258;LINESTRING (5.70182 59.5513
 SELECT '3', count(id) FROM (SELECT 1 AS id FROM topo_update.create_surface_edge_domain_obj('{"type": "Feature","geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[18.3342803675,69.1937360885],[18.3248972004,69.1926352514],[18.3225223088,69.1928235904],[18.3172506318,69.1941599626],[18.3145519815,69.1957316656],[18.3123602886,69.1980059858],[18.310704822,69.2011722899],[18.3080083628,69.2036461481],[18.3052533657,69.2074983075],[18.3057756447,69.2082956989],[18.3075330509,69.2093067972],[18.3103134457,69.2100132313],[18.3156403748,69.2107656476],[18.3228118186,69.2113399389],[18.3301412606,69.2111984614],[18.3349532259,69.2112004097],[18.3395639862,69.2116335442],[18.3433515794,69.2127948707],[18.3502828982,69.2152724054],[18.3524811669,69.2156570867],[18.3547763375,69.2158024362],[18.3580354423,69.2152640418],[18.3623692173,69.2138971761],[18.3678152295,69.2110837518],[18.3695071064,69.2082009883],[18.3680734909,69.2067092134],[18.3638755844,69.2028967661],[18.355530639,69.1981677188],[18.3471464882,69.1957662158],[18.3342803675,69.1937360885]]},"properties":{"fellesegenskaper.opphav":null,"fellesegenskaper.kvalitet.synbarhet":null,"fellesegenskaper.kvalitet.noyaktighet":null,"fellesegenskaper.kvalitet.maalemetode":null,"fellesegenskaper.oppdateringsdato":null,"fellesegenskaper.forstedatafangstdato":"2016-01-01","fellesegenskaper.verifiseringsdato":null,"Fellesegenskaper.Kvalitet.Maalemetode":82}}','topo_rein', 'arstidsbeite_var_flate', 'omrade', 'arstidsbeite_var_grense','grense',  1e-10)) AS R;
 SELECT '03_01', status, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.arstidsbeite_var_flate WHERE id = (select max(id) FROM topo_rein.arstidsbeite_var_flate) AND (felles_egenskaper).oppdateringsdato = current_date;
 SELECT '03_02', (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato FROM topo_rein.arstidsbeite_var_grense WHERE id = (select max(id) FROM topo_rein.arstidsbeite_var_grense) AND (felles_egenskaper).oppdateringsdato = current_date;
+SELECT '03_02_query_to_topojson_bb' , * from topo_update.query_to_topojson('select distinct a.* from topo_rein.arstidsbeite_var_topojson_flate_v  a ',25832,0,0,'SRID=4258;POLYGON((18.3052533657 69.1926352514,18.3052533657 69.2158024362,18.3695071064 69.2158024362,18.3695071064 69.1926352514,18.3052533657 69.1926352514))');
+SELECT '03_02_query_to_topojson' , * from topo_update.query_to_topojson('select distinct a.* from topo_rein.arstidsbeite_var_topojson_flate_v  a WHERE a.id in (1)',25832,0,0);
+SELECT '03_02_as_topo_json', topo_update.as_topo_json(a.omrade,null,null) from topo_rein.arstidsbeite_var_topojson_flate_v  a WHERE a.id in (1);
+SELECT '03_02_AsTopoJSON_org', AsTopoJSON(a.omrade,null) from topo_rein.arstidsbeite_var_topojson_flate_v  a WHERE a.id in (1);
+
 -- Check that update log has no values for arstidsbeite_var_flate
 select '3_data_update_log', count(*) from topo_rein.data_update_log e where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_var_flate';
 -- Check that new data_update_log_new_v has no values fro arstidsbeite_var_flate since no update has be done yet, there is zero rows here because the added row has not reached a valid state yet
 select '3_data_update_log_new_v', count(*) from topo_rein.data_update_log_new_v where  schema_name = 'topo_rein' and table_name = 'arstidsbeite_var_flate' and json_after is not null and json_after::text <> '{}'::text;
+
+
 
 -- ======= Create line object in layer reindrift_anlegg_linje and update it,   ======= --
 SELECT '4', count(id) FROM (SELECT 1 AS id FROM  topo_update.create_line_edge_domain_obj('{"type":"Feature","properties":{"fellesegenskaper.verifiseringsdato":null,"fellesegenskaper.oppdateringsdato":null,"fellesegenskaper.opphav":"Reindriftsforvaltningen"},"geometry":{"type":"LineString","crs":{"type":"name","properties":{"name":"EPSG:4258"}},"coordinates":[[5.70182,58.55131],[5.70368,58.55134],[5.70403,58.553751]]}}','topo_rein', 'reindrift_anlegg_linje', 'linje', 1e-10)) AS R;
@@ -354,7 +361,6 @@ SELECT '60_res_01', id, reinbeitebruker_id,arealtype, treslag, skogbonitet , gru
 SELECT '60_res_02', id, saksbehandler, avgrensing_type, (felles_egenskaper).opphav, (felles_egenskaper).forstedatafangstdato, (felles_egenskaper).verifiseringsdato from topo_ar5.webclient_grense grense order by id desc limit 1;
 SELECT '61_upd_01', topo_update.apply_attr_on_topo_line('{"properties":{"id":1,"status":1,"arealtype":11,"fellesegenskaper.verifiseringsdato":"2017-11-22","fellesegenskaper.forstedatafangstdato":"2017-11-20"}}','topo_ar5', 'webclient_flate','omrade');
 SELECT '61_res_02', id, reinbeitebruker_id,arealtype, treslag, skogbonitet , grunnforhold, omrade, status,  (felles_egenskaper).opphav, (felles_egenskaper).forstedatafangstdato from topo_ar5.webclient_flate where (felles_egenskaper).oppdateringsdato = current_date or (felles_egenskaper).oppdateringsdato =  current_date order by id desc limit 3;
-
 
 
 -- Create a simple closed polygon
