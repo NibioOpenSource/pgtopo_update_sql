@@ -1,7 +1,7 @@
 BEGIN;
 
 CREATE SCHEMA IF NOT EXISTS topo_update;
-\i :regdir/../../../main/sql/topo_update/function_02_json_props_to_pg_cols.sql
+\i :regdir/../../src/sql/topo_update/function_02_json_props_to_pg_cols.sql
 
 CREATE TABLE json_mappings (id INT primary key, lbl TEXT UNIQUE, map json, props json);
 

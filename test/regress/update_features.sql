@@ -3,8 +3,8 @@ BEGIN;
 set client_min_messages to WARNING;
 
 CREATE SCHEMA IF NOT EXISTS topo_update;
-\i :regdir/../../../main/sql/topo_update/function_02_json_props_to_pg_cols.sql
-\i :regdir/../../../main/sql/topo_update/function_02_update_features.sql
+\i :regdir/../../src/sql/topo_update/function_02_json_props_to_pg_cols.sql
+\i :regdir/../../src/sql/topo_update/function_02_update_features.sql
 
 -- TARGET TABLES:
 -- topo_ar5.webclient_flate
@@ -36,7 +36,7 @@ DECLARE
 BEGIN
 
   sql := format($$
-      CREATE TABLE IF NOT EXISTS %1$I.limits AS 
+      CREATE TABLE IF NOT EXISTS %1$I.limits AS
       SELECT 'node'::text as what, COALESCE(max(node_id),0) max FROM %1$I.node
       UNION ALL
       SELECT 'edge'::text as what, COALESCE(max(edge_id),0) max FROM %1$I.edge
@@ -311,7 +311,7 @@ INSERT INTO update_features_test.json_input(label, source, payload) VALUES (
 
 -- Start of operations
 SELECT 'start', 'topo', * FROM update_features_test.check_changes('update_features_test_topo');
-	
+
 -- Call the first time, should INSERT
 SELECT topo_update.update_features(
 	(SELECT payload FROM update_features_test.json_input WHERE label = 'test1'),

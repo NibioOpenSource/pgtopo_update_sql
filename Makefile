@@ -1,6 +1,6 @@
 INPUT_SQL := \
-	$(shell find src/main/sql/topo_update/ -name 'schema_*' | sort) \
-	$(shell find src/main/sql/topo_update/ -name 'function_*' | sort) \
+	$(shell find src/sql/topo_update/ -name 'schema_*' | sort) \
+	$(shell find src/sql/topo_update/ -name 'function_*' | sort) \
 	$(END)
 
 all: topo_update.sql ## Build schema loader script
@@ -15,4 +15,4 @@ topo_update.sql: $(INPUT_SQL) Makefile
 	echo "COMMIT;" >> $@
 
 check: topo_update.sql ## Run regression testing
-	$(MAKE) -C src/test/sql/regress/ check
+	$(MAKE) -C test/regress/ check

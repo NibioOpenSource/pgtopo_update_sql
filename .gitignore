@@ -1,3 +1,2 @@
 topo_update.sql
-src/test/sql/loader/
-src/test/sql/regress/00-regress-install/
+test/loader/
