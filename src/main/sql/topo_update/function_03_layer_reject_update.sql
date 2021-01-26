@@ -1,6 +1,6 @@
 
 
--- set status to 10 for givene object 
+-- set status to 10 for givene object
 
 -- _data_update_log_id_before int, this id used to get info from the change log
 -- _saksbehandler varchar this is the logged in user
@@ -8,7 +8,7 @@
 drop function if exists topo_update.layer_reject_update(_data_update_log_id_before int, _saksbehandler varchar ) ;
 
 
-CREATE OR REPLACE FUNCTION topo_update.layer_reject_update(_data_update_log_id_before int, _saksbehandler varchar ) 
+CREATE OR REPLACE FUNCTION topo_update.layer_reject_update(_data_update_log_id_before int, _saksbehandler varchar )
 RETURNS int AS $$DECLARE
 
 num_rows_affected int;
@@ -29,21 +29,25 @@ an_old_id int;
 
 BEGIN
 
-	-- TODO diable trigger whe update done by this code 
-	
+	-- TODO diable trigger whe update done by this code
+
 	-- get schema name and table nam,e value
-	select s.schema_name, s.table_name, s.row_id, s.json_row_data::text 
+	select s.schema_name, s.table_name, s.row_id, s.json_row_data::text
 	into this_schema_name, this_table_name, this_data_row_id, this_json_row_data
 	from topo_rein.data_update_log s
 	where s.id = _data_update_log_id_before and s.change_confirmed_by_admin = false;
+
+	IF NOT FOUND THEN
+		RAISE EXCEPTION 'topo_update.layer_reject_update: no unconfirmed change found in data_update_log with id=%', _data_update_log_id_before;
+	END IF;
 
 	-- update attributtes to old values
 	IF this_json_row_data <> '{}'::text THEN
 		perform topo_update.apply_attr_on_topo_layer(
 		'{"properties":'||((this_json_row_data::json->'objects'->'collection'->'geometries'->>0)::json->'properties')::text||'}',
-		this_schema_name, 
-		this_table_name);	
-	ELSE 
+		this_schema_name,
+		this_table_name);
+	ELSE
 		command_string := format('update %I.%I set status = -1, slette_status_kode = 1 where id = %L',
 		this_schema_name, this_table_name, this_data_row_id);
 		RAISE NOTICE 'command_string %' , command_string;
@@ -56,9 +60,9 @@ BEGIN
 	where s.row_id = this_data_row_id and s.schema_name = this_schema_name and s.table_name = this_table_name and s.change_confirmed_by_admin = false;
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 	RAISE NOTICE 'Number of meta rows affected  %',  num_rows_affected;
-	
-	
-	
+
+
+
 
 
 	RETURN num_rows_affected;
@@ -77,5 +81,5 @@ $$ LANGUAGE plpgsql;
 
 --	select '{"properties":'||((s.json_row_data::json->'objects'->'collection'->'geometries'->>0)::json->'properties')::text||'}'
 --	from topo_rein.data_update_log s
---	where s.id = 1 and s.change_confirmed_by_admin = false;	
+--	where s.id = 1 and s.change_confirmed_by_admin = false;
 

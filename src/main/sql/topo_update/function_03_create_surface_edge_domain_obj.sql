@@ -12,6 +12,64 @@
 -- DROP FUNCTION IF EXISTS topo_update.create_surface_edge_domain_obj(json_feature text) cascade;
 
 
+CREATE OR REPLACE FUNCTION topo_update.check_split_border(
+  line GEOMETRY,
+  toponame TEXT
+) RETURNS GEOMETRY AS $BODY$
+DECLARE --{
+  line_intersection_result GEOMETRY;
+  sql TEXT;
+  num_edge_intersects INT;
+BEGIN
+	-- modify the input geometry if it's not simple.
+	IF NOT ST_IsSimple(line) THEN
+		-- This is probably a crossing line so we try to build a surface
+		BEGIN
+			line_intersection_result := ST_BuildArea(ST_UnaryUnion(line))::geometry;
+			RAISE DEBUG 'topo_update.check_split_border Line intersection result is %', ST_AsText(line_intersection_result);
+			line := ST_ExteriorRing(line_intersection_result);
+		EXCEPTION WHEN others THEN
+			RAISE DEBUG 'topo_update.check_split_border Error code: %', SQLSTATE;
+			RAISE DEBUG 'topo_update.check_split_border Error message: %', SQLERRM;
+			RAISE DEBUG 'topo_update.check_split_border Failed to to use line intersection result is %, try buffer', ST_AsText(line_intersection_result);
+			line := ST_ExteriorRing(ST_Buffer(line_intersection_result,0.00000000001));
+		END;
+
+		-- check the object after a fix
+		RAISE DEBUG 'topo_update.check_split_border Fixed a non simple line to be valid simple line by using by buildArea %',  line;
+	ELSIF NOT ST_IsClosed(line) THEN
+		-- If this is not closed just check that it intersects two times with a exting border
+		-- TODO make more precice check that only used edges that in varbeite surface
+		-- TODO handle return of gemoerty collection
+		-- thic code fails need to make a test on this
+
+		sql := format($$
+SELECT ST_Union(ST_Intersection($1, e.geom))
+FROM %I.edge_data e
+WHERE ST_Intersects($1, e.geom)
+		$$, toponame);
+		RAISE DEBUG 'topo_update.check_split_border sql %', sql;
+
+		EXECUTE sql USING line
+		INTO line_intersection_result;
+
+		RAISE DEBUG 'topo_update.check_split_border Line intersection result is %', ST_AsText(line_intersection_result);
+
+		num_edge_intersects := COALESCE(ST_NumGeometries(line_intersection_result), 0);
+
+		RAISE DEBUG 'topo_update.check_split_border: non closed linestring intersects % times with topology edges', num_edge_intersects;
+		IF num_edge_intersects = 0 THEN
+			RAISE EXCEPTION 'Non closed linestring does not intersect any edges';
+		ELSIF num_edge_intersects = 1 THEN
+			line := ST_ExteriorRing(ST_BuildArea(ST_UnaryUnion(ST_AddPoint(line, ST_StartPoint(line)))));
+		ELSIF num_edge_intersects > 2 THEN
+			RAISE EXCEPTION 'Found a non valid linestring does intersect % times, with any borders by using buildArea %', num_edge_intersects, line;
+		END IF;
+	END IF;
+  RETURN line;
+END; --}
+$BODY$ LANGUAGE 'plpgsql';
+
 CREATE OR REPLACE FUNCTION topo_update.create_surface_edge_domain_obj(client_json_feature text,
   layer_schema text,
   surface_layer_table text, surface_layer_column text,
@@ -75,8 +133,9 @@ BEGIN
 	surface_topo_info := topo_update.make_input_meta_info(layer_schema, surface_layer_table , surface_layer_column );
 
 	-- parse the input values and find input geo and properties.
-	-- If there are properties with equal name found both in client_json_feature and server_json_feature,
-	-- then the values in server_json_feature will be used.
+	-- If there are properties with equal name found both in
+	-- client_json_feature and server_json_feature, then the values
+	-- in server_json_feature will be used.
 	json_input_structure := topo_update.handle_input_json_props(client_json_feature::json,server_json_feature::json,4258);
 
 	-- save a copy of the input geometry before modfied, used for logging later.
@@ -98,46 +157,7 @@ BEGIN
 		INSERT INTO topo_rein.create_surface_edge_domain_obj_t0(geo_in,IsSimple,IsClosed) VALUES(json_input_structure.input_geo,St_IsSimple(json_input_structure.input_geo),St_IsSimple(json_input_structure.input_geo));
 	END IF;
 
-	-- modify the input geometry if it's not simple.
-	IF NOT ST_IsSimple(json_input_structure.input_geo) THEN
-		-- This is probably a crossing line so we try to build a surface
-		BEGIN
-			line_intersection_result := ST_BuildArea(ST_UnaryUnion(json_input_structure.input_geo))::geometry;
-			RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Line intersection result is %', ST_AsText(line_intersection_result);
-			json_input_structure.input_geo := ST_ExteriorRing(line_intersection_result);
-		EXCEPTION WHEN others THEN
-		 	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Error code: %', SQLSTATE;
-      		RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Error message: %', SQLERRM;
-			RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Failed to to use line intersection result is %, try buffer', ST_AsText(line_intersection_result);
-			json_input_structure.input_geo := ST_ExteriorRing(ST_Buffer(line_intersection_result,0.00000000001));
-		END;
-
-		-- check the object after a fix
-		RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Fixed a non simple line to be valid simple line by using by buildArea %',  json_input_structure.input_geo;
-	ELSIF NOT ST_IsClosed(json_input_structure.input_geo) THEN
-		-- If this is not closed just check that it intersects two times with a exting border
-		-- TODO make more precice check that only used edges that in varbeite surface
-		-- TODO handle return of gemoerty collection
-		-- thic code fails need to make a test on this
-
-		command_string := format('select ST_Union(ST_Intersection(%L,e.geom)) FROM %I.edge_data e WHERE ST_Intersects(%L,e.geom)',
-  		json_input_structure.input_geo,border_topo_info.topology_name,json_input_structure.input_geo);
-  		RAISE NOTICE 'topo_update.create_surface_edge_domain_obj command_string %', command_string;
-  		EXECUTE command_string INTO line_intersection_result;
-
-		RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Line intersection result is %', ST_AsText(line_intersection_result);
-
-		num_edge_intersects :=  (SELECT ST_NumGeometries(line_intersection_result))::int;
-
-		RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Found a non closed linestring does intersect % times, with any borders by using buildArea %', num_edge_intersects, json_input_structure.input_geo;
-		IF num_edge_intersects is null THEN
-			RAISE EXCEPTION 'Found a non non closed linestring does not intersect any borders by using buildArea %', json_input_structure.input_geo;
-		ELSEIF num_edge_intersects < 2 THEN
-			json_input_structure.input_geo := ST_ExteriorRing(ST_BuildArea(ST_UnaryUnion(ST_AddPoint(json_input_structure.input_geo, ST_StartPoint(json_input_structure.input_geo)))));
-		ELSEIF num_edge_intersects > 2 THEN
-			RAISE EXCEPTION 'Found a non valid linestring does intersect % times, with any borders by using buildArea %', num_edge_intersects, json_input_structure.input_geo;
-		END IF;
-	END IF;
+	json_input_structure.input_geo := topo_update.check_split_border(json_input_structure.input_geo, border_topo_info.topology_name);
 
 	IF do_timing_debug THEN
 		RAISE NOTICE '% time spent % to reach state where input check is done', proc_name, clock_timestamp() - ts;
@@ -219,8 +239,8 @@ BEGIN
 
 	-- Create table for the rows to be returned to the caller.
 	-- The result contains list of line and surface id so the client knows alle row created.
-	DROP TABLE IF EXISTS create_surface_edge_domain_obj_r1_r;
-	CREATE TEMP TABLE create_surface_edge_domain_obj_r1_r(id int, id_type text) ;
+	CREATE TEMP TABLE create_surface_edge_domain_obj_r1_r(id int, id_type text)
+	ON COMMIT DROP;
 
 	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Step::::::::::::::::: 2';
 
@@ -233,25 +253,26 @@ BEGIN
 	-- The new faces are already created so we new find them and relate our domain objects
 	-- ##############################################################
 
-		-- Add new collumns for default values
---	alter table new_surface_data_for_edge add column reinbeitebruker_id varchar(3);
---	update new_surface_data_for_edge set reinbeitebruker_id = 'ZD';
+	-- Add new columns for default values
 
-
---select '{"reindrift_sesongomrade_kode":1,"fellesegenskaper.forstedatafangstdato":"2018-11-20","fellesegenskaper.verifiseringsdato":"2018-11-22","reinbeitebruker_id":"ZX"}'::json->>'reinbeitebruker_id'::text;
---select NULLIF('{"reindrift_sesongomrade_kode":1,"fellesegenskaper.forstedatafangstdato":"2018-11-20","fellesegenskaper.verifiseringsdato":"2018-11-22","reinbeitebruker_id":""}'::json->>'reinbeitebruker_id'::text,'');
---create temp table aa as select NULLIF('{"reindrift_sesongomrade_kode":1,"fellesegenskaper.forstedatafangstdato":"2018-11-20","fellesegenskaper.verifiseringsdato":"2018-11-22"}'::json->>'reinbeitebruker_id'::text,'') as bb;
-
-	-- Create a new temp table to hold topo surface objects that has a relation to the edge added by the user .
-	DROP TABLE IF EXISTS new_surface_data_for_edge;
+	-- Create a new temp table to hold topo surface objects that
+	-- has a relation to the edge added by the user .
+	--
 	-- find out if any old topo objects overlaps with this new objects using the relation table
 	-- by using the surface objects owned by the both the new objects and the exting one
-	CREATE TEMP TABLE new_surface_data_for_edge AS
-	(SELECT
-	topo::topogeometry AS surface_topo,
-	json_input_structure.sosi_felles_egenskaper_flate AS felles_egenskaper,
-	NULLIF (json_input_structure.json_properties->>'reinbeitebruker_id'::text,'') as reinbeitebruker_id
-	FROM topo_update.create_edge_surfaces(surface_topo_info,border_topo_info,new_border_data,json_input_structure.input_geo,json_input_structure.sosi_felles_egenskaper_flate));
+	CREATE TEMP TABLE new_surface_data_for_edge
+	ON COMMIT DROP AS
+	SELECT
+		surface_topo,
+		json_input_structure.sosi_felles_egenskaper_flate AS felles_egenskaper,
+		NULLIF (json_input_structure.json_properties->>'reinbeitebruker_id'::text,'') as reinbeitebruker_id
+	FROM topo_update.create_edge_surfaces(
+		surface_topo_info,
+		border_topo_info,
+		new_border_data,
+		json_input_structure.input_geo,
+		json_input_structure.sosi_felles_egenskaper_flate
+	) surface_topo;
 	-- We now have a list with all surfaces that intersect the line that is drwan by the user.
 	-- In this list there may areas that overlaps so we need to clean up some values
 
@@ -261,10 +282,17 @@ BEGIN
 		RAISE NOTICE '% time spent % to reach state, Number of topo surfaces added to table new_surface_data_for_edge %', proc_name, clock_timestamp() - ts, num_rows_affected;
 	END IF;
 
-	-- Clean up old surface and return a list of the objects that should be returned to the user for further processing
-	DROP TABLE IF EXISTS res_from_update_domain_surface_layer;
-	CREATE TEMP TABLE res_from_update_domain_surface_layer AS
-	(SELECT topo::topogeometry AS surface_topo FROM topo_update.update_domain_surface_layer(surface_topo_info,border_topo_info,json_input_structure,'new_surface_data_for_edge'));
+	-- Clean up old surface and return a list of the objects that
+	-- should be returned to the user for further processing
+	CREATE TEMP TABLE res_from_update_domain_surface_layer
+	ON COMMIT DROP AS
+	SELECT surface_topo
+	FROM topo_update.update_domain_surface_layer(
+		surface_topo_info,
+		border_topo_info,
+		json_input_structure,
+		'new_surface_data_for_edge'
+	) surface_topo;
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 
 	IF do_timing_debug THEN
