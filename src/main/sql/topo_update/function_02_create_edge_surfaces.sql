@@ -3,7 +3,13 @@
 -- TODO make general
 
 
-CREATE OR REPLACE FUNCTION topo_update.create_edge_surfaces(surface_topo_info topo_update.input_meta_info, border_topo_info topo_update.input_meta_info , new_border_data topogeometry, valid_user_geometry geometry, felles_egenskaper_flate topo_rein.sosi_felles_egenskaper)
+CREATE OR REPLACE FUNCTION topo_update.create_edge_surfaces(
+	surface_topo_info topo_update.input_meta_info,
+	border_topo_info topo_update.input_meta_info,
+	new_border_data topogeometry,
+	valid_user_geometry geometry,
+	felles_egenskaper_flate topo_rein.sosi_felles_egenskaper
+)
 RETURNS SETOF topo_update.topogeometry_def AS $$
 DECLARE
 
