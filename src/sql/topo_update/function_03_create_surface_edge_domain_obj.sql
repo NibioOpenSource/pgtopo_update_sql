@@ -60,14 +60,26 @@ $BODY$ LANGUAGE 'plpgsql';
 
 
 --
--- This a function that will be called from the client when user is drawing a line
--- This line will be applied the data in the line layer first
--- After that will find the new surfaces created.
--- new surfaces that was part old serface should inherit old values
+-- This function will be called from the client when the user
+-- draws a line to either create a new surface or extend an
+-- existing one.
 --
--- The result is a JSON array of objects with keys:
+-- If the border line will not form a new surface or modify
+-- an existing one, nothing is be done, otherwise:
+--
+--   1. The line, with associated attributes,
+--      is added into the border layer.
+--
+--   2. New surfaces created by addition of the border
+--      are found and added into the surface layer.
+--      Attributes for the new surface records will be
+--      inherited by the surface originally covering the
+--      space now covered by the new surface.
+--
+-- The returned value is an array of objects (in JSON format)
+-- having keys:
 --		- id integer, a TopoGeometry identifier
---      - id_type char, S or L, saying if the object
+--      - id_type char, S or L, saying if the TopoGeometry
 --                      was created in the surface layer (S)
 --                      or the border layer (L)
 --
@@ -79,6 +91,9 @@ $BODY$ LANGUAGE 'plpgsql';
 --
 -- {
 CREATE OR REPLACE FUNCTION topo_update.create_surface_edge_domain_obj(
+
+	-- A GeoJSON Feature object
+	-- See https://geojson.org/
 	client_json_feature text,
 
 	-- Name of the schema containing both
