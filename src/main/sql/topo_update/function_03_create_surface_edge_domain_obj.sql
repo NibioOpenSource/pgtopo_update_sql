@@ -1,17 +1,3 @@
--- This a function that will be called from the client when user is drawing a line
--- This line will be applied the data in the line layer first
--- After that will find the new surfaces created.
--- new surfaces that was part old serface should inherit old values
-
--- The result is a set of id's of the new surface objects created
-
--- TODO set attributtes for the line
--- TODO set attributtes for the surface
-
-
--- DROP FUNCTION IF EXISTS topo_update.create_surface_edge_domain_obj(json_feature text) cascade;
-
-
 CREATE OR REPLACE FUNCTION topo_update.check_split_border(
   line GEOMETRY,
   toponame TEXT
@@ -68,57 +54,74 @@ WHERE ST_Intersects($1, e.geom)
 	END IF;
   RETURN line;
 END; --}
+
 $BODY$ LANGUAGE 'plpgsql';
 
-CREATE OR REPLACE FUNCTION topo_update.create_surface_edge_domain_obj(client_json_feature text,
-  layer_schema text,
-  surface_layer_table text, surface_layer_column text,
-  border_layer_table text, border_layer_column text,
-  snap_tolerance float8,
-  server_json_feature text default null)
+
+-- This a function that will be called from the client when user is drawing a line
+-- This line will be applied the data in the line layer first
+-- After that will find the new surfaces created.
+-- new surfaces that was part old serface should inherit old values
+--
+-- The result is a set of id's of the new surface objects created
+--
+-- TODO set attributtes for the line
+-- TODO set attributtes for the surface
+--
+--
+CREATE OR REPLACE FUNCTION topo_update.create_surface_edge_domain_obj(
+	client_json_feature text,
+	layer_schema text,
+	surface_layer_table text,
+	surface_layer_column text,
+	border_layer_table text,
+	border_layer_column text,
+	snap_tolerance float8,
+	server_json_feature text default null
+)
 RETURNS TABLE(result text) AS $$
 DECLARE
 
-json_result text;
+	json_result text;
 
-new_border_data topology.topogeometry;
+	new_border topology.topogeometry;
 
--- TODO use as parameter put for testing we just have here for now
-border_topo_info topo_update.input_meta_info ;
-surface_topo_info topo_update.input_meta_info ;
+	-- TODO use as parameter put for testing we just have here for now
+	border_topo_info topo_update.input_meta_info ;
+	surface_topo_info topo_update.input_meta_info ;
 
--- hold striped gei
-edge_with_out_loose_ends geometry = null;
+	-- hold striped gei
+	edge_with_out_loose_ends geometry = null;
 
--- holds dynamic sql to be able to use the same code for different
-command_string text;
+	-- holds dynamic sql to be able to use the same code for different
+	command_string text;
 
--- used for logging
-num_rows_affected int;
+	-- used for logging
+	num_rows_affected int;
 
--- used for logging
-add_debug_tables int = 0;
+	-- used for logging
+	add_debug_tables int = 0;
 
--- the number times the inlut line intersects
-num_edge_intersects int;
+	-- the number times the inlut line intersects
+	num_edge_intersects int;
 
--- the orignal geo that is from the user
-org_geo_in geometry;
+	-- the orignal geo that is from the user
+	org_geo_in geometry;
 
-line_intersection_result geometry;
+	line_intersection_result geometry;
 
--- array of quoted field identifiers
--- for attribute fields passed in by user and known (by name)
--- in the target table
-not_null_fields text[];
+	-- array of quoted field identifiers
+	-- for attribute fields passed in by user and known (by name)
+	-- in the target table
+	not_null_fields text[];
 
--- holde the computed value for json input reday to use
-json_input_structure topo_update.json_input_structure;
+	-- holde the computed value for json input reday to use
+	json_input_structure topo_update.json_input_structure;
 
--- do debug timing
-do_timing_debug boolean = true;
-ts timestamptz := clock_timestamp();
-proc_name text = 'topo_update.create_surface_edge_domain_obj';
+	-- do debug timing
+	do_timing_debug boolean = true;
+	ts timestamptz := clock_timestamp();
+	proc_name text = 'topo_update.create_surface_edge_domain_obj';
 
 BEGIN
 
@@ -175,11 +178,11 @@ BEGIN
 
 
 	-- Create the new topo object for the egde layer, this edges will be used by the new surface objects later
-	new_border_data := topo_update.create_surface_edge(json_input_structure.input_geo,border_topo_info);
+	new_border := topo_update.create_surface_edge(json_input_structure.input_geo,border_topo_info);
 	IF do_timing_debug THEN
 		RAISE NOTICE 'topo_update.create_surface_edge_domain_obj The input as it used after check/fixed %',  ST_AsText(json_input_structure.input_geo);
-		RAISE NOTICE 'topo_update.create_surface_edge_domain_obj The new topo object created for based on the input geo % in table %.%',  new_border_data, border_topo_info.layer_schema_name,border_topo_info.layer_table_name;
-		RAISE NOTICE '% time spent % to reach state where new_border_data is by calling ', proc_name, clock_timestamp() - ts;
+		RAISE NOTICE 'topo_update.create_surface_edge_domain_obj The new topo object created for based on the input geo % in table %.%',  new_border, border_topo_info.layer_schema_name,border_topo_info.layer_table_name;
+		RAISE NOTICE '% time spent % to reach state where new_border is by calling ', proc_name, clock_timestamp() - ts;
 	END IF;
 
 
@@ -203,7 +206,7 @@ BEGIN
 	command_string := format('UPDATE ttt2_new_topo_rows_in_org_border_table
     SET %I = %L,
 	 felles_egenskaper = %L',
-  	border_topo_info.layer_feature_column, new_border_data,json_input_structure.sosi_felles_egenskaper);
+	border_topo_info.layer_feature_column, new_border,json_input_structure.sosi_felles_egenskaper);
   	EXECUTE command_string;
 
   	IF do_timing_debug THEN
@@ -269,7 +272,7 @@ BEGIN
 	FROM topo_update.create_edge_surfaces(
 		surface_topo_info,
 		border_topo_info,
-		new_border_data,
+		new_border,
 		json_input_structure.input_geo,
 		json_input_structure.sosi_felles_egenskaper_flate
 	) surface_topo;
@@ -347,12 +350,3 @@ BEGIN
 
 END;
 $$ LANGUAGE plpgsql;
-
-
-
---{ kept for backward compatility
---CREATE OR REPLACE FUNCTION topo_update.create_surface_edge_domain_obj(json_feature text)
---RETURNS TABLE(result text) AS $$
---  SELECT topo_update.create_surface_edge_domain_obj($1, 'topo_rein', 'arstidsbeite_var_flate', 'omrade', 'arstidsbeite_var_grense','grense',  1e-10);
---$$ LANGUAGE 'sql';
---}
