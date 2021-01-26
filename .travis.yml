@@ -13,6 +13,7 @@ addons:
   postgresql: '11'
 
 before_install:
+  - pg_lsclusters
   - sudo sed -i 's/port = 5433/port = 5432/' /etc/postgresql/11/main/postgresql.conf
   - sudo cp /etc/postgresql/{10,11}/main/pg_hba.conf
   - sudo service postgresql stop
@@ -24,7 +25,7 @@ services:
 global:
   - PGPORT=5432
 script:
-#  - find / -name shp2pgsql* 2>/dev/null 
+#  - find / -name shp2pgsql* 2>/dev/null
   - echo "select version()" | psql template1
   - make check RUNTESTFLAGS=-v
 
