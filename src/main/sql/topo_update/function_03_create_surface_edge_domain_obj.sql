@@ -239,8 +239,8 @@ BEGIN
 
 	-- Create table for the rows to be returned to the caller.
 	-- The result contains list of line and surface id so the client knows alle row created.
-	DROP TABLE IF EXISTS create_surface_edge_domain_obj_r1_r;
-	CREATE TEMP TABLE create_surface_edge_domain_obj_r1_r(id int, id_type text) ;
+	CREATE TEMP TABLE create_surface_edge_domain_obj_r1_r(id int, id_type text)
+	ON COMMIT DROP;
 
 	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj Step::::::::::::::::: 2';
 
@@ -253,20 +253,15 @@ BEGIN
 	-- The new faces are already created so we new find them and relate our domain objects
 	-- ##############################################################
 
-		-- Add new collumns for default values
---	alter table new_surface_data_for_edge add column reinbeitebruker_id varchar(3);
---	update new_surface_data_for_edge set reinbeitebruker_id = 'ZD';
+	-- Add new columns for default values
 
-
---select '{"reindrift_sesongomrade_kode":1,"fellesegenskaper.forstedatafangstdato":"2018-11-20","fellesegenskaper.verifiseringsdato":"2018-11-22","reinbeitebruker_id":"ZX"}'::json->>'reinbeitebruker_id'::text;
---select NULLIF('{"reindrift_sesongomrade_kode":1,"fellesegenskaper.forstedatafangstdato":"2018-11-20","fellesegenskaper.verifiseringsdato":"2018-11-22","reinbeitebruker_id":""}'::json->>'reinbeitebruker_id'::text,'');
---create temp table aa as select NULLIF('{"reindrift_sesongomrade_kode":1,"fellesegenskaper.forstedatafangstdato":"2018-11-20","fellesegenskaper.verifiseringsdato":"2018-11-22"}'::json->>'reinbeitebruker_id'::text,'') as bb;
-
-	-- Create a new temp table to hold topo surface objects that has a relation to the edge added by the user .
-	DROP TABLE IF EXISTS new_surface_data_for_edge;
+	-- Create a new temp table to hold topo surface objects that
+	-- has a relation to the edge added by the user .
+	--
 	-- find out if any old topo objects overlaps with this new objects using the relation table
 	-- by using the surface objects owned by the both the new objects and the exting one
-	CREATE TEMP TABLE new_surface_data_for_edge AS
+	CREATE TEMP TABLE new_surface_data_for_edge
+	ON COMMIT DROP AS
 	(SELECT
 	topo::topogeometry AS surface_topo,
 	json_input_structure.sosi_felles_egenskaper_flate AS felles_egenskaper,
@@ -281,9 +276,10 @@ BEGIN
 		RAISE NOTICE '% time spent % to reach state, Number of topo surfaces added to table new_surface_data_for_edge %', proc_name, clock_timestamp() - ts, num_rows_affected;
 	END IF;
 
-	-- Clean up old surface and return a list of the objects that should be returned to the user for further processing
-	DROP TABLE IF EXISTS res_from_update_domain_surface_layer;
-	CREATE TEMP TABLE res_from_update_domain_surface_layer AS
+	-- Clean up old surface and return a list of the objects that
+	-- should be returned to the user for further processing
+	CREATE TEMP TABLE res_from_update_domain_surface_layer
+	ON COMMIT DROP AS
 	(SELECT topo::topogeometry AS surface_topo FROM topo_update.update_domain_surface_layer(surface_topo_info,border_topo_info,json_input_structure,'new_surface_data_for_edge'));
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 
