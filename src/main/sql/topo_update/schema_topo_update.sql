@@ -6,9 +6,3 @@ COMMENT ON SCHEMA topo_update IS 'Is a schema for topo_update attributes and ref
 
 -- make the scema public
 GRANT USAGE ON SCHEMA topo_update to public;
-
-
--- craeted to make it possible to return a set of objects from the topo function
--- Todo find a better way to du this
-DROP TABLE IF EXISTS topo_update.topogeometry_def;
-CREATE TABLE topo_update.topogeometry_def(topo topogeometry);
