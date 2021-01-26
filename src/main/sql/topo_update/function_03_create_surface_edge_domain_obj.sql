@@ -161,7 +161,11 @@ BEGIN
 	-- If there are properties with equal name found both in
 	-- client_json_feature and server_json_feature, then the values
 	-- in server_json_feature will be used.
-	json_input_structure := topo_update.handle_input_json_props(client_json_feature::json,server_json_feature::json,4258);
+	json_input_structure := topo_update.handle_input_json_props(
+		client_json_feature::json,
+		server_json_feature::json,
+		4258
+	);
 
 	-- save a copy of the input geometry before modfied, used for logging later.
 	org_geo_in := json_input_structure.input_geo;
