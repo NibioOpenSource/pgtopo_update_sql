@@ -1,8 +1,9 @@
+-- Internal service function
 CREATE OR REPLACE FUNCTION topo_update.check_split_border(
   line GEOMETRY,
   toponame TEXT
-) RETURNS GEOMETRY AS $BODY$
-DECLARE --{
+) RETURNS GEOMETRY AS $BODY$ --{
+DECLARE
   line_intersection_result GEOMETRY;
   sql TEXT;
   num_edge_intersects INT;
@@ -58,28 +59,49 @@ END; --}
 $BODY$ LANGUAGE 'plpgsql';
 
 
+--
 -- This a function that will be called from the client when user is drawing a line
 -- This line will be applied the data in the line layer first
 -- After that will find the new surfaces created.
 -- new surfaces that was part old serface should inherit old values
 --
--- The result is a set of id's of the new surface objects created
+-- The result is a JSON array of objects with keys:
+--		- id integer, a TopoGeometry identifier
+--      - id_type char, S or L, saying if the object
+--                      was created in the surface layer (S)
+--                      or the border layer (L)
 --
--- TODO set attributtes for the line
--- TODO set attributtes for the surface
+-- NOTE: the return is typed as TEXT because Java clients
+--       may have trouble with JSON type return from functions
 --
+-- TODO set attributes for the line
+-- TODO set attributes for the surface
 --
+-- {
 CREATE OR REPLACE FUNCTION topo_update.create_surface_edge_domain_obj(
 	client_json_feature text,
+
+	-- Name of the schema containing both
+	-- Surface and Border layer
 	layer_schema text,
+
+	-- Name of Surface layer table
 	surface_layer_table text,
+
+	-- Name of Surface layer TopoGeometry column
 	surface_layer_column text,
+
+	-- Name of Border layer table
 	border_layer_table text,
+
+	-- Name of Border layer TopoGeometry column
 	border_layer_column text,
+
 	snap_tolerance float8,
+
 	server_json_feature text default null
 )
-RETURNS TABLE(result text) AS $$
+RETURNS TABLE(result text) AS $BODY$
 DECLARE
 
 	json_result text;
@@ -340,13 +362,14 @@ BEGIN
 
 	EXECUTE command_string;
 
-	command_string := 'SELECT json_agg(row_to_json(t.*))::text FROM create_surface_edge_domain_obj_r1_r AS t';
 
 	IF do_timing_debug THEN
 		RAISE NOTICE '% time spent % done at %', proc_name, clock_timestamp() - ts, clock_timestamp();
 	END IF;
 
-    RETURN QUERY EXECUTE command_string;
+    RETURN QUERY
+	SELECT json_agg(row_to_json(t.*))::text as result
+	FROM create_surface_edge_domain_obj_r1_r t;
 
 END;
-$$ LANGUAGE plpgsql;
+$BODY$ LANGUAGE plpgsql; --}
