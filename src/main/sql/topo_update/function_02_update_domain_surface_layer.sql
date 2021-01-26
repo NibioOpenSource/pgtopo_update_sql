@@ -5,109 +5,114 @@
 -- DROP FUNCTION topo_update.update_domain_surface_layer(_new_topo_objects regclass) cascade;
 
 
-CREATE OR REPLACE FUNCTION topo_update.update_domain_surface_layer(surface_topo_info topo_update.input_meta_info, border_topo_info topo_update.input_meta_info, json_input_structure topo_update.json_input_structure,  _new_topo_objects regclass) 
+CREATE OR REPLACE FUNCTION topo_update.update_domain_surface_layer(
+	surface_topo_info topo_update.input_meta_info,
+	border_topo_info topo_update.input_meta_info,
+	json_input_structure topo_update.json_input_structure,
+	_new_topo_objects regclass
+)
 RETURNS SETOF topo_update.topogeometry_def AS $$
 DECLARE
 
--- this border layer id will picked up by input parameters
-border_layer_id int;
+	-- this border layer id will picked up by input parameters
+	border_layer_id int;
 
--- this surface layer id will picked up by input parameters
-surface_layer_id int;
+	-- this surface layer id will picked up by input parameters
+	surface_layer_id int;
 
--- this is the tolerance used for snap to 
-snap_tolerance float8 = null;
+	-- this is the tolerance used for snap to
+	snap_tolerance float8 = null;
 
--- hold striped gei
-edge_with_out_loose_ends geometry = null;
+	-- hold striped gei
+	edge_with_out_loose_ends geometry = null;
 
--- holds dynamic sql to be able to use the same code for different
-command_string text;
+	-- holds dynamic sql to be able to use the same code for different
+	command_string text;
 
--- holds the num rows affected when needed
-num_rows_affected int;
+	-- holds the num rows affected when needed
+	num_rows_affected int;
 
--- number of rows to delete from org table
-num_rows_to_delete int;
+	-- number of rows to delete from org table
+	num_rows_to_delete int;
 
--- The border topology
-new_border_data topology.topogeometry;
+	-- The border topology
+	new_border_data topology.topogeometry;
 
--- used for logging
-add_debug_tables int = 0;
+	-- used for logging
+	add_debug_tables int = 0;
 
--- array of quoted field identifiers
--- for attribute fields passed in by user and known (by name)
--- in the target table
-update_fields text[];
+	-- array of quoted field identifiers
+	-- for attribute fields passed in by user and known (by name)
+	-- in the target table
+	update_fields text[];
 
--- array of quoted field identifiers
--- for attribute fields passed in by user and known (by name)
--- in the temp table
-update_fields_t text[];
+	-- array of quoted field identifiers
+	-- for attribute fields passed in by user and known (by name)
+	-- in the temp table
+	update_fields_t text[];
 
--- String surface layer name
-surface_layer_name text;
+	-- String surface layer name
+	surface_layer_name text;
 
--- the closed geom if the instring is closed
-valid_closed_user_geometry geometry = null;
+	-- the closed geom if the instring is closed
+	valid_closed_user_geometry geometry = null;
 
--- temp variable
-temp_text_var TEXT;
+	-- temp variable
+	temp_text_var TEXT;
 
--- do debug timing
-do_timing_debug boolean = true;
-ts timestamptz := clock_timestamp();
-proc_name text = 'topo_update.update_domain_surface_layer';
+	-- do debug timing
+	do_timing_debug boolean = true;
+	ts timestamptz := clock_timestamp();
+	proc_name text = 'topo_update.update_domain_surface_layer';
 
 
 BEGIN
-	
+
 	IF do_timing_debug THEN
 		RAISE NOTICE '% time spent % start at %', proc_name, clock_timestamp() - ts, clock_timestamp();
 	END IF;
 
-	-- this is the tolerance used for snap to 
+	-- this is the tolerance used for snap to
 	snap_tolerance := surface_topo_info.snap_tolerance;
-	
+
 	-- find border layer id
 	border_layer_id := border_topo_info.border_layer_id;
 	RAISE NOTICE 'topo_update.update_domain_surface_layer border_layer_id   %',  border_layer_id ;
-	
+
 	-- find surface layer id
 	surface_layer_id := surface_topo_info.border_layer_id;
 	RAISE NOTICE 'topo_update.update_domain_surface_layer surface_layer_id %, surface_topo_info.layer_feature_column % ',  surface_layer_id, surface_topo_info.layer_feature_column ;
 
 	surface_layer_name := surface_topo_info.layer_schema_name || '.' || surface_topo_info.layer_table_name;
 
-	-- check if this is closed polygon drawn by the user 
+	-- check if this is closed polygon drawn by the user
 	-- if it's a closed polygon the only surface inside this polygon should be affected
 	IF St_IsClosed(json_input_structure.input_geo) THEN
 		valid_closed_user_geometry = ST_MakePolygon(json_input_structure.input_geo);
 	END IF;
 
 	-- get the data into a new tmp table
-	DROP TABLE IF EXISTS new_surface_data; 
+	DROP TABLE IF EXISTS new_surface_data;
 
-	
+
 	EXECUTE format('CREATE TEMP TABLE new_surface_data AS (SELECT * FROM %s)', _new_topo_objects);
 	ALTER TABLE new_surface_data ADD COLUMN id_foo SERIAL PRIMARY KEY;
 	ALTER TABLE new_surface_data ADD COLUMN status_foo int default 0;
 
-	
-	DROP TABLE IF EXISTS old_surface_data; 
+
+	DROP TABLE IF EXISTS old_surface_data;
 	-- Find out if any old topo objects overlaps with this new objects using the relation table
 	-- by using the surface objects owned by the both the new objects and the exting one
 	-- Exlude the the new surface object created
 	-- We are using the rows in new_surface_data to cpare with, this contains all the rows which are affected
-	command_string :=  format('CREATE TEMP TABLE old_surface_data AS 
-	(SELECT 
-	re.* 
-	FROM 
+	command_string :=  format('CREATE TEMP TABLE old_surface_data AS
+	(SELECT
+	re.*
+	FROM
 	%I.relation re,
 	%I.relation re_tmp,
 	new_surface_data new_sd
-	WHERE 
+	WHERE
 	re.layer_id =%L AND
 	re.element_type = 3 AND
 	re.element_id = re_tmp.element_id AND
@@ -118,9 +123,9 @@ BEGIN
     surface_topo_info.topology_name,
     surface_topo_info.topology_name,
     surface_layer_id,
-    surface_layer_id);  
+    surface_layer_id);
 	EXECUTE command_string;
-	
+
 	command_string :=  format('CREATE index on old_surface_data(topogeo_id)');
 	EXECUTE command_string;
 
@@ -128,24 +133,24 @@ BEGIN
 		RAISE NOTICE '% time spent % to reach state get where table old_surface_data are created ', proc_name, clock_timestamp() - ts;
 	END IF;
 
-	DROP TABLE IF EXISTS old_surface_data_not_in_new; 
-	-- Find any old objects that are not covered totaly by new surfaces 
+	DROP TABLE IF EXISTS old_surface_data_not_in_new;
+	-- Find any old objects that are not covered totaly by new surfaces
 	-- This objets should not be deleted, but the geometry should only decrease in size.
 	-- TODO Take a disscusion about how to handle attributtes in this cases
 	-- TODO add a test case for this
-	command_string :=  format('CREATE TEMP TABLE old_surface_data_not_in_new AS 
-	(SELECT 
-	re.* 
-	FROM 
+	command_string :=  format('CREATE TEMP TABLE old_surface_data_not_in_new AS
+	(SELECT
+	re.*
+	FROM
 	%I.relation re,
 	old_surface_data re_tmp
-	WHERE 
+	WHERE
 	re.layer_id = %L AND
 	re.element_type = 3 AND
 	re.topogeo_id = re_tmp.topogeo_id AND
 	re.element_id NOT IN (SELECT element_id FROM old_surface_data))',
     surface_topo_info.topology_name,
-    surface_layer_id);  
+    surface_layer_id);
 	EXECUTE command_string;
 
 	command_string :=  format('CREATE index on old_surface_data_not_in_new(topogeo_id)');
@@ -154,22 +159,22 @@ BEGIN
 	IF do_timing_debug THEN
 		RAISE NOTICE '% time spent % to reach state get where table old_surface_data_not_in_new are created ', proc_name, clock_timestamp() - ts;
 	END IF;
-	
-	
+
+
 	DROP TABLE IF EXISTS old_rows_be_reused;
 	-- IF old_surface_data_not_in_new is empty we know that all areas are coverbed by the new objects
 	-- and we can delete/resuse this objects for the new rows
 	-- Get a list of old row id's used
-	
-	command_string :=  format('CREATE TEMP TABLE old_rows_be_reused AS 
-	-- we can have distinct here 
-	(SELECT distinct(old_data_row.id) FROM 
+
+	command_string :=  format('CREATE TEMP TABLE old_rows_be_reused AS
+	-- we can have distinct here
+	(SELECT distinct(old_data_row.id) FROM
 	%I.%I old_data_row,
-	old_surface_data sf 
+	old_surface_data sf
 	WHERE (old_data_row.%I).id = sf.topogeo_id)',
     surface_topo_info.layer_schema_name,
     surface_topo_info.layer_table_name,
-    surface_topo_info.layer_feature_column);  
+    surface_topo_info.layer_feature_column);
 	EXECUTE command_string;
 
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
@@ -183,47 +188,47 @@ BEGIN
 	-- Take a copy of old attribute values because they will be needed when you add new rows.
 	-- The new surfaces should pick up old values from the old row attributtes that overlaps the new rows
 	-- We also have to take copy of the geometry we need that to find overlaps when we pick up old values
-	-- TODO this should have been solved by using topology relation table, but I do that later 
+	-- TODO this should have been solved by using topology relation table, but I do that later
 	DROP TABLE IF EXISTS old_rows_attributes;
-	
-	command_string :=  format('CREATE TEMP TABLE old_rows_attributes AS 
-	(SELECT distinct old_data_row.*, old_data_row.%s::geometry as foo_geo FROM 
+
+	command_string :=  format('CREATE TEMP TABLE old_rows_attributes AS
+	(SELECT distinct old_data_row.*, old_data_row.%s::geometry as foo_geo FROM
 	%I.%I  old_data_row,
-	old_surface_data sf 
+	old_surface_data sf
 	WHERE (old_data_row.%I).id = sf.topogeo_id)',
 	surface_topo_info.layer_feature_column,
     surface_topo_info.layer_schema_name,
     surface_topo_info.layer_table_name,
-    surface_topo_info.layer_feature_column);  
+    surface_topo_info.layer_feature_column);
 	EXECUTE command_string;
 
 
 	IF do_timing_debug THEN
 		RAISE NOTICE '% time spent % to reach state get where table old_rows_attributes are created ', proc_name, clock_timestamp() - ts;
 	END IF;
-	
+
 -- Only used for debug
 	IF add_debug_tables = 1 THEN
 		-- list topo objects to be reused
 		-- get new objects created from topo_update.create_edge_surfaces
 		DROP TABLE IF EXISTS topo_rein.update_domain_surface_layer_t4;
-		CREATE TABLE topo_rein.update_domain_surface_layer_t4 AS 
+		CREATE TABLE topo_rein.update_domain_surface_layer_t4 AS
 		( SELECT * FROM old_rows_attributes) ;
 	END IF;
 
-	
+
 	-- Only used for debug
 	IF add_debug_tables = 1 THEN
 		-- list topo objects to be reused
 		-- get new objects created from topo_update.create_edge_surfaces
 		DROP TABLE IF EXISTS topo_rein.update_domain_surface_layer_t1;
-		 
+
 		EXECUTE format('CREATE TABLE topo_rein.update_domain_surface_layer_t1 AS ( SELECT r.id, r.%S::geometry AS geo, %L || r.%S::text AS topo
 			FROM topo_rein.arstidsbeite_sommer_flate r, old_rows_be_reused reuse WHERE reuse.id = r.id)',
 			surface_topo_info.layer_feature_column,'reuse topo objcts', surface_topo_info.layer_feature_column);
 	END IF;
 
-	
+
 	-- We now know which rows we can reuse clear out old data rom the realation table
 	command_string :=  format('UPDATE %I.%I  r
 	SET %I = clearTopoGeom(%I)
@@ -232,9 +237,9 @@ BEGIN
     surface_topo_info.layer_schema_name,
     surface_topo_info.layer_table_name,
     surface_topo_info.layer_feature_column,
-    surface_topo_info.layer_feature_column);  
+    surface_topo_info.layer_feature_column);
 	EXECUTE command_string;
-	
+
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 
 	IF do_timing_debug THEN
@@ -244,37 +249,37 @@ BEGIN
 	-- If no rows are updated the user don't have update rights, we are using row level security
 	-- We return no data and it will done a rollback
 	IF num_rows_affected = 0 AND (SELECT count(*) FROM old_rows_be_reused)::int > 0 THEN
-		RETURN;	
+		RETURN;
 	END IF;
-	
+
 	SELECT (num_rows_affected - (SELECT count(*) FROM new_surface_data)) INTO num_rows_to_delete;
 
 	RAISE NOTICE 'topo_update.update_domain_surface_layer Number rows to be added in org table  %',  count(*) FROM new_surface_data;
 
 	RAISE NOTICE 'topo_update.update_domain_surface_layer Number rows to be deleted in org table  %',  num_rows_to_delete;
 
-	-- When overwrite we may have more rows in the org table so we may need do delete the rows that are not needed 
-	-- from  topo_rein.arstidsbeite_var_flate, we the just delete the left overs 
+	-- When overwrite we may have more rows in the org table so we may need do delete the rows that are not needed
+	-- from  topo_rein.arstidsbeite_var_flate, we the just delete the left overs
 	command_string :=  format('DELETE FROM %I.%I
 	WHERE ctid IN (
 	SELECT r.ctid FROM
 	%I.%I r,
 	old_rows_be_reused reuse
-	WHERE reuse.id = r.id 
+	WHERE reuse.id = r.id
 	LIMIT  greatest(%L, 0))',
     surface_topo_info.layer_schema_name,
     surface_topo_info.layer_table_name,
     surface_topo_info.layer_schema_name,
     surface_topo_info.layer_table_name,
     num_rows_to_delete
-  	);  
+  	);
 	EXECUTE command_string;
-	
-	
+
+
 	-- Delete rows, also rows that could be reused, since I was not able to update those.
 	-- TODO fix update of old rows instead of using delete
 	DROP TABLE IF EXISTS new_rows_updated_in_org_table;
-	
+
 	command_string :=  format('CREATE TEMP TABLE new_rows_updated_in_org_table AS (SELECT * FROM %I.%I  limit 0);
 	WITH updated AS (
 		DELETE FROM %I.%I  old
@@ -290,13 +295,13 @@ BEGIN
     surface_topo_info.layer_table_name,
     surface_topo_info.layer_feature_column,
     surface_topo_info.layer_feature_column
-  	);  
+  	);
 	EXECUTE command_string;
-	
+
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 	RAISE NOTICE 'topo_update.update_domain_surface_layer Number old rows to deleted in table %',  num_rows_affected;
-	
-	
+
+
 
 
 	-- Only used for debug
@@ -304,36 +309,36 @@ BEGIN
 		-- list new objects added reused
 		-- get new objects created from topo_update.create_edge_surfaces
 		DROP TABLE IF EXISTS topo_rein.update_domain_surface_layer_t2;
-		CREATE TABLE topo_rein.update_domain_surface_layer_t2 AS 
-			
+		CREATE TABLE topo_rein.update_domain_surface_layer_t2 AS
+
 		EXECUTE format('CREATE TABLE topo_rein.update_domain_surface_layer_t2 AS ( SELECT r.id, r.%S::geometry AS geo, %L || r.%S::text AS topo
 			FROM new_rows_updated_in_org_table r)',
 			surface_topo_info.layer_feature_column,'old rows deleted update', surface_topo_info.layer_feature_column);
 
 	END IF;
 
-	
+
 	IF (SELECT count(*) FROM old_rows_attributes)::int > 0 THEN
 
-      -- Update status, value before insert attribttus 
-	
+      -- Update status, value before insert attribttus
+
  	    command_string := format(
  	    'UPDATE new_surface_data a
- 		SET 
+ 		SET
  		status_foo = c.status
  		FROM old_rows_attributes c
  		WHERE ST_Intersects(c.foo_geo,ST_pointOnSurface(a.surface_topo::geometry))'
  	    );
  	    EXECUTE command_string;
- 		
+
  		GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
  		--UPDATE new_surface_data a SET status_foo = 1 where status_foo <> 1;
- 	
+
  	END IF;
 
 	-- insert missing rows and keep a copy in them a temp table
 	DROP TABLE IF EXISTS new_rows_added_in_org_table;
-	
+
 	command_string :=  format('CREATE TEMP TABLE new_rows_added_in_org_table AS (SELECT * FROM %I.%I limit 0);
 	WITH inserted AS (
 	INSERT INTO  %I.%I(%I,reinbeitebruker_id,felles_egenskaper,status)
@@ -354,42 +359,42 @@ BEGIN
     surface_topo_info.layer_feature_column,
     surface_topo_info.layer_feature_column,
     surface_topo_info.layer_feature_column
-  	);  
+  	);
 	EXECUTE command_string;
-	
-	
+
+
 	-- Only used for debug
 	IF add_debug_tables = 1 THEN
 		-- list new objects added reused
 		-- get new objects created from topo_update.create_edge_surfaces
 		DROP TABLE IF EXISTS topo_rein.update_domain_surface_layer_t3;
 
-        EXECUTE format('CREATE TABLE topo_rein.update_domain_surface_layer_t3 AS 
+        EXECUTE format('CREATE TABLE topo_rein.update_domain_surface_layer_t3 AS
 		( SELECT r.id, r.%s::geometry AS geo, %L || r.%s::text AS topo
 			FROM new_rows_added_in_org_table r)',
 			surface_topo_info.layer_feature_column,'new topo objcts', surface_topo_info.layer_feature_column);
-			
+
 	END IF;
 
 	   	-- update the newly inserted rows with attribute values based from old_rows_table
     -- find the rows toubching
   DROP TABLE IF EXISTS touching_surface;
-  
+
 
   -- If this is a not a closed polygon you have use touches
   IF  valid_closed_user_geometry IS NULL  THEN
-	  CREATE TEMP TABLE touching_surface AS 
-	  (SELECT distinct a.id, unnest(topo_update.touches(surface_layer_name,a.id,surface_topo_info)) as id_from 
+	  CREATE TEMP TABLE touching_surface AS
+	  (SELECT distinct a.id, unnest(topo_update.touches(surface_layer_name,a.id,surface_topo_info)) as id_from
 	  FROM new_rows_added_in_org_table a);
   ELSE
   -- IF this a cloesed polygon only use objcet thats inside th e surface drawn by the user
-  
-   --CREATE TEMP TABLE touching_surface AS 
-   --SELECT a.id, topo_update.touches(surface_layer_name,a.id,surface_topo_info) as id_from 
-   
-	  EXECUTE format('CREATE TEMP TABLE touching_surface AS 
+
+   --CREATE TEMP TABLE touching_surface AS
+   --SELECT a.id, topo_update.touches(surface_layer_name,a.id,surface_topo_info) as id_from
+
+	  EXECUTE format('CREATE TEMP TABLE touching_surface AS
 	  (
-	  SELECT distinct a.id, unnest(topo_update.touches(%L,a.id,%L)) as id_from 
+	  SELECT distinct a.id, unnest(topo_update.touches(%L,a.id,%L)) as id_from
 	  FROM new_rows_added_in_org_table a
 	  WHERE ST_Covers(%L,ST_PointOnSurface(a.%s::geometry))
 	  )',
@@ -398,28 +403,28 @@ BEGIN
 	  valid_closed_user_geometry,
 	  surface_topo_info.layer_feature_column
 	  );
-	  
+
   END IF;
 
 
 	  -- Extract name of fields with not-null values:
   -- Extract name of fields with not-null values and append the table prefix n.:
-  -- Only update json value that exits 
+  -- Only update json value that exits
   IF (SELECT count(*) FROM old_rows_attributes)::int > 0 THEN
-  
+
  	 	RAISE NOTICE 'topo_update.update_domain_surface_layer num rows in old attrbuttes: %', (SELECT count(*) FROM old_rows_attributes)::int;
 
- 	 	-- Update felles_egenskaper attribttus 
+ 	 	-- Update felles_egenskaper attribttus
 	    command_string := format(
 	    'UPDATE %I.%I a
-		SET 
-		felles_egenskaper.forstedatafangstdato = (c.felles_egenskaper).forstedatafangstdato, 
-		felles_egenskaper.verifiseringsdato = (c.felles_egenskaper).verifiseringsdato, 
-		felles_egenskaper.opphav = (c.felles_egenskaper).opphav 
-		FROM new_rows_added_in_org_table b, 
+		SET
+		felles_egenskaper.forstedatafangstdato = (c.felles_egenskaper).forstedatafangstdato,
+		felles_egenskaper.verifiseringsdato = (c.felles_egenskaper).verifiseringsdato,
+		felles_egenskaper.opphav = (c.felles_egenskaper).opphav
+		FROM new_rows_added_in_org_table b,
 		old_rows_attributes c
-		WHERE 
-	    a.id = b.id AND                           
+		WHERE
+	    a.id = b.id AND
 	    ST_Intersects(c.foo_geo,ST_pointOnSurface(a.%I::geometry))',
 	    surface_topo_info.layer_schema_name,
 	    surface_topo_info.layer_table_name,
@@ -427,11 +432,11 @@ BEGIN
 	    );
 		RAISE NOTICE 'topo_update.update_domain_surface_layer command_string %', command_string;
 		EXECUTE command_string;
-		
+
 		GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 		RAISE NOTICE 'topo_update.update_domain_surface_layer no old attribute values found  %',  num_rows_affected;
 
-        -- Update other attribttus 
+        -- Update other attribttus
   		SELECT
 	  	array_agg(quote_ident(update_column)) AS update_fields,
 	  	array_agg('c.'||quote_ident(update_column)) as update_fields_t
@@ -440,21 +445,21 @@ BEGIN
 		  	update_fields_t
 		  FROM (
 		   SELECT distinct(key) AS update_column
-		   FROM old_rows_attributes t, json_each_text(to_json((t)))  
-		   WHERE key != 'id' AND key != 'foo_geo'  AND key != surface_topo_info.layer_feature_column AND key != 'felles_egenskaper'  
+		   FROM old_rows_attributes t, json_each_text(to_json((t)))
+		   WHERE key != 'id' AND key != 'foo_geo'  AND key != surface_topo_info.layer_feature_column AND key != 'felles_egenskaper'
 		  ) AS keys;
-		
+
 		  RAISE NOTICE 'topo_update.update_domain_surface_layer Extract name of not-null fields-c: %', update_fields_t;
 		  RAISE NOTICE 'topo_update.update_domain_surface_layer Extract name of not-null fields-c: %', update_fields;
-		
+
 	    command_string := format(
 	    'UPDATE %I.%I a
-		SET 
-		(%s) = (%s) 
-		FROM new_rows_added_in_org_table b, 
+		SET
+		(%s) = (%s)
+		FROM new_rows_added_in_org_table b,
 		old_rows_attributes c
-		WHERE 
-	    a.id = b.id AND                           
+		WHERE
+	    a.id = b.id AND
 	    ST_Intersects(c.foo_geo,ST_pointOnSurface(a.%I::geometry))',
 	    surface_topo_info.layer_schema_name,
 	    surface_topo_info.layer_table_name,
@@ -463,14 +468,14 @@ BEGIN
 	    surface_topo_info.layer_feature_column
 	    );
 	    EXECUTE command_string;
-		
+
 		GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 		RAISE NOTICE 'topo_update.update_domain_surface_layer no old attribute values found  %',  num_rows_affected;
 
-	
+
 	END IF;
 
-      -- if there are any toching interfaces  
+      -- if there are any toching interfaces
 	IF (SELECT count(*) FROM touching_surface)::int > 0 THEN
 
 	IF valid_closed_user_geometry IS NOT NULL THEN
@@ -480,9 +485,9 @@ BEGIN
 		  	update_fields
 		  FROM (
 		   SELECT distinct(key) AS update_column
-		   FROM new_rows_added_in_org_table t, json_each_text(to_json((t)))  
-		   WHERE key != 'id' AND key != 'foo_geo' AND key != surface_topo_info.layer_feature_column 
-		   AND key != 'felles_egenskaper' AND key != 'status' 
+		   FROM new_rows_added_in_org_table t, json_each_text(to_json((t)))
+		   WHERE key != 'id' AND key != 'foo_geo' AND key != surface_topo_info.layer_feature_column
+		   AND key != 'felles_egenskaper' AND key != 'status'
 		   AND key != 'saksbehandler' AND key != 'slette_status_kode' AND key != 'alle_reinbeitebr_id' AND key != 'simple_geo'
 		  ) AS keys;
 		  RAISE NOTICE 'topo_update.update_domain_surface_layer Extract name of not-null fields-a: %', update_fields;
@@ -493,34 +498,34 @@ BEGIN
 		  	update_fields
 		  FROM (
 		   SELECT distinct(key) AS update_column
-		   FROM new_rows_added_in_org_table t, json_each_text(to_json((t)))  
-		   WHERE key != 'reinbeitebruker_id' AND key != 'id' AND  key != 'foo_geo' AND key != surface_topo_info.layer_feature_column 
-		   AND key != 'felles_egenskaper' AND key != 'status' 
+		   FROM new_rows_added_in_org_table t, json_each_text(to_json((t)))
+		   WHERE key != 'reinbeitebruker_id' AND key != 'id' AND  key != 'foo_geo' AND key != surface_topo_info.layer_feature_column
+		   AND key != 'felles_egenskaper' AND key != 'status'
 		   AND key != 'saksbehandler' AND key != 'slette_status_kode' AND key != 'alle_reinbeitebr_id' AND key != 'simple_geo'
 		  ) AS keys;
-		  RAISE NOTICE 'topo_update.update_domain_surface_layer Extract name of not-null fields-a: %', update_fields;	
+		  RAISE NOTICE 'topo_update.update_domain_surface_layer Extract name of not-null fields-a: %', update_fields;
 	END IF;
-		
+
 	   	-- update the newly inserted rows with attribute values based from old_rows_table
 	    -- find the rows toubching
 --	  	DROP TABLE IF EXISTS touching_surface;
---		CREATE TEMP TABLE touching_surface AS 
---		(SELECT topo_update.touches(surface_layer_name,a.id,surface_topo_info) as id 
+--		CREATE TEMP TABLE touching_surface AS
+--		(SELECT topo_update.touches(surface_layer_name,a.id,surface_topo_info) as id
 --		FROM new_rows_added_in_org_table a);
-	
-	
+
+
 		-- we set values with null row that can pick up a value from a neighbor.
 		-- NB! this onlye work if new rows dont' have any defalut value
 		-- TODO use a test based on new rows added and not a test on null values
 		FOR temp_text_var IN SELECT unnest( update_fields ) LOOP
 	        raise notice 'update colum: %', temp_text_var;
 		    command_string := format('UPDATE %I.%I a
-			SET 
-				%s = d.%s 
-			FROM 
+			SET
+				%s = d.%s
+			FROM
 			%I.%I d,
 			touching_surface b
-			WHERE 
+			WHERE
 			d.id = b.id_from AND
 			a.id = b.id AND
 			d.%s is not null AND
@@ -535,36 +540,24 @@ BEGIN
 		    temp_text_var);
 --			RAISE NOTICE '? command_string %', command_string;
 			EXECUTE command_string;
-		
+
 --			GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 --			RAISE NOTICE 'topo_update.update_domain_surface_layer Number num_rows_affected  %',  num_rows_affected;
    		END loop;
 
-  
+
 	END IF;
 
 	IF do_timing_debug THEN
 		RAISE NOTICE '% time spent % done at %', proc_name, clock_timestamp() - ts, clock_timestamp();
 	END IF;
 
-	
+
 
 
 
 	RETURN QUERY SELECT a.surface_topo::topogeometry as t FROM new_surface_data a;
 
-	
+
 END;
 $$ LANGUAGE plpgsql;
-
-
---	RAISE NOTICE 'topo_update.update_domain_surface_layer touching_surface  %', to_json(array_agg(row_to_json(t.*))) FROM touching_surface t;
---	RAISE NOTICE 'topo_update.update_domain_surface_layer new_surface_data  %', to_json(array_agg(row_to_json(t.*))) FROM new_surface_data t;
---	RAISE NOTICE 'topo_update.update_domain_surface_layer new_rows_added_in_org_table  %', to_json(array_agg(row_to_json(t.*))) FROM new_rows_added_in_org_table t;
---	RAISE NOTICE 'topo_update.update_domain_surface_layer old_rows_attributes  %', to_json(array_agg(row_to_json(t.*))) FROM old_rows_attributes t;
---  RAISE NOTICE 'topo_update.update_domain_surface_layer old_surface_data %', to_json(array_agg(row_to_json(t.*))) FROM old_surface_data t;
---	RAISE NOTICE 'topo_update.update_domain_surface_layer valid_closed_user_geometry  %', ST_AsText(valid_closed_user_geometry);
-
---{"15" : "0106000020A210000001000000010300000001000000080000004D5073032713244136C9202FD79C5D41FAAF4A00A31D2441B4D7C9EA529A5D413F8E9C0F18212441959EA025449D5D4168008CDCFF3B2441AA2C686E169E5D41417493AD4E392441F9099639F6975D416D070D7C840024410DD0B708F2975D417D4058E360072441F789B7297B9C5D414D5073032713244136C9202FD79C5D41"},
---{"16" : "0106000020A210000001000000010300000001000000050000003F8E9C0F18212441959EA025449D5D414D5073032713244136C9202FD79C5D416315863C41FE23414ADE8359DBA15D410D5E3E58F8262441B4E7F75D44A25D413F8E9C0F18212441959EA025449D5D41"},
---{"17" : "0106000020A210000001000000010300000001000000040000003F8E9C0F18212441959EA025449D5D41FAAF4A00A31D2441B4D7C9EA529A5D414D5073032713244136C9202FD79C5D413F8E9C0F18212441959EA025449D5D41"}]
