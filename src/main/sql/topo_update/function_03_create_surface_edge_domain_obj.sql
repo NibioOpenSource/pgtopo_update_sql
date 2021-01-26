@@ -262,11 +262,17 @@ BEGIN
 	-- by using the surface objects owned by the both the new objects and the exting one
 	CREATE TEMP TABLE new_surface_data_for_edge
 	ON COMMIT DROP AS
-	(SELECT
-	topo::topogeometry AS surface_topo,
-	json_input_structure.sosi_felles_egenskaper_flate AS felles_egenskaper,
-	NULLIF (json_input_structure.json_properties->>'reinbeitebruker_id'::text,'') as reinbeitebruker_id
-	FROM topo_update.create_edge_surfaces(surface_topo_info,border_topo_info,new_border_data,json_input_structure.input_geo,json_input_structure.sosi_felles_egenskaper_flate));
+	SELECT
+		surface_topo,
+		json_input_structure.sosi_felles_egenskaper_flate AS felles_egenskaper,
+		NULLIF (json_input_structure.json_properties->>'reinbeitebruker_id'::text,'') as reinbeitebruker_id
+	FROM topo_update.create_edge_surfaces(
+		surface_topo_info,
+		border_topo_info,
+		new_border_data,
+		json_input_structure.input_geo,
+		json_input_structure.sosi_felles_egenskaper_flate
+	) surface_topo;
 	-- We now have a list with all surfaces that intersect the line that is drwan by the user.
 	-- In this list there may areas that overlaps so we need to clean up some values
 

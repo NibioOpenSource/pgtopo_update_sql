@@ -1,47 +1,50 @@
 -- Create new new surface object after new valid intersect line is drawn
-
+--
 -- TODO make general
-
-
 CREATE OR REPLACE FUNCTION topo_update.create_edge_surfaces(
 	surface_topo_info topo_update.input_meta_info,
 	border_topo_info topo_update.input_meta_info,
-	new_border_data topogeometry,
+
+	-- The border we want to use to split surfaces
+	new_border_data TopoGeometry,
+
 	valid_user_geometry geometry,
+
 	felles_egenskaper_flate topo_rein.sosi_felles_egenskaper
 )
-RETURNS SETOF topo_update.topogeometry_def AS $$
+RETURNS SETOF topology.TopoGeometry
+AS $BODY$ --{
 DECLARE
 
--- this border layer id will picked up by input parameters
-border_layer_id int;
+	-- this border layer id will picked up by input parameters
+	border_layer_id int;
 
--- this surface layer id will picked up by input parameters
-surface_layer_id int;
+	-- this surface layer id will picked up by input parameters
+	surface_layer_id int;
 
--- hold striped gei
-edge_with_out_loose_ends geometry = null;
+	-- hold striped gei
+	edge_with_out_loose_ends geometry = null;
 
--- holds dynamic sql to be able to use the same code for different
-command_string text;
+	-- holds dynamic sql to be able to use the same code for different
+	sql text;
 
--- holds the num rows affected when needed
-num_rows_affected int;
+	-- holds the num rows affected when needed
+	num_rows_affected int;
 
--- number of rows to delete from org table
-num_rows_to_delete int;
+	-- number of rows to delete from org table
+	num_rows_to_delete int;
 
--- used for logging
-add_debug_tables int = 0;
+	-- used for logging
+	add_debug_tables int = 0;
 
--- used for looping
-rec RECORD;
+	-- used for looping
+	rec RECORD;
 
--- used for creating new topo objects
-new_surface_topo topology.topogeometry;
+	-- used for creating new topo objects
+	new_surface_topo topology.topogeometry;
 
--- the closed geom if the instring is closed
-valid_closed_user_geometry geometry;
+	-- the closed geom if the instring is closed
+	valid_closed_user_geometry geometry;
 
 BEGIN
 
@@ -68,7 +71,7 @@ BEGIN
 	CREATE TEMP TABLE new_faces(face_id int);
 
 	-- find left faces
-	command_string := FORMAT('INSERT INTO new_faces(face_id)
+	sql := FORMAT('INSERT INTO new_faces(face_id)
 	SELECT DISTINCT(fa.face_id) as face_id
 	FROM
 	%I.relation re,
@@ -88,16 +91,16 @@ BEGIN
     border_layer_id);
 
 	-- display the string
-    -- RAISE NOTICE '%', command_string;
+    -- RAISE NOTICE '%', sql;
 	-- execute the string
-    EXECUTE command_string;
+    EXECUTE sql;
 
 
     GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 	RAISE NOTICE 'Number of face objects found on the left side  % ',  num_rows_affected;
 
     -- find right faces
-	command_string := FORMAT('INSERT INTO new_faces(face_id)
+	sql := FORMAT('INSERT INTO new_faces(face_id)
 	SELECT DISTINCT(fa.face_id) as face_id
 	FROM
 	%I.relation re,
@@ -117,9 +120,9 @@ BEGIN
     border_layer_id);
 
 	-- display the string
-    -- RAISE NOTICE '%', command_string;
+    -- RAISE NOTICE '%', sql;
 	-- execute the string
-    EXECUTE command_string;
+    EXECUTE sql;
 
 
 
@@ -139,9 +142,14 @@ BEGIN
 		--IF  NOT EXISTS(SELECT 1 FROM used_topo_faces WHERE face_id = rec.face_id) AND
 		--EXISTS(SELECT 1 FROM valid_topo_faces WHERE face_id = rec.face_id) THEN
 		-- Test if this surface already used by another topo object
-			new_surface_topo := topology.CreateTopoGeom(surface_topo_info.topology_name,surface_topo_info.element_type,surface_layer_id,topology.TopoElementArray_Agg(ARRAY[rec.face_id,3])  );
-			-- if not null
-			IF new_surface_topo IS NOT NULL THEN
+		new_surface_topo := topology.CreateTopoGeom(
+			surface_topo_info.topology_name,
+			surface_topo_info.element_type,
+			surface_layer_id,
+			topology.TopoElementArray_Agg(ARRAY[rec.face_id,3])
+		);
+		-- if not null
+		IF new_surface_topo IS NOT NULL THEN
 
 				-- check if this topo already exist
 				-- TODO find out this chck is needed then we can only check on id
@@ -155,22 +163,11 @@ BEGIN
 					RAISE NOTICE 'topo_update.create_edge_surfaces, Use new topo object % for face % created from user input %',  new_surface_topo, rec.face_id, new_border_data;
 				END IF;
 
-				INSERT INTO new_surface_data(surface_topo) VALUES(new_surface_topo);
+				RETURN NEXT new_surface_topo;
 
 			END IF;
 		--END IF;
     END LOOP;
-
-
-	-- We now objects that are missing attribute values that should be inheretaded from mother object.
-
-
-	RETURN QUERY SELECT a.surface_topo::topogeometry as t FROM new_surface_data a;
-
 END;
-$$ LANGUAGE plpgsql;
-
-
-
--- SELECT * FROM topo_update.create_edge_surfaces((select topo_update.create_surface_edge('SRID=4258;LINESTRING (5.70182 58.55131, 5.70368 58.55134, 5.70403 58.55375, 5.70152 58.55373, 5.70182 58.55131)'))::topogeometry)
-
+$BODY$ -- }
+LANGUAGE plpgsql;
