@@ -286,7 +286,13 @@ BEGIN
 	-- should be returned to the user for further processing
 	CREATE TEMP TABLE res_from_update_domain_surface_layer
 	ON COMMIT DROP AS
-	(SELECT topo::topogeometry AS surface_topo FROM topo_update.update_domain_surface_layer(surface_topo_info,border_topo_info,json_input_structure,'new_surface_data_for_edge'));
+	SELECT surface_topo
+	FROM topo_update.update_domain_surface_layer(
+		surface_topo_info,
+		border_topo_info,
+		json_input_structure,
+		'new_surface_data_for_edge'
+	) surface_topo;
 	GET DIAGNOSTICS num_rows_affected = ROW_COUNT;
 
 	IF do_timing_debug THEN

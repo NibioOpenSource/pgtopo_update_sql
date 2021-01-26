@@ -11,7 +11,8 @@ CREATE OR REPLACE FUNCTION topo_update.update_domain_surface_layer(
 	json_input_structure topo_update.json_input_structure,
 	_new_topo_objects regclass
 )
-RETURNS SETOF topo_update.topogeometry_def AS $$
+RETURNS SETOF topology.TopoGeometry
+AS $BODY$ --{
 DECLARE
 
 	-- this border layer id will picked up by input parameters
@@ -553,11 +554,9 @@ BEGIN
 	END IF;
 
 
-
-
-
-	RETURN QUERY SELECT a.surface_topo::topogeometry as t FROM new_surface_data a;
+	RETURN QUERY SELECT (surface_topo).* FROM new_surface_data;
 
 
 END;
-$$ LANGUAGE plpgsql;
+$BODY$ --}
+LANGUAGE plpgsql;
