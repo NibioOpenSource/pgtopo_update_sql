@@ -152,7 +152,7 @@ DECLARE
 	-- in the target table
 	not_null_fields text[];
 
-	-- holde the computed value for json input reday to use
+	-- holds the computed value for json input ready to use
 	json_input_structure topo_update.json_input_structure;
 
 	-- do debug timing
@@ -244,6 +244,7 @@ BEGIN
 	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj added json_input_structure.json_properties % to ttt2_new_topo_rows_in_org_border_table', json_input_structure.json_properties;
 
 	-- Update the single rows in border line temp table with TopoGeometry and felles egenskaper
+	-- TODO: do NOT depend on "sosi_felles_egenskaper" but rather use json mapping
 	command_string := format('UPDATE ttt2_new_topo_rows_in_org_border_table
     SET %I = %L,
 	 felles_egenskaper = %L',
@@ -363,20 +364,32 @@ BEGIN
 	END IF;
 
 	IF ST_IsClosed(json_input_structure.input_geo) THEN
-		command_string := format('INSERT INTO create_surface_edge_domain_obj_r1_r(id,id_type) ' ||
-		'SELECT tg.id AS id, ''S''::text AS id_type FROM ' ||
-		surface_topo_info.layer_schema_name || '.' || surface_topo_info.layer_table_name ||
-		' tg, new_surface_data_for_edge new ' ||
-		'WHERE (new.surface_topo).id = (tg.%2$s).id AND ' ||
-		'ST_intersects(ST_PointOnSurface((new.surface_topo)::geometry), ST_MakePolygon(%1$L))'
-		,json_input_structure.input_geo,
-		surface_topo_info.layer_feature_column);
+		command_string := format(
+			$$
+	INSERT INTO create_surface_edge_domain_obj_r1_r(id, id_type)
+	SELECT tg.id AS id, 'S'::text AS id_type
+	FROM %3$I.%4$I tg, new_surface_data_for_edge new
+	WHERE (new.surface_topo).id = (tg.%2$s).id
+	AND ST_intersects(ST_PointOnSurface((new.surface_topo)::geometry), ST_MakePolygon(%1$L))
+			$$,
+			json_input_structure.input_geo,
+			surface_topo_info.layer_feature_column,
+			surface_topo_info.layer_schema_name,
+			surface_topo_info.layer_table_name
+		);
     	RAISE NOTICE 'topo_update.create_surface_edge_domain_obj A closed objects only return objects in %', command_string;
   	ELSE
-		command_string := 'INSERT INTO create_surface_edge_domain_obj_r1_r(id,id_type) ' ||
-		' SELECT tg.id AS id, ''S'' AS id_type FROM ' ||
-		surface_topo_info.layer_schema_name || '.' || surface_topo_info.layer_table_name || ' tg, new_surface_data_for_edge new ' ||
-		'WHERE (new.surface_topo).id = (tg.'||surface_topo_info.layer_feature_column||').id ';
+		command_string := format(
+			$$
+	INSERT INTO create_surface_edge_domain_obj_r1_r(id,id_type)
+	SELECT tg.id AS id, 'S' AS id_type
+	FROM %1$I.%2$I tg, new_surface_data_for_edge new
+	WHERE (new.surface_topo).id = (tg.%3$I).id
+			$$,
+			surface_topo_info.layer_schema_name,
+			surface_topo_info.layer_table_name,
+			surface_topo_info.layer_feature_column
+		);
 	END IF;
 
 	EXECUTE command_string;
