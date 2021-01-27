@@ -1,3 +1,0 @@
-simple|{from_simple,from_comp,from_subcomp}|{'1','c1','sc1'}
-composite|{"\"c\".\"a\"","\"c\".\"nc\".\"a\""}|{'c1','sc1'}
-nulls|{to_simple_by_path,to_simple_by_literal}|{"NULL","NULL"}
