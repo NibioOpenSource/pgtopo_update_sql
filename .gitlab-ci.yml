@@ -1,9 +1,29 @@
-test:
-  image: ubuntu:xenial
+image: ubuntu:xenial
+
+variables:
+  POSTGRES_HOST_AUTH_METHOD: trust
+  PGUSER: postgres
+  PGHOST: db
+  RUNTESTFLAGS: -v
+
+# TODO: use an "image" which already has these dependencies
+before_script:
+  - apt-get update -qq
+  - apt-get install -qy
+      make
+      perl
+      postgresql-client
+
+pg11:
+  services:
+    - name: postgis/postgis:11-2.5-alpine
+      alias: db
   script:
-    - apt-get update -qq && apt-get install -y
-        postgresql-11
-        postgresql-11-postgis-2.5
-        postgresql-11-postgis-2.5-scripts
-        postgis
-    - RUNTESTFLAGS=-v make check
+    - make check
+
+pg12:
+  services:
+    - name: postgis/postgis:12-3.1-alpine
+      alias: db
+  script:
+    - make check
