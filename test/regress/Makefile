@@ -1,7 +1,3 @@
-PATH := $(PATH):$(shell pg_config --bindir)
-
-POSTGIS_SCRIPT_DIR ?= $(shell find $(shell pg_config --sharedir)/contrib/postgis-* -maxdepth 0 -type d | sort -n | tail -1)
-
 TESTS := \
   topo_update \
   json_props_to_pg_cols \
@@ -18,9 +14,9 @@ check: loader
   $(TESTS)
 
 loader:
-#	find / -name shp2pgsql 2>/dev/null # debug 
+#	find / -name shp2pgsql 2>/dev/null # debug
 #	ls # debug
-	
+
 	@which shp2pgsql pgsql2shp > /dev/null || \
     { echo "shp2pgsql and pgsql2shp must be in your PATH (which is $${PATH})" && exit 1; }; \
 	mkdir -p ../loader; \
